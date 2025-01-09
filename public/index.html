@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8" />
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no, viewport-fit=cover">
+		<meta name="view-transition" content="same-origin" />
+		<meta content="light dark" name="color-scheme">
+
+		<title>Tic</title>
+		<meta name="description" content="X and O" />
+
+		<link rel="stylesheet" type="text/css" href="./index.css"><link>
+		<script async defer type="module" src="./index.js"></script>
+	</head>
+	<body data-aside>
+		<dialog id="WebAuthN">
+			<form>
+				<label for="UserName">User Name</label>
+				<input id="UserName" type="text" placeholder="user name"/>
+
+				<button data-action="register">Register User</button>
+				<div data-or-divider>-- Or --</div>
+				<button data-action="login">Login</button>
+			</form>
+		</dialog>
+
+		<dialog id="SimpleUser">
+			<form>
+				<label for="SimpleUserName">User Name</label>
+				<input id="SimpleUserName" type="text" placeholder="user name"/>
+
+				<button data-action="simpleLogin">Go</button>
+			</form>
+		</dialog>
+
+		<dialog id="OfferTo">
+			<input type="text" />
+
+			<button-set>
+				<button>Close</button>
+				<button>Offer</button>
+			</button-set>
+		</dialog>
+
+		<dialog id="ForfeitConfirm">
+			<span>Are you sure you wish to Forfeit this game?</span>
+
+			<button-set>
+				<button onclick="event.target.closest('dialog').close()">Close</button>
+				<button data-confirm>Forfeit</button>
+			</button-set>
+		</dialog>
+
+		<dialog id="CloseConfirm">
+			<span>Close this Game?</span>
+
+			<form>
+				<label for="CloseConfirmReason">Reason for close</label>
+				<input id="CloseConfirmReason" type="text" name="reason" />
+			</form>
+
+			<button-set>
+				<button onclick="event.target.closest('dialog').close()">Close</button>
+				<button data-confirm>Confirm</button>
+			</button-set>
+		</dialog>
+
+
+		<header>
+			<h1>Tic</h1>
+			<button-set>
+				<button onclick="document.getElementById('SimpleUser').showModal()">👤</button>
+				<!-- <button onclick="document.getElementById('WebAuthN').showModal()">👤</button> -->
+				<button onclick="document.body.toggleAttribute('data-aside')">🟰</button>
+			</button-set>
+		</header>
+		<progress id="GlobalProgress" min="0" max="100" value="25"></progress>
+		<div id="Toast" data-toast>
+			<output></output>
+			<button onclick="UI.hideToast()">❌</button>
+		</div>
+		<main>
+			<aside>
+				<header>Games:</header>
+				<span data-no-games-listed>No Games Listed</span>
+				<ul id="GamesListing">
+					<template>
+						<li>
+							<span></span>
+							<span></span>
+						</li>
+					</template>
+
+					<!-- template content here -->
+				</ul>
+			</aside>
+
+			<section id="GameFields">
+				<span data-no-game-fields>No Game Loaded</span>
+
+				<template id="GameTemplate">
+					<game-field game-id="">
+						<button-set data-actions>
+							<button data-action="accept" disabled><localized-output key="accept">Accept</localized-output></button>
+							<button data-action="close">Close</button>
+							<button data-action="decline" disabled>Decline</button>
+							<button data-action="forfeit" disabled>Forfeit</button>
+							<button data-action="offer" disabled>Offer</button>
+						</button-set>
+
+						<!-- <game-messages>
+							<span data-key="canMove">Your Move</span>
+						</game-messages> -->
+
+						<game-board>
+							<button data-position="0"><output></output></button>
+							<button data-position="1"><output></output></button>
+							<button data-position="2"><output></output></button>
+
+							<button data-position="3"><output></output></button>
+							<button data-position="4"><output></output></button>
+							<button data-position="5"><output></output></button>
+
+							<button data-position="6"><output></output></button>
+							<button data-position="7"><output></output></button>
+							<button data-position="8"><output></output></button>
+						</game-board>
+					</game-field>
+				</template>
+
+				<!-- template content here -->
+			</section>
+		</main>
+		<footer></footer>
+	</body>
+</html>

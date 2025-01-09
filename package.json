@@ -1,0 +1,14 @@
+{
+  "name": "@johntalton/tic",
+  "type": "module",
+  "scripts": {
+    "start": "./node_modules/.bin/http-server --cors -S -C ./localhost-cert.pem -K ./localhost-privkey.pem ./public",
+    "serve": "node --env-file=.env src/index.js"
+  },
+  "devDependencies": {
+    "http-server": "^14.1.1"
+  },
+  "dependencies": {
+    "@johntalton/sse-util": "^0.0.4"
+  }
+}

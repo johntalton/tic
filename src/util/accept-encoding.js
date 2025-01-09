@@ -1,0 +1,35 @@
+import { parseAcceptStyleHeader } from './accept-util.js'
+
+export class AcceptEncoding {
+	static parse(acceptEncodingHeader) {
+		return parseAcceptStyleHeader(acceptEncodingHeader)
+	}
+
+	static select(acceptEncodingHeader, supportedTypes) {
+		const accepts = AcceptEncoding.parse(acceptEncodingHeader)
+		return this.selectFrom(accepts, supportedTypes)
+	}
+
+	static selectFrom(acceptEncodings, supportedTypes) {
+		for(const acceptEncoding of acceptEncodings) {
+			const { name } = acceptEncoding
+			if(supportedTypes.includes(name)) {
+				return name
+			 }
+		}
+
+		return undefined
+	}
+}
+
+
+// console.log(AcceptEncoding.parse(''))
+// console.log(AcceptEncoding.parse(' '))
+// console.log(AcceptEncoding.parse('zstd'))
+// console.log(AcceptEncoding.parse('identity'))
+// console.log(AcceptEncoding.parse('*'))
+// console.log(AcceptEncoding.parse('gzip, deflate, br, zstd'))
+// console.log(AcceptEncoding.parse('br;q=1.0, gzip;q=0.8, *;q=0.1'))
+// console.log(AcceptEncoding.parse('deflate, gzip;q=1.0, *;q=0.5'))
+// console.log(AcceptEncoding.parse('identity;q=0'))
+// console.log(AcceptEncoding.parse('*;q=0'))

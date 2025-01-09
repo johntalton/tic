@@ -1,0 +1,387 @@
+@layer Base, App;
+
+@layer Base {
+	:root {
+		/* font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif; */
+		font-family: Arial, Helvetica, sans-serif
+	}
+
+	* {
+		margin: 0;
+		padding: 0;
+
+		box-sizing: border-box;
+
+		&:not(:where(html, body)) {
+			font-family: inherit;
+			font-size: inherit;
+		}
+	}
+}
+
+@layer App {
+	:root {
+		color-scheme: light dark;
+		accent-color: rgb(174, 14, 214);
+
+		--background-lighter: light-dark(
+			oklab(0.91 0.02 -0.03),
+			/* oklab(0.3 0.06 -0.17) */
+			oklab(0.4 0.07 -0.05)
+			);
+		--text-lighter: light-dark(black, white);
+
+		--background-light: light-dark(
+			oklab(0.75 0.05 -0.04),
+			/* oklab(0.22 0.08 -0.08) */
+			oklab(0.28 0.09 -0.06)
+			);
+		--text-light: light-dark(black, white);
+
+		--grid-size: 10px;
+		--grid-color: light-dark(
+			oklab(0.53 0.09 -0.08),
+			oklab(0.44 0.08 -0.08)
+			);
+		--grid-mark-color: light-dark(
+			oklab(0.94 0.05 -0.03),
+			oklab(0.73 0.09 -0.07)
+			);
+
+		--background-toast: light-dark(
+			oklab(0.65 0.29 -0.03),
+			oklab(0.47 0.21 0.01)
+		);
+		--text-toast: light-dark(black, white);
+	}
+
+	}
+
+	html {
+
+	}
+
+	@font-face {
+		font-family: 'Noto Emoji';
+		src: url('./Noto_Emoji/NotoEmoji-VariableFont_wght.ttf') format('truetype');
+	}
+
+	progress#GlobalProgress {
+		/* width: calc(100% - 2em); */
+    /* margin-inline: 1em; */
+		/* margin-block: 0.25em; */
+
+		width: 100%;
+		height: 0.5em;
+		margin-block-start: -1px;
+		appearance: none;
+
+
+
+		&::-webkit-progress-bar {
+			background-color: oklab(from var(--background-light) calc(l * 1.25) a b);
+		}
+
+		&::-webkit-progress-value {
+			background-color: hsl(from var(--background-light) h s calc(l * .5));
+			border-radius: 0 1em 1em 0;
+		}
+	}
+
+	dialog {
+		background-color: var(--background-lighter);
+		color: var(--text-lighter);
+		margin-block-start: -100%;
+		transition: margin-block-start 400ms;
+		margin-inline: auto;
+
+		box-shadow: 0px 0.5em 10px oklab(0 0 0 / 0.37);
+
+		display: flex;
+		gap: 1em;
+
+		padding: 1em;
+		flex-direction: column;
+
+
+		&[open] {
+			/* display: flex; */
+			margin-block-start: 6em;
+		}
+
+		&#WebAuthN {
+			display: flex;
+			gap: 1em;
+
+			padding: 1em;
+			flex-direction: column;
+
+
+			& > form {
+				display: flex;
+				flex-direction: column;
+				gap: 0.5em;
+
+				& > input[type="text"] {
+					padding-inline: 1ch;
+					padding-block: 0.5ch;
+				}
+
+				& > [data-or-divider] {
+					margin-block: 0.5em;
+					margin-inline: auto;
+				}
+			}
+
+			& > form#Register {}
+
+			& > form#Login {}
+		}
+
+		&::backdrop {
+			background-color: oklab(0 0 0 / 0.18);
+			backdrop-filter: blur(10px);
+		}
+	}
+
+
+	body {
+		height: 100vh;
+		display: flex;
+		flex-direction: column;
+
+		color: var(--text-light);
+		background-color: var(--background-light);
+	}
+
+	body > header {
+		display: flex;
+		justify-content: space-between;
+
+		font-size: 3em;
+		/* font-weight: bold; */
+		padding-inline: 1ch;
+		padding-block: 0.25em;
+
+		color: var(--text-lighter);
+		background-color: var(--background-lighter);
+		border-block-end: 1px solid var(--background-light);
+
+		& > h1 {
+			font-weight: inherit;
+		}
+
+		& > button-set {
+			display: flex;
+			gap: 0.25em;
+
+			& > button {
+				font-family: 'Noto Emoji';
+				color: inherit;
+				background-color: inherit;
+				border: none;
+				border-radius: 0.25em;
+
+
+				&:active {
+					background-color: var(--background-light);
+					transform: translateX(3px) translateY(3px);
+				}
+
+				@media (hover: hover) {
+					&:hover {
+						background-color: var(--background-light);
+					}
+				}
+			}
+		}
+	}
+
+	aside {
+		display: flex;
+		flex-direction: column;
+		position: absolute;
+		width: 100vw;
+		height: 100%;
+		top: 0;
+		left: -100%;
+		overflow-y: scroll;
+		/* padding-inline: 1em; */
+		padding-block: 2em;
+
+		background-color: transparent;
+		transition: left 300ms, background-color 300ms;
+
+		& > [data-no-games-listed] {
+			display: flex;
+			justify-content: center;
+			font-size: 1.5em;
+			margin-block: 1em .5em;
+
+		}
+
+		&:has(ul#GamesListing > li) > [data-no-games-listed] {
+			display: none;
+		}
+
+		& > header {
+			margin-inline-start: 1ch;
+			margin-block-end: 1em;
+			font-weight: bolder;
+			font-size: 1.5em;
+			text-transform: uppercase;
+		}
+	}
+
+	ul#GamesListing {
+		list-style: none;
+		border-block-start: 1px solid var(--background-light);
+
+		& > li {
+			display: grid;
+			grid-template-columns: 1fr;
+			grid-template-rows: 1fr 1fr;
+			gap: 0.5em;
+
+			padding: 1em;
+			border-block-end: 1px solid var(--background-light)
+		}
+	}
+
+
+	[data-toast] {
+		display: flex;
+		justify-content: space-between;
+
+		padding-block: 1em;
+		padding-inline: 1em;
+
+		background-color: var(--background-toast);
+		color: var(--text-toast);
+
+		&:not([data-show]) {
+			display: none;
+		}
+
+		& > output {
+			margin-block: auto;
+		}
+
+		& > button {
+			font-family: 'Noto Emoji';
+			padding: 0.5em;
+			background-color: var(--background-toast);
+			color: var(--text-toast);
+			border: none;
+		}
+	}
+
+	body[data-aside] aside {
+		left: 0;
+		background-color: var(--background-lighter);
+
+	}
+
+	main {
+		position: relative;
+		display: flex;
+		height: 100%;
+		overflow-y: scroll;
+
+	}
+
+	section {
+		padding: 1em;
+		width: 100%;
+		height: 100%;
+		overflow-y: scroll;
+
+		& > [data-no-game-fields] {
+			display: flex;
+			justify-content: center;
+
+			font-size: 1.5em;
+			margin-block-start: 1em;
+		}
+
+		&:has(game-field) > [data-no-game-fields] {
+			display: none;
+		}
+	}
+
+	button-set[data-actions] {
+		display: block flex;
+		justify-content: center;
+		gap: 1ch;
+		margin-block-end: 2em;
+
+		& > button {
+			padding-inline: 1ch;
+			padding-block: 0.75em;
+
+			border: 1px solid transparent;
+			text-decoration: underline;
+			border-radius: .25em;
+
+			color: var(--text-lighter);
+			background-color: var(--background-lighter);
+
+			&[disabled] {
+				display: none;
+			}
+
+			@media (hover: hover) {
+				&:hover {
+					background-color: var(--background-light);
+					border: 1px solid var(--text-light);
+				}
+			}
+		}
+	}
+
+	game-field {
+		display: flex;
+		flex-direction: column;
+		gap: 1em;
+
+		&:not([data-active]) {
+			display: none;
+		}
+
+		&:not([can-move]) game-board {
+			pointer-events: none;
+		}
+	}
+
+	game-board {
+		font-size: 3em;
+		margin: 0.25em;
+
+		display: grid;
+		grid-template-columns: 1fr 1fr 1fr;
+		grid-template-rows: 1fr 1fr 1fr;
+		gap: var(--grid-size);
+		margin-inline: auto;
+		max-width: fit-content;
+
+		background-color: var(--grid-color);
+
+		& > button {
+			font-family: 'Noto Emoji';
+			color: var(--grid-mark-color);
+
+			min-height: 1.5em;
+			/* padding: 0.125em; */
+			aspect-ratio: 1 / 1;
+			border: none;
+
+			/* color: var(--text-light); */
+			background-color: var(--background-light);
+
+			&:not([disabled]):hover {
+				background-color: lavenderblush;
+			}
+
+		}
+	}
+}
