@@ -150,40 +150,41 @@ function startSSE() {
 
 
 
-function usernameFromDOM() {
-	const usernameInput = document.getElementById('UserName')
-	if(usernameInput === null || usernameInput?.value === '') {
-		throw new Error('Invalid User Name')
-	}
+// function usernameFromDOM() {
+// 	const usernameInput = document.getElementById('UserName')
+// 	if(usernameInput === null || usernameInput?.value === '') {
+// 		throw new Error('Invalid User Name')
+// 	}
 
-	return usernameInput?.value
-}
+// 	return usernameInput?.value
+// }
 
-function handleRegister(event) {
-	event.preventDefault()
+// function handleRegister(event) {
+// 	event.preventDefault()
 
-	const username = usernameFromDOM()
+// 	const username = usernameFromDOM()
 
-	register(WEB_AUTH_N_URL, username)
-		.then(() => {})
-		.catch(e => {})
-}
+// 	register(WEB_AUTH_N_URL, username)
+// 		.then(() => {})
+// 		.catch(e => {})
+// }
 
-function handleLogin(event) {
-	event.preventDefault()
+// function handleLogin(event) {
+// 	event.preventDefault()
 
-	// const username = usernameFromDOM()
+// 	// const username = usernameFromDOM()
 
-	login(WEB_AUTH_N_URL)
-		.then(() => {})
-		.catch(e => {})
-}
+// 	login(WEB_AUTH_N_URL)
+// 		.then(() => {})
+// 		.catch(e => {})
+// }
 
 
 
 function simpleUserAutoLogin() {
 	const info = localStorage.getItem('simple-login')
 	if(info === null) {
+		UI.setLoggedIn(false)
 		return false
 	}
 
@@ -193,21 +194,30 @@ function simpleUserAutoLogin() {
 	USER.name = displayName
 	USER.accessToken = token
 
+	UI.setLoggedIn()
 	return true
 }
 
-function handleSimpleLogin(event) {
-	event.preventDefault()
+function handleSimpleLoginForm(event) {
+	// event.preventDefault()
 
-	const dialogElem = document.getElementById('SimpleUser')
-	dialogElem.close()
+	// const dialogElem = document.getElementById('SimpleUser')
+	// dialogElem.close()
 
-	const usernameElem = document.getElementById('SimpleUserName')
-	const name = usernameElem?.value
-	if(name === undefined || name.length < 5) {
-		UI.showToast('User Name invalid')
-		return
+	// const usernameElem = document.getElementById('SimpleUserName')
+	// const name = usernameElem?.value
+	// if(name === undefined || name.length < 5) {
+	// 	UI.showToast('User Name invalid')
+	// 	return
+	// }
+
+
+	const fd = new FormData(event.target)
+	if(!fd.has('username')) {
+		UI.showToast('Missing User Name')
 	}
+
+	const name = fd.get('username')
 
 	const url = new URL('/simple-login', SIMPLE_LOGIN_URL)
 	url.searchParams.set('name', name)
@@ -223,20 +233,23 @@ function handleSimpleLogin(event) {
 		.then(async response => {
 			if(!response.ok) {
 				const text = await response.text()
-				throw new Error(`not ok (${text})`)
+				throw new Error(`not ok ${response.status} (${text})`)
 			}
 
 			const json = await response.json()
-			const { id, displayName, token } = json
+			// const { id, displayName, token } = json
 
-			USER.id = id
-			USER.name = displayName
-			USER.accessToken = token
+			// USER.id = id
+			// USER.name = displayName
+			// USER.accessToken = token
 
 			localStorage.setItem('simple-login', JSON.stringify(json))
 
-			clientPort.postMessage({ type: 'listing' })
-			startSSE()
+
+			if(simpleUserAutoLogin()) {
+				clientPort.postMessage({ type: 'listing' })
+				startSSE()
+			}
 
 		})
 		.catch(e => {
@@ -249,20 +262,24 @@ function handleSimpleLogin(event) {
 
 
 async function onContentLoadedAsync(params) {
-	document.querySelector('[data-action="login"]')?.addEventListener('click', handleLogin)
-	document.querySelector('[data-action="register"]')?.addEventListener('click', handleRegister)
+	// document.querySelector('[data-action="login"]')?.addEventListener('click', handleLogin)
+	// document.querySelector('[data-action="register"]')?.addEventListener('click', handleRegister)
 
 	globalThis.UI = UI
 
-	document.querySelector('[data-action="simpleLogin"]')?.addEventListener('click', handleSimpleLogin)
+
+
+
+	const simpleDialog = document.getElementById('SimpleUser')
+	const simpleForm = simpleDialog?.querySelector('form')
+	simpleForm?.addEventListener('submit', handleSimpleLoginForm)
+
+	// document.querySelector('[data-action="simpleLogin"]')?.addEventListener('click', handleSimpleLogin)
+
 	if(simpleUserAutoLogin()) {
 		clientPort.postMessage({ type: 'listing' })
 		startSSE()
 	}
-	else {
-
-	}
-
 }
 
 function onContentLoaded() {

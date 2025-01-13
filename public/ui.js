@@ -183,5 +183,24 @@ export class UI {
 		toastElem?.toggleAttribute('data-show', false)
 	}
 
+	static setLoggedIn(loggedIn = true) {
+		document.querySelector('body')?.toggleAttribute('data-logged-in', loggedIn)
+	}
+
+	static logout() {
+		UI.setLoggedIn(false)
+
+		// game listing
+		const gameListElement = document.getElementById('GamesListing')
+		const lis = gameListElement?.querySelectorAll('li')
+		lis?.forEach(li => li.remove())
+
+		// games
+		const gameFieldsElem = document.getElementById('GameFields')
+		const games = gameFieldsElem?.querySelectorAll('game-field')
+		games?.forEach(game => game.remove())
+
+	}
+
 }
 

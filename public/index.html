@@ -13,7 +13,7 @@
 		<link rel="stylesheet" type="text/css" href="./index.css"><link>
 		<script async defer type="module" src="./index.js"></script>
 	</head>
-	<body data-aside>
+	<body data-aside data-logged-in>
 		<dialog id="WebAuthN">
 			<form>
 				<label for="UserName">User Name</label>
@@ -26,11 +26,27 @@
 		</dialog>
 
 		<dialog id="SimpleUser">
-			<form>
-				<label for="SimpleUserName">User Name</label>
-				<input id="SimpleUserName" type="text" placeholder="user name"/>
+			<span>Sign In</span>
 
-				<button data-action="simpleLogin">Go</button>
+			<form method="dialog">
+				<label for="SimpleUserName">User Name</label>
+				<input id="SimpleUserName" name="username" type="text" required minlength="5" placeholder="user name"></input>
+
+				<button-set>
+					<button type="button" formnovalidate onclick="event.target.closest('dialog').close()" command="close">Cancel</button>
+					<button type="submit" data-action="simpleLogin">Login</button>
+				</button-set>
+			</form>
+		</dialog>
+
+		<dialog id="SimpleLogoutConfirm">
+			<span>Sign Out?</span>
+
+			<form method="dialog">
+				<button-set>
+					<button type="button" onclick="event.target.closest('dialog').close()">Cancel</button>
+					<button type="submit" onclick="UI.logout()">Logout</button>
+				</button-set>
 			</form>
 		</dialog>
 
@@ -46,31 +62,34 @@
 		<dialog id="ForfeitConfirm">
 			<span>Are you sure you wish to Forfeit this game?</span>
 
-			<button-set>
-				<button onclick="event.target.closest('dialog').close()">Close</button>
-				<button data-confirm>Forfeit</button>
-			</button-set>
+			<form method="dialog">
+				<button-set>
+					<button type="button" onclick="event.target.closest('dialog').close()">Cancel</button>
+					<button type="submit" data-confirm>Forfeit</button>
+				</button-set>
+			</form>
 		</dialog>
 
 		<dialog id="CloseConfirm">
 			<span>Close this Game?</span>
 
-			<form>
+			<form method="dialog">
 				<label for="CloseConfirmReason">Reason for close</label>
 				<input id="CloseConfirmReason" type="text" name="reason" />
-			</form>
 
-			<button-set>
-				<button onclick="event.target.closest('dialog').close()">Close</button>
-				<button data-confirm>Confirm</button>
-			</button-set>
+				<button-set>
+					<button type="button" onclick="event.target.closest('dialog').close()">Cancel</button>
+					<button type="submit" data-confirm>Confirm</button>
+				</button-set>
+			</form>
 		</dialog>
 
 
 		<header>
 			<h1>Tic</h1>
 			<button-set>
-				<button onclick="document.getElementById('SimpleUser').showModal()">👤</button>
+				<button data-not-logged-in onclick="document.getElementById('SimpleUser').showModal()">👤</button>
+				<button data-logged-in onclick="document.getElementById('SimpleLogoutConfirm').showModal()">👤</button>
 				<!-- <button onclick="document.getElementById('WebAuthN').showModal()">👤</button> -->
 				<button onclick="document.body.toggleAttribute('data-aside')">🟰</button>
 			</button-set>
@@ -109,11 +128,18 @@
 							<button data-action="offer" disabled>Offer</button>
 						</button-set>
 
-						<!-- <game-messages>
-							<span data-key="canMove">Your Move</span>
-						</game-messages> -->
+						<game-message>
+							<span data-active data-key="move">Your Move</span>
+							<span data-key="wait">Waiting on Opponent</span>
 
-						<game-board>
+							<span data-key="win">You Win!</span>
+							<span data-key="loose">You Loose!</span>
+							<span data-key="cat">Tie 🐈‍⬛</span>
+
+							<span data-key="closed">Closed <output data-close-reason></output></span>
+						</game-message>
+
+						<game-board win-line="">
 							<button data-position="0"><output></output></button>
 							<button data-position="1"><output></output></button>
 							<button data-position="2"><output></output></button>

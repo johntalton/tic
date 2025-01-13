@@ -1,4 +1,4 @@
-@layer Base, App;
+@layer Base, Form, App;
 
 @layer Base {
 	:root {
@@ -15,6 +15,34 @@
 		&:not(:where(html, body)) {
 			font-family: inherit;
 			font-size: inherit;
+		}
+	}
+}
+
+@layer Form {
+	form {
+		display: flex;
+		flex-direction: column;
+		gap: 0.5em;
+
+		& > input[type="text"] {
+			padding-inline: 1ch;
+			padding-block: 0.5ch;
+		}
+
+		& > button-set {
+			display: flex;
+			justify-content: space-between;
+			margin-block-start: 1em;
+
+			& > button {
+				padding-inline: 2ch;
+				padding-block: 0.3em;
+
+				&[type="submit"] {
+					border: 2px solid hsl(from var(--background-light) h s calc(l * .5));
+				}
+			}
 		}
 	}
 }
@@ -55,8 +83,6 @@
 		--text-toast: light-dark(black, white);
 	}
 
-	}
-
 	html {
 
 	}
@@ -65,6 +91,20 @@
 		font-family: 'Noto Emoji';
 		src: url('./Noto_Emoji/NotoEmoji-VariableFont_wght.ttf') format('truetype');
 	}
+
+	body[data-logged-in] {
+		& [data-not-logged-in] {
+			display: none
+		}
+	}
+
+	body:not([data-logged-in]) {
+		& [data-logged-in] {
+			display: none
+		}
+	}
+
+
 
 	progress#GlobalProgress {
 		/* width: calc(100% - 2em); */
@@ -89,11 +129,16 @@
 	}
 
 	dialog {
+		z-index: 10;
+
 		background-color: var(--background-lighter);
 		color: var(--text-lighter);
 		margin-block-start: -100%;
-		transition: margin-block-start 400ms;
+		transition: margin-block-start .5s;
 		margin-inline: auto;
+
+		max-width: min(420px, 80vw);
+		width: auto;
 
 		box-shadow: 0px 0.5em 10px oklab(0 0 0 / 0.37);
 
@@ -103,6 +148,10 @@
 		padding: 1em;
 		flex-direction: column;
 
+		& > span:first-child {
+			font-size: 1.5em;
+			font-weight: bold;
+		}
 
 		&[open] {
 			/* display: flex; */
@@ -198,6 +247,8 @@
 	}
 
 	aside {
+		z-index: 1;
+
 		display: flex;
 		flex-direction: column;
 		position: absolute;
@@ -313,7 +364,7 @@
 		display: block flex;
 		justify-content: center;
 		gap: 1ch;
-		margin-block-end: 2em;
+		/* margin-block-end: 2em; */
 
 		& > button {
 			padding-inline: 1ch;
@@ -339,6 +390,16 @@
 		}
 	}
 
+	game-message {
+		display: block flex;
+		justify-content: center;
+		margin-block: 1em;
+
+		& > span:not([data-active]) {
+			display: none
+		}
+	}
+
 	game-field {
 		display: flex;
 		flex-direction: column;
@@ -356,6 +417,7 @@
 	game-board {
 		font-size: 3em;
 		margin: 0.25em;
+		position: relative;
 
 		display: grid;
 		grid-template-columns: 1fr 1fr 1fr;
@@ -382,6 +444,59 @@
 				background-color: lavenderblush;
 			}
 
+		}
+
+		&[win-line=""]:after {
+			display: none;
+		}
+
+		&[win-line="row0"]:after {
+			transform: translateY(.5em) rotate(0deg);
+		}
+
+		&[win-line="row1"]:after {
+			transform: translateY(2.25em) rotate(0deg);
+		}
+
+		&[win-line="row2"]:after {
+			transform: translateY(3.85em) rotate(0deg);
+		}
+
+		&[win-line ^= "col"]:after {
+			transform-origin: left;
+			top: -0.25em;
+		}
+
+		&[win-line="col0"]:after {
+			transform: translateX(0.75em) rotate(90deg);
+		}
+
+		&[win-line="col1"]:after {
+			transform: translateX(2.5em) rotate(90deg);
+		}
+
+		&[win-line="col2"]:after {
+			transform: translateX(4.125em) rotate(90deg);
+		}
+
+		&[win-line="forwardSlash"]:after {
+			transform: translateX(0%) translateY(2.25em) rotate(-45deg);
+		}
+
+		&[win-line="backSlash"]:after {
+			transform: translateX(0%) translateY(2.25em) rotate(45deg);
+		}
+
+		&:after {
+			content: '';
+			position: absolute;
+			border: .25em solid red;
+			height: 0em;
+			width: 100%;
+			border-radius: 1em;
+			transform-origin: center;
+			/* transform: translateX(0%) translateY(2.25em) rotate(45deg); */
+			box-sizing: border-box;
 		}
 	}
 }
