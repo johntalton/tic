@@ -62,6 +62,11 @@ export class UI {
 		return gameFieldElem
 	}
 
+	static hasGameField(gameId) {
+		const gameFieldElem = document.querySelector(`game-field[game-id="${gameId}"]`)
+		return gameFieldElem !== null
+	}
+
 	static updateGameField(game, user) {
 		const gameFieldElem = document.querySelector(`game-field[game-id="${game.id}"]`)
 		if(gameFieldElem === null) { throw new Error('game not in dom') }

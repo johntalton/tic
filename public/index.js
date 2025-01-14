@@ -1,4 +1,4 @@
-import { login, register } from './webauthn.js'
+// import { login, register } from './webauthn.js'
 import { GameAPI } from './game-api.js'
 import { UI } from './ui.js'
 
@@ -140,11 +140,25 @@ function startSSE() {
 	sseStream.addEventListener('update', msg => {
 		const { lastEventId, data } = msg
 		const json = JSON.parse(data)
-		console.log('update from SSE', json)
-		// const listing = document.getElementById('GamesListing')
-		// const li  = document.createElement('li')
-		// li.innerText = msg.data
-		// listing?.appendChild(li)
+		const { id: gameId } = json
+
+		console.log('update from SSE', gameId)
+
+		// update listing (add or remove)
+		// update game field
+
+		if(!UI.hasGameField(gameId)) {
+			// game is not in the game field
+			return
+		}
+
+		gameApi.fetch(gameId)
+			.then(game => UI.updateGameField(game, USER))
+			.catch(e => {
+				// UI.showToast(e.message)
+				console.warn(e)
+			})
+
 	})
 }
 

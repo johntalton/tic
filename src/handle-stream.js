@@ -70,7 +70,8 @@ const {
 	HTTP2_HEADER_ACCESS_CONTROL_ALLOW_ORIGIN,
 	HTTP2_HEADER_ACCESS_CONTROL_ALLOW_METHODS,
 	HTTP2_HEADER_ACCESS_CONTROL_ALLOW_HEADERS,
-	HTTP2_HEADER_REFERER
+	HTTP2_HEADER_REFERER,
+	HTTP2_HEADER_AUTHORITY
 } = http2.constants
 
 const {
@@ -171,9 +172,9 @@ const feedConfig = {
 const ipRateStore = new Map()
 const ipRequestPerSecondPolicy = {
 	name: 'ip',
-	quota: 20,
-	windowSeconds: 60,
-	size: 10
+	quota: 10,
+	windowSeconds: 15,
+	size: 50
 }
 
 async function handleStreamAsync(stream, header, flags) {
@@ -185,6 +186,7 @@ async function handleStreamAsync(stream, header, flags) {
 	const fullAcceptEncoding = header[HTTP2_HEADER_ACCEPT_ENCODING]
 	const fullAcceptLanguage = header[HTTP2_HEADER_ACCEPT_LANGUAGE]
 	const origin = header['origin']
+	const authority = header[HTTP2_HEADER_AUTHORITY]
 	const lastEventID = header[SSE_LAST_EVENT_ID.toLowerCase()]
 	const UA = header['user-agent']
 	const referer = header[HTTP2_HEADER_REFERER]
@@ -207,9 +209,10 @@ async function handleStreamAsync(stream, header, flags) {
 	const acceptedLanguage= AcceptLanguage.select(fullAcceptLanguage, [ 'en-US', 'en' ])
 
 
-	console.log({ host, ip, port, origin, referer, method, route, id, action, UA, accept, acceptedLanguage, fullContentType })
+	console.log({ host, ip, port, origin, authority, referer, method, route, id, action, UA, accept, acceptedLanguage, fullContentType })
 
 	stream.on('close', () => console.log('stream closed'))
+	stream.on('error', error => console.log('stream error', error))
 
 	// preflight come before rate limiting?
 	if(method === HTTP2_METHOD_OPTIONS) {
@@ -217,6 +220,7 @@ async function handleStreamAsync(stream, header, flags) {
 		return
 	}
 
+	// console.log(ipRateStore)
 	const limitInfo = RateLimiter.test(ipRateStore, ip, ipRequestPerSecondPolicy)
 	if(limitInfo.exhausted) {
 		sendTooManyRequests(stream, limitInfo, ipRequestPerSecondPolicy)
@@ -229,7 +233,7 @@ async function handleStreamAsync(stream, header, flags) {
 		const user = { token: query.get('token') }
 		await Promise.try(feedConfig.handler, stream, user, query)
 			.catch(e => {
-				console.log(e)
+				console.log('Feed Handler Error', e)
 				stream.end()
 			})
 		return

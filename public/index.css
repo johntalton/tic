@@ -39,10 +39,15 @@
 				padding-inline: 2ch;
 				padding-block: 0.3em;
 
-				&[type="submit"] {
+				/* &[type="submit"] {
 					border: 2px solid hsl(from var(--background-light) h s calc(l * .5));
-				}
+				} */
 			}
+		}
+
+		& > [data-or-divider] {
+			margin-block: 0.5em;
+			margin-inline: auto;
 		}
 	}
 }
@@ -158,35 +163,6 @@
 			margin-block-start: 6em;
 		}
 
-		&#WebAuthN {
-			display: flex;
-			gap: 1em;
-
-			padding: 1em;
-			flex-direction: column;
-
-
-			& > form {
-				display: flex;
-				flex-direction: column;
-				gap: 0.5em;
-
-				& > input[type="text"] {
-					padding-inline: 1ch;
-					padding-block: 0.5ch;
-				}
-
-				& > [data-or-divider] {
-					margin-block: 0.5em;
-					margin-inline: auto;
-				}
-			}
-
-			& > form#Register {}
-
-			& > form#Login {}
-		}
-
 		&::backdrop {
 			background-color: oklab(0 0 0 / 0.18);
 			backdrop-filter: blur(10px);
@@ -246,6 +222,11 @@
 		}
 	}
 
+	body[data-aside] aside {
+		left: 0;
+		background-color: var(--background-lighter);
+	}
+
 	aside {
 		z-index: 1;
 
@@ -262,6 +243,12 @@
 
 		background-color: transparent;
 		transition: left 300ms, background-color 300ms;
+
+		@media (min-width: 1000px) {
+			position: unset;
+			background-color: var(--background-lighter);
+			max-width: 40ch;
+		}
 
 		& > [data-no-games-listed] {
 			display: flex;
@@ -289,13 +276,16 @@
 		border-block-start: 1px solid var(--background-light);
 
 		& > li {
-			display: grid;
+			/* display: grid;
 			grid-template-columns: 1fr;
 			grid-template-rows: 1fr 1fr;
-			gap: 0.5em;
+			gap: 0.5em; */
 
 			padding: 1em;
-			border-block-end: 1px solid var(--background-light)
+			border-block-end: 1px solid var(--background-light);
+
+			text-overflow: ellipsis;
+      overflow: hidden;
 		}
 	}
 
@@ -327,11 +317,7 @@
 		}
 	}
 
-	body[data-aside] aside {
-		left: 0;
-		background-color: var(--background-lighter);
 
-	}
 
 	main {
 		position: relative;

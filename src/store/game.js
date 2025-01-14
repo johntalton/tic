@@ -37,6 +37,8 @@ const COUCH_HEADER_NOT_MODIFIED = 304
 export class CouchGameStore {
 	#url
 	#cache = new Map()
+	#useCache = true
+
 	// #eventSource
 	#feedUrl
 	#feed
@@ -83,7 +85,7 @@ export class CouchGameStore {
 
 
 	async has(id) {
-		if(this.#cache.has(id)) {
+		if(this.#useCache && this.#cache.has(id)) {
 			// todo kinda ok for now
 			return true
 		}
@@ -97,9 +99,9 @@ export class CouchGameStore {
 		return response.ok
 	}
 
-	async get(id, user) {
+	async get(id) {
 		// console.log('couch get game by id', id)
-		if(this.#cache.has(id)) {
+		if(this.#useCache && this.#cache.has(id)) {
 			const doc = this.#cache.get(id)
 			const etag = doc._rev
 
@@ -158,8 +160,15 @@ export class CouchGameStore {
 
 	async list(user, query) {
 		const limit = 100
-		// console.log('fetching listing ...')
-		const response = await fetch(`${this.#url}/_design/basic/_view/games_by_viewer?key="${user}"&reduce=false&limit=${limit}`, {
+		const includeDocs = false
+
+		const url = new URL(`${this.#url}/_design/basic/_view/games_by_viewer`)
+		url.searchParams.set('key', `"${user}"`)
+		url.searchParams.set('limit', `${limit}`)
+		url.searchParams.set('reduce', 'false')
+		url.searchParams.set('include_docs', `${includeDocs}`)
+
+		const response = await fetch(url, {
 				method: 'GET',
 				headers: {
 					...authorizationHeaders
@@ -170,7 +179,11 @@ export class CouchGameStore {
 			})
 
 
-		if(!response.ok) { throw new Error('game listing error') }
+		if(!response.ok) {
+			const text = await response.text()
+			console.log('game listing error', response.status, text)
+			throw new Error('game listing error')
+		}
 
 		const result = await response.json()
 		// console.log(result)

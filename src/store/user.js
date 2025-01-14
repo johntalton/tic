@@ -13,16 +13,16 @@ async function fromView(url) {
 		}
 	})
 	.catch(e => {
-		throw new Error(`DB fetch failure: ${e.message}`, { cause: e })
+		throw new Error(`User DB fetch failure: ${e.message}`, { cause: e })
 	})
 
-	if(!response.ok) { throw new Error('DB Fetch no Ok') }
+	if(!response.ok) { throw new Error('User DB Fetch no Ok') }
 
 	const result = await response.json()
 
 	// console.log(result)
 
-	if(result.rows.length !== 1) { throw new Error('DB invalid rows length') }
+	if(result.rows.length !== 1) { throw new Error('USer DB invalid rows length') }
 	return result.rows[0].value
 }
 

@@ -2,7 +2,7 @@ export const CONNECTING = 0
 export const OPEN = 1
 export const CLOSED = 2
 
-export const DEFAULT_RECONNECT_INTERVAL_MS = 1000 * 3
+export const DEFAULT_RECONNECT_INTERVAL_MS = 1000 * 10
 
 class DataEvent extends Event {
 	data
@@ -58,11 +58,12 @@ export class CouchContinuous extends EventTarget {
 			},
 			signal: this.#controller.signal
 		})
-			.then(response => {
+			.then(async response => {
 				const { status, headers } = response
 
 				if(!response.ok) {
-					this.#failure(status, 'Not Ok')
+					const text = await response.text()
+					this.#failure(status, `Connect Fetch Not Ok (${status}) (${text})`)
 					return
 				}
 
@@ -83,8 +84,8 @@ export class CouchContinuous extends EventTarget {
 				const stream = response.body
 					.pipeThrough(new TextDecoderStream())
 
-				Promise.resolve()
-					.then(async () => {
+				// Promise.resolve()
+				// 	.then(async () => {
 						for await(const chunk of stream) {
 							const lines = chunk.split('\n')
 							lines.forEach(line => {
@@ -99,10 +100,14 @@ export class CouchContinuous extends EventTarget {
 
 							})
 						}
-					})
+					// })
+					// .catch(error => {
+					// 	console.log('couch continuous stream processing error', error)
+					// })
 
 			})
 			.catch(error => {
+				// console.log('couch continuous fetch error - reconnect', error)
 				this.#controller = undefined
 				if(this.#readyState === CLOSED) { return }
 
@@ -125,6 +130,7 @@ export class CouchContinuous extends EventTarget {
 	}
 
 	#failure(status, message) {
+		console.log('couch continuous', status, message)
 		if(this.#readyState !== CLOSED) { this.#readyState = CLOSED }
 		this.dispatchEvent(new Event('error'))
 	}

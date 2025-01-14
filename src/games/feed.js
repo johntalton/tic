@@ -3,14 +3,19 @@ import { ServerSentEvents } from '@johntalton/sse-util'
 import { isViewable } from './tic.js'
 import { userStore } from '../store/user.js'
 
-const channel = new BroadcastChannel('SSE')
 
 export async function handleGameFeed(stream, sessionUser, query) {
+	const channel = new BroadcastChannel('SSE')
 
 	const user = await userStore.fromToken(sessionUser.token)
 	if(user === undefined) {
 		throw new Error('invalid user token')
 	}
+
+	stream.on('error', error => {
+		console.log('Game Feed Closed')
+		channel.close()
+	})
 
 	ServerSentEvents.messageToEventStreamLines({
 		comment: `SSE for ${user}`,

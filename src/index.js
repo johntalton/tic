@@ -63,6 +63,7 @@ server.on('session', session => {
 })
 
 server.on('error', error => {
+	console.warn('Server Error:', error)
 	if (error.code === 'EADDRINUSE') {
 		console.log('Address in use')
 	}

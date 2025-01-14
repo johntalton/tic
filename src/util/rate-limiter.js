@@ -47,6 +47,7 @@ export class RateLimiter {
 		const { exhausted, resetSeconds } = Bucket.getToken(bucket, policy, 1)
 
 		return {
+			name: policy.name,
 			exhausted,
 
 			remaining: bucket.tokenCount,
