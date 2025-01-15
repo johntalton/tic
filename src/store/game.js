@@ -190,7 +190,11 @@ export class CouchGameStore {
 
 		const full = result.rows.map(row => ({
 			id: row.id,
-			state: row.value.toLowerCase()
+			...row.value
+		}))
+		.map(row => ({
+			...row,
+			active: row.active?.includes(user)
 		}))
 
 		if(query === undefined || query === null || query === '') { return full }
