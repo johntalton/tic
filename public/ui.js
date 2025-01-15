@@ -157,21 +157,30 @@ export class UI {
 	}
 
 	static confirmClose(gameId, port) {
-		const forfeitDialog = document.getElementById('CloseConfirm')
-		const reasonElem = forfeitDialog?.querySelector('input[name="reason"]')
+		const closeDialog = document.getElementById('CloseConfirm')
+		const closeForm = closeDialog?.querySelector('form')
+		// const reasonElem = closeDialog?.querySelector('input[name="reason"]')
 
-		const forfeitButton = forfeitDialog?.querySelector('button[data-confirm]')
-		forfeitButton?.addEventListener('click', event => {
+		// const forfeitButton = closeDialog?.querySelector('button[data-confirm]')
+		// forfeitButton?.addEventListener('click', event => {
+		closeForm?.addEventListener('submit', event => {
+			const fd = new FormData(event.target)
+
+			// const reason = reasonElem?.value
+			const reason = fd.get('reason')
+
 			port.postMessage({
 				type: 'close',
 				gameId,
 				confirmed: true,
-				reason: reasonElem?.value
+				reason
 			})
-			forfeitDialog?.close()
+
+			closeForm.reset()
+			closeDialog?.close()
 		}, { once: true })
 
-		forfeitDialog.showModal()
+		closeDialog?.showModal()
 	}
 
 	static confirmForfeit(gameId, port) {
@@ -208,6 +217,8 @@ export class UI {
 				gameId,
 				targets
 			})
+
+			offerForm.reset()
 			offerToDialog?.close()
 		}, { once: true })
 

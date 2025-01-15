@@ -30,6 +30,15 @@
 			padding-block: 0.5ch;
 		}
 
+		& > input[type="checkbox"] {
+			align-self: start;
+			margin-block-end: 0.5em;
+		}
+
+		& > select {
+			padding: 0.25em;
+		}
+
 		& > button-set {
 			display: flex;
 			justify-content: space-between;
