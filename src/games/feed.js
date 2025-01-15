@@ -14,6 +14,7 @@ export async function handleGameFeed(stream, sessionUser, query) {
 
 	stream.on('error', error => {
 		console.log('Game Feed Closed')
+		stream.close()
 		channel.close()
 	})
 

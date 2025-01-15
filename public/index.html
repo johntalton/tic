@@ -50,12 +50,25 @@
 		</dialog>
 
 		<dialog id="OfferTo">
-			<input type="text" />
+			<span>Offer Game</span>
 
-			<button-set>
-				<button>Close</button>
-				<button>Offer</button>
-			</button-set>
+			<form method="dialog">
+				<label for="offerToSelf">Include Self as Player</label>
+				<input id="offerToSelf" type="checkbox" name="offerToSelf" />
+
+				<label for="offerToUser">Select User to Offer game to</label>
+				<select id="offerToUser" name="offerTo" required multiple>
+					<!-- <option value="">-</option> -->
+					<option value="alice.one">Alice</option>
+					<option value="bob123">Bob</option>
+				</select>
+
+
+				<button-set>
+					<button type="button" onclick="event.target.closest('dialog').close()">Cancel</button>
+					<button type="submit" data-offer>Offer</button>
+				</button-set>
+			</form>
 		</dialog>
 
 		<dialog id="ForfeitConfirm">
@@ -84,7 +97,7 @@
 		</dialog>
 
 
-		<header>
+		<header aria-label="main navigation">
 			<h1>Tic</h1>
 			<button-set>
 				<button data-not-logged-in onclick="document.getElementById('SimpleUser').showModal()">👤</button>
@@ -98,14 +111,12 @@
 			<button onclick="UI.hideToast()">❌</button>
 		</div>
 		<main>
-			<aside>
+			<aside aria-label="User Game Listing">
 				<header>Games:</header>
 				<span data-no-games-listed>No Games Listed</span>
 				<ul id="GamesListing">
 					<template>
-						<li>
-							<span></span>
-							<span></span>
+						<li data-game-id="">
 						</li>
 					</template>
 
@@ -127,12 +138,15 @@
 						</button-set>
 
 						<game-message>
-							<span data-active data-key="move">Your Move</span>
-							<span data-key="wait">Waiting on Opponent</span>
+							<span data-key="pending">Awaiting Players</span>
+							<span data-key="offer">Add Offers to start Game</span>
+
+							<span data-key="move">Your Move</span>
+							<span data-key="wait">Waiting on Opponent to Move</span>
 
 							<span data-key="win">You Win!</span>
 							<span data-key="loose">You Loose!</span>
-							<span data-key="cat">Tie 🐈‍⬛</span>
+							<span data-key="draw">Draw 🐈‍⬛</span>
 
 							<span data-key="closed">Closed <output data-close-reason></output></span>
 						</game-message>

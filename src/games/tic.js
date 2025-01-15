@@ -17,7 +17,7 @@ export const ACTIONS = {
 const USER_STATE_ACTIONS = {
 	owner: {
 		[STATES.NEW]: [ACTIONS.CLOSE, ACTIONS.OFFER],
-		[STATES.PENDING]: [ACTIONS.CLOSE],
+		[STATES.PENDING]: [ACTIONS.CLOSE, ACTIONS.OFFER],
 		[STATES.ACTIVE]: [ACTIONS.CLOSE]
 	},
 	challenger: {
@@ -26,6 +26,7 @@ const USER_STATE_ACTIONS = {
 	},
 	player: {
 		[STATES.ACTIVE]: [ACTIONS.FORFEIT],
+		// [STATES.PENDING]: [ACTIONS.DECLINE], // changed your mind?
 	},
 	active: {
 		[STATES.ACTIVE]: [ACTIONS.MOVE],
@@ -80,29 +81,29 @@ export class Board {
 
 	static isFull(board) { return !board.includes(EMPTY) }
 
-	static isWin(board) { return Board.winner(board) !== EMPTY }
+	static isWin(board) { return Board.winner(board).user !== EMPTY }
 
 	static winner(board) {
 		const winConditions = [
-			[0, 1, 2],
-			[3, 4, 5],
-			[6, 7, 8],
+			{ name: 'row0', condition: [0, 1, 2] },
+			{ name: 'row1', condition: [3, 4, 5] },
+			{ name: 'row2', condition: [6, 7, 8] },
 
-			[0, 3, 6],
-			[1, 4, 7],
-			[2, 5, 8],
+			{ name: 'col0', condition: [0, 3, 6] },
+			{ name: 'col1', condition: [1, 4, 7] },
+			{ name: 'col2', condition: [2, 5, 8] },
 
-			[0, 4, 8],
+			{ name: 'backSlash', condition: [0, 4, 8] },
 
-			[2, 4, 6]
+			{ name: 'forwardSlash', condition: [2, 4, 6] }
 		]
 
-		for(const condition of winConditions) {
+		for(const { name, condition } of winConditions) {
 			const [ a, b, c ] = condition.map(index => board[index])
-			if(a !== EMPTY && a === b && b === c) { return a }
+			if(a !== EMPTY && a === b && b === c) { return { name, user: a } }
 		}
 
-		return EMPTY
+		return { user: EMPTY }
 	}
 
 	static isDraw(board) {
@@ -111,12 +112,23 @@ export class Board {
 	}
 
 	static isResolved(board) { return Board.isFull(board) || Board.isWin(board) }
+
+	static resolution(board) {
+		return {
+			full: Board.isFull(board),
+			resolved: Board.isResolved(board),
+			draw: Board.isDraw(board),
+			win: Board.isWin(board),
+			winner: Board.winner(board)
+		}
+	}
 }
 
 export class Tic {
 	static actionable(game, user) {
 		return {
 			...game,
+			resolution: Board.resolution(game.board),
 			actions: Action.for(game, user)
 		}
 	}
@@ -144,22 +156,26 @@ export class Tic {
 	static offer(game, user, offer) {
 		// console.log('Tic::offer(owner)', game, user, offer)
 
-		const { target, includeSelf } = offer
+		const { targets: targetsMaybe, target, includeSelf } = offer
+		const targets = targetsMaybe ?? [ target ]
+		if(targets.length <= 0) { return { ...game, message: 'no target(s) in offer' }}
 
 		if(!isOwner(game, user)) { return { ...game, message: 'not the owner' } }
-		if(game.state !== STATES.NEW) { return { ...game, message: 'game not new' } }
+		if(game.state !== STATES.NEW && game.state !== STATES.PENDING) { return { ...game, message: 'game not offerable' } }
 
-		const players = includeSelf ? [ ...game.players, user ] : game.players
-		const offers = [ ...game.offers, target ]
+		// const players = includeSelf ? [ ...game.players, user ] : game.players
+		const offers = [ ...game.offers, ...targets ]
+		const state = STATES.PENDING
 
 		return {
 			...game,
-			players,
+			state,
+			// players,
 			offers
 		}
 	}
 
-	static close(game, user) {
+	static close(game, user, reason) {
 		// console.log('Tic::close(owner)', game, user)
 
 		if(!isOwner(game, user)) { return { ...game, message: 'not the owner' } }
@@ -169,7 +185,8 @@ export class Tic {
 			...game,
 			state: STATES.RESOLVED,
 			active: [],
-			offers: []
+			offers: [],
+			reason
 		}
 	}
 

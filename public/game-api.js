@@ -86,7 +86,11 @@ export class GameAPI {
 		return this.#action(gameId, 'forfeit')
 	}
 
-	async offer(gameId, to) {}
+	async offer(gameId, targets) {
+		const sp = new URLSearchParams()
+		targets.forEach(target => sp.append('t', target))
+		return this.#action(gameId, 'offer', sp)
+	}
 
 	async move(gameId, position) {
 		const sp = new URLSearchParams()

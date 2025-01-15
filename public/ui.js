@@ -1,10 +1,10 @@
 export class UI {
-	static updateGameListing(listing, port) {
-
+	static addGameListingItem(game, port) {
 		const gameListElement = document.getElementById('GamesListing')
-		listing.games.forEach(game => {
-			const li = document.createElement('LI')
+
+		const li = document.createElement('LI')
 			li.textContent = 'Game:' + game.id
+			li.setAttribute('data-game-id', game.id)
 			gameListElement?.appendChild(li)
 
 			li.addEventListener('click', event => {
@@ -14,6 +14,15 @@ export class UI {
 					gameId: game.id
 				})
 			})
+	}
+
+	static updateGameListingItem(gameId) {
+
+	}
+
+	static updateGameListing(listing, port) {
+		listing.games.forEach(game => {
+			UI.addGameListingItem(game, port)
 		})
 	}
 
@@ -87,8 +96,25 @@ export class UI {
 		const canMove = (game.active.includes(user.id))
 		gameFieldElem.toggleAttribute('can-move', canMove)
 
+		const { resolution, state } = game
+		const { draw, full, resolved, win, winner } = resolution
+		const { name: winningPosition, user: winningUser } = winner
+
+		if(state === 'new' && game.owner === user.id) { UI.setGameMessage(game.id, 'offer') }
+		else if(state === 'pending') {
+			UI.setGameMessage(game.id, 'pending')
+		}
+		else if(state === 'resolved') { UI.setGameMessage(game.id, 'closed') }
+		else if(draw) { UI.setGameMessage(game.id, 'draw') }
+		else if(win && winningUser === user.id) { UI.setGameMessage(game.id, 'win') }
+		else if(win) { UI.setGameMessage(game.id, 'loose') }
+		else if(canMove) { UI.setGameMessage(game.id, 'move') }
+		else { UI.setGameMessage(game.id, 'wait') }
 
 		const gameBoardElem = gameFieldElem.querySelector('game-board')
+
+		if(win) { gameBoardElem?.setAttribute('win-line', winningPosition) }
+		else { gameBoardElem?.removeAttribute('win-line') }
 
 		game.board.forEach((playerId, index) => {
 			const moveButtonElem = gameBoardElem?.querySelector(`button[data-position="${index}"]`)
@@ -164,9 +190,40 @@ export class UI {
 		forfeitDialog.showModal()
 	}
 
-	static startOffer(gameId, port) {}
+	static startOffer(gameId, port) {
+		const offerToDialog = document.getElementById('OfferTo')
+		const offerForm = offerToDialog?.querySelector('form')
 
-	static setGameMessage() {}
+		offerForm?.addEventListener('submit', event => {
+			const fd = new FormData(offerForm)
+			const targets = fd.getAll('offerTo')
+
+			if(targets === undefined || targets.length <= 0) {
+				console.log('empty target')
+				return
+			}
+
+			port.postMessage({
+				type: 'offer',
+				gameId,
+				targets
+			})
+			offerToDialog?.close()
+		}, { once: true })
+
+		offerToDialog?.showModal()
+	}
+
+	static setGameMessage(gameId, key) {
+		const gameFieldElem = document.querySelector(`game-field[game-id="${gameId}"]`)
+		if(gameFieldElem === null) { return }
+
+		const messages = gameFieldElem.querySelector('game-message')
+		const children = messages?.querySelectorAll('[data-key]')
+		children?.forEach(child => child.removeAttribute('data-active'))
+		const message = gameFieldElem.querySelector(`[data-key="${key}"]`)
+		message?.toggleAttribute('data-active', true)
+	}
 
 	static setProgress() {
 			// const progressElement = document.getElementById('GlobalProgress')

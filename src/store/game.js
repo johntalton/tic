@@ -79,7 +79,7 @@ export class CouchGameStore {
 						game
 					})
 				})
-				.catch(e => console.warn(e))
+				.catch(e => console.warn('game watcher error:', e))
 		})
 	}
 

@@ -44,9 +44,11 @@ const options = {
 }
 
 const server = http2.createSecureServer(options)
+
 server.addContext('localhost', credentialsMap.get('localhost'))
 server.addContext('next.local', credentialsMap.get('next.local'))
 // server.addContext('www.next.local', credentialsMap.get('www.next.local'))
+
 server.setTimeout(2 * 1000)
 // server.timeout = 2 * 1000
 // server.headersTimeout = 2 * 1000
@@ -54,7 +56,7 @@ server.setTimeout(2 * 1000)
 // server.keepAliveTimeout = 2 * 1000
 server.on('timeout', () => console.warn('server level timeout'))
 server.on('tlsClientError', (error, socket) => console.log('TLS Error', socket.servername, socket.remoteAddress, error.code))
-server.on('sessionError', error => console.warn(error))
+server.on('sessionError', error => console.warn('server session error', error))
 
 server.on('stream', handleStream)
 
@@ -73,6 +75,7 @@ server.on('error', error => {
 })
 
 server.on('listening', () => {
+	process.title = 'Tic Server'
 	console.log('Server Up', server.address())
 })
 

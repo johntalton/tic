@@ -26,7 +26,7 @@ gamePort.addEventListener('message', message => {
 		gameId,
 		position,
 		confirmed,
-		to,
+		targets,
 		reason
 	} = message.data
 
@@ -37,7 +37,7 @@ gamePort.addEventListener('message', message => {
 		case 'close': handleClose(gameId, confirmed, reason); break
 		case 'decline': handleDecline(gameId); break
 		case 'forfeit': handleForfeit(gameId, confirmed); break
-		case 'offer': handleOffer(gameId, to); break
+		case 'offer': handleOffer(gameId, targets); break
 		case 'move': handleGameMove(gameId, position); break
 		default:
 			console.warn('unhandled message', type)
@@ -90,14 +90,14 @@ function handleForfeit(gameId, confirmed = false) {
 		})
 }
 
-function handleOffer(gameId, to) {
-	if(to === undefined) {
+function handleOffer(gameId, targets) {
+	if(targets === undefined) {
 		UI.startOffer(gameId, clientPort)
 		return
 	}
 
-	console.log('offing game to', to)
-	gameApi.offer(gameId, to)
+	console.log('offing game to', targets)
+	gameApi.offer(gameId, targets)
 		.then(updatedGame => UI.updateGameField(updatedGame, USER))
 		.catch(e => console.warn(e))
 }
@@ -142,10 +142,9 @@ function startSSE() {
 		const json = JSON.parse(data)
 		const { id: gameId } = json
 
-		console.log('update from SSE', gameId)
+		// if(!UI.hasGameListingItem(gameId)) {
 
-		// update listing (add or remove)
-		// update game field
+		// }
 
 		if(!UI.hasGameField(gameId)) {
 			// game is not in the game field
@@ -229,6 +228,7 @@ function handleSimpleLoginForm(event) {
 	const fd = new FormData(event.target)
 	if(!fd.has('username')) {
 		UI.showToast('Missing User Name')
+		return
 	}
 
 	const name = fd.get('username')

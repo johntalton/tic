@@ -208,11 +208,11 @@ async function handleStreamAsync(stream, header, flags) {
 	const accept = Accept.select(fullAccept, [ MIME_TYPE_JSON, MIME_TYPE_TEXT ])
 	const acceptedLanguage= AcceptLanguage.select(fullAcceptLanguage, [ 'en-US', 'en' ])
 
+	const requestId = `${ip}-${stream.id}`
+	console.log({ requestId, host, ip, port, origin, authority, referer, method, route, id, action, UA, accept, acceptedLanguage, fullContentType })
 
-	console.log({ host, ip, port, origin, authority, referer, method, route, id, action, UA, accept, acceptedLanguage, fullContentType })
-
-	stream.on('close', () => console.log('stream closed'))
-	stream.on('error', error => console.log('stream error', error))
+	stream.on('close', () => console.log('stream closed', requestId))
+	stream.on('error', error => console.log('stream error', requestId, error))
 
 	// preflight come before rate limiting?
 	if(method === HTTP2_METHOD_OPTIONS) {
@@ -277,7 +277,7 @@ async function handleStreamAsync(stream, header, flags) {
 							sendJSON_Encoded(stream, data, acceptedEncoding, meta)
 						})
 						.catch(e => {
-							console.log(e)
+							//console.log(e)
 							sendError(stream, `listing failure: ${e.message}`)
 						})
 
