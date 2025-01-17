@@ -155,7 +155,7 @@ export function sendSSE(stream, origin, options) {
 	const sendBOM = options?.bom ?? true
 
 	stream.respond({
-		[HTTP2_HEADER_ACCESS_CONTROL_ALLOW_ORIGIN]: origin,
+		[HTTP2_HEADER_ACCESS_CONTROL_ALLOW_ORIGIN]: ALLOWED_ORIGIN,
 		[HTTP2_HEADER_CONTENT_TYPE]: SSE_MIME,
 		[HTTP2_HEADER_STATUS]: activeStream ? HTTP_STATUS_OK : HTTP_STATUS_NO_CONTENT, // SSE_INACTIVE_STATUS_CODE
 		'Access-Control-Allow-Credentials': true

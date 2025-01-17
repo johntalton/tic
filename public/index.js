@@ -10,7 +10,7 @@ const USER = {
 	// accessToken: 'abcd1234'
 }
 
-const COMMON_API_URL = 'https://next.local:8443'
+const COMMON_API_URL = 'https://tic.next.local:8443'
 const SIMPLE_LOGIN_URL = COMMON_API_URL
 const WEB_AUTH_N_URL = COMMON_API_URL
 const TIC_URL = COMMON_API_URL
@@ -132,7 +132,7 @@ function handleLoadListing() {
 }
 
 function startSSE() {
-	const sseStream = new EventSource(`https://next.local:8443/tic/v1/events?token=${USER.accessToken}`, {
+	const sseStream = new EventSource(new URL(`/tic/v1/events?token=${USER.accessToken}`, TIC_URL), {
 		// withCredentials: true
 	})
 	sseStream.onerror = error => console.warn(error)
@@ -226,12 +226,11 @@ function handleSimpleLoginForm(event) {
 
 
 	const fd = new FormData(event.target)
-	if(!fd.has('username')) {
+	const name = fd.get('username')
+	if(name === null || typeof name != 'string') {
 		UI.showToast('Missing User Name')
 		return
 	}
-
-	const name = fd.get('username')
 
 	const url = new URL('/simple-login', SIMPLE_LOGIN_URL)
 	url.searchParams.set('name', name)
@@ -251,26 +250,17 @@ function handleSimpleLoginForm(event) {
 			}
 
 			const json = await response.json()
-			// const { id, displayName, token } = json
-
-			// USER.id = id
-			// USER.name = displayName
-			// USER.accessToken = token
-
 			localStorage.setItem('simple-login', JSON.stringify(json))
-
 
 			if(simpleUserAutoLogin()) {
 				clientPort.postMessage({ type: 'listing' })
 				startSSE()
 			}
-
 		})
 		.catch(e => {
 			console.warn(e)
 			UI.showToast(`simple login error: ${e.message}`)
 		})
-
 }
 
 
@@ -282,13 +272,9 @@ async function onContentLoadedAsync(params) {
 	globalThis.UI = UI
 
 
-
-
 	const simpleDialog = document.getElementById('SimpleUser')
 	const simpleForm = simpleDialog?.querySelector('form')
 	simpleForm?.addEventListener('submit', handleSimpleLoginForm)
-
-	// document.querySelector('[data-action="simpleLogin"]')?.addEventListener('click', handleSimpleLogin)
 
 	if(simpleUserAutoLogin()) {
 		clientPort.postMessage({ type: 'listing' })
