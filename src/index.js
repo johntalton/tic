@@ -1,87 +1,75 @@
 import http2 from 'node:http2'
-import fs from 'node:fs/promises'
-import tls from 'node:tls'
+import fs from 'node:fs'
+import crypto from 'node:crypto'
+
+import { handleStream } from './handle-stream.js'
 
 const {
 	SSL_OP_NO_TLSv1,
-	SSL_OP_NO_TLSv1_1
-} = http2.constants
-
-import { handleStream } from './handle-stream.js'
+	SSL_OP_NO_TLSv1_1,
+	SSL_OP_NO_TLSv1_2,
+	SSL_OP_NO_TLSv1_3,
+	SSL_OP_NO_SSLv2,
+	SSL_OP_NO_SSLv3
+} = crypto.constants
 
 const HOST = process.env.HOST
 const PORT = process.env.PORT ?? 8443
 const IPV6_ONLY = process.env.IPV6_ONLY ?? false
+const CREDENTIALS = (process.env.CREDENTIALS ?? '').split(',').map(c => c.trim()).filter(c => c.length > 0)
 
-async function fsCreds(host) {
-	// openssl req -x509 -newkey rsa:2048 -nodes -sha256 -subj '/CN=localhost' -keyout localhost-privkey.pem -out localhost-cert.pem
-	const key = await fs.readFile(`${host}-privkey.pem`, 'utf-8')
-	const cert = await fs.readFile(`${host}-cert.pem`, 'utf-8')
+// openssl req -x509 -newkey rsa:2048 -nodes -sha256 -subj '/CN=localhost' -keyout localhost-privkey.pem -out localhost-cert.pem
+class CredentialsCache {
+	static cache = new Map()
 
-	// fs.watch(keyName, { encoding: 'utf-8', signal })
-	// fs.watch(cert, { encoding: 'utf-8', signal })
+	static #load(host) {
+		const key = fs.readFileSync(`${host}-privkey.pem`, 'utf-8')
+		const cert = fs.readFileSync(`${host}-cert.pem`, 'utf-8')
+		return { key, cert }
+	}
 
-	return { key, cert }
+	static get(host) {
+		if(!CredentialsCache.cache.has(host)) {
+			const credentials = CredentialsCache.#load(host)
+			CredentialsCache.cache.set(host, credentials)
+		}
+		return CredentialsCache.cache.get(host)
+	}
 }
 
-const credentialsMap = new Map()
-credentialsMap.set('localhost', await fsCreds('localhost'))
-credentialsMap.set('next.local', await fsCreds('next.local'))
-// credentialsMap.set('www.next.local', await fsCreds('next.local'))
-
 const options = {
-	allowHTTP1: false,
 	// origins: [],
-	secureOptions: SSL_OP_NO_TLSv1 | SSL_OP_NO_TLSv1_1,
-	// ...await fsCreds(),
 
-	// SNICallback: (serverName, callback) => {
-	// 	console.log('SNI callback', serverName)
-	// 	const url = new URL(serverName)
+	allowHTTP1: false,
+	secureOptions: SSL_OP_NO_TLSv1 | SSL_OP_NO_TLSv1_1 | SSL_OP_NO_TLSv1_2,
+	settings: {
+		enablePush: false
+	},
 
-	// 	callback(null, tls.createSecureContext(localhostCredentials))
-	// }
+	// ALPNCallback
+	// SNICallback: (serverName, callback)
+
+	// enableTrace: false,
+	// noDelay: false,
 }
 
 const server = http2.createSecureServer(options)
-
-server.addContext('localhost', credentialsMap.get('localhost'))
-server.addContext('next.local', credentialsMap.get('next.local'))
-// server.addContext('www.next.local', credentialsMap.get('www.next.local'))
-
 server.setTimeout(2 * 1000)
-// server.timeout = 2 * 1000
-// server.headersTimeout = 2 * 1000
-// server.requestTimeout = 2 * 1000
-// server.keepAliveTimeout = 2 * 1000
-server.on('timeout', () => console.warn('server level timeout'))
-server.on('tlsClientError', (error, socket) => console.log('TLS Error', socket.servername, socket.remoteAddress, error.code))
-server.on('sessionError', error => console.warn('server session error', error))
 
+CREDENTIALS.forEach(credential => {
+	server.addContext(credential, CredentialsCache.get(credential))
+})
+
+server.on('timeout', () => console.warn('Server Timeout'))
+server.on('tlsClientError', (error, socket) => console.log('Server TLS Error', socket.servername, socket.remoteAddress, error.code))
+server.on('sessionError', error => console.warn('Server Session Error', error))
+server.on('error', error => console.log('Server Error', (error.code === 'EADDRINUSE') ? 'Address in use' : error))
+server.on('session', session => console.log('New Session', session.alpnProtocol, session.originSet))
 server.on('stream', handleStream)
-
-server.on('session', session => {
-	console.log('New Session', session.alpnProtocol, session.originSet)
-})
-
-server.on('error', error => {
-	console.warn('Server Error:', error)
-	if (error.code === 'EADDRINUSE') {
-		console.log('Address in use')
-	}
-	else {
-		console.log(error.message)
-	}
-})
-
-server.on('listening', () => {
-	process.title = 'Tic Server'
-	console.log('Server Up', server.address())
-})
-
+server.on('listening', () => console.log('Server Up', server.address()))
 server.on('close', () => {
 	console.log()
-	console.log('end of line')
+	console.log('End of Line.')
 })
 
 const controller = new AbortController()
