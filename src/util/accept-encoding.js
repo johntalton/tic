@@ -1,8 +1,13 @@
 import { parseAcceptStyleHeader } from './accept-util.js'
 
+const WELL_KNOWN = new Map([
+	[ 'gzip, deflate, br, zstd', [ { name: 'gzip' }, { name: 'deflate' }, { name: 'br' }, { name: 'zstd' } ] ],
+	[ 'gzip, deflate, br', [ { name: 'gzip' }, { name: 'deflate' }, { name: 'br' } ] ]
+])
+
 export class AcceptEncoding {
 	static parse(acceptEncodingHeader) {
-		return parseAcceptStyleHeader(acceptEncodingHeader)
+		return parseAcceptStyleHeader(acceptEncodingHeader, WELL_KNOWN)
 	}
 
 	static select(acceptEncodingHeader, supportedTypes) {

@@ -14,7 +14,7 @@ import {
 } from './util/handle-stream-util.js'
 
 import { requestBody } from './util/body.js'
-import { parseContentType, CONTENT_TYPE_JSON, MIME_TYPE_JSON, MIME_TYPE_TEXT } from './util/content-type.js'
+import { parseContentType, CONTENT_TYPE_JSON, MIME_TYPE_JSON, MIME_TYPE_TEXT, MIME_TYPE_EVENT_STREAM, MIME_TYPE_XML } from './util/content-type.js'
 import { Accept } from './util/accept.js'
 import { AcceptEncoding } from './util/accept-encoding.js'
 import { AcceptLanguage } from './util/accept-language.js'
@@ -177,6 +177,8 @@ const ipRequestPerSecondPolicy = {
 	size: 50
 }
 
+const USE_TIMING = false
+
 async function handleStreamAsync(stream, header, flags) {
 	const tokenFull = header[HTTP2_HEADER_AUTHORIZATION]
 	const method = header[HTTP2_HEADER_METHOD]
@@ -205,13 +207,14 @@ async function handleStreamAsync(stream, header, flags) {
 	const hasContentType =  (fullContentType !== undefined) && (fullContentType !== '')
 	const contentType = parseContentType(hasContentType ? fullContentType : CONTENT_TYPE_ASSUMED)
 
-	const accept = Accept.select(fullAccept, [ MIME_TYPE_JSON, MIME_TYPE_TEXT ])
+	const accept = Accept.select(fullAccept, [ MIME_TYPE_JSON, MIME_TYPE_XML, MIME_TYPE_TEXT, MIME_TYPE_EVENT_STREAM ])
 	const acceptedLanguage= AcceptLanguage.select(fullAcceptLanguage, [ 'en-US', 'en' ])
 
-	const requestId = `${ip}-${stream.id}`
-	console.log({ requestId, host, ip, port, origin, authority, referer, method, route, id, action, UA, accept, acceptedLanguage, fullContentType })
+	const requestId = `${ip}-${stream.id}.${crypto.randomUUID()}`
+	// console.log({ requestId, method, fullPathAndQuery, fullAccept, accept, acceptedLanguage })
+	// console.log({ requestId, host, ip, port, origin, authority, referer, method, route, id, action, UA, accept, acceptedLanguage, fullContentType })
 
-	stream.on('close', () => console.log('stream closed', requestId))
+	// stream.on('close', () => console.log('stream closed', requestId))
 	stream.on('error', error => console.log('stream error', requestId, error))
 
 	// preflight come before rate limiting?
@@ -241,18 +244,16 @@ async function handleStreamAsync(stream, header, flags) {
 
 	const [ bearer, token ] = tokenFull?.split(SPACE_CHAR) ?? []
 	if(bearer?.toLowerCase() !== BEARER.toLowerCase()) {
+		console.log(HTTP2_HEADER_AUTHORIZATION,tokenFull)
 		sendUnauthorized(stream)
 		return
 	}
 
 	const user = { token }
 
-	// const userRateLimit = RateLimiter.get(user.token)
-	// if(userRateLimit.exhausted) {
-	// 	sendTooManyRequests(stream, userRateLimit)
-	// 	return
-	// }
+	// todo rate limit based on token
 
+	if(USE_TIMING) { performance.mark(`stream-${requestId}.start`) }
 
 	if(id === undefined) {
 		// listing
@@ -264,21 +265,34 @@ async function handleStreamAsync(stream, header, flags) {
 					const supportedEncodings = forceIdentity ? [] : [ ...ENCODER_MAP.keys() ]
 					const acceptedEncoding = AcceptEncoding.select(fullAcceptEncoding, supportedEncodings)
 
-					performance.mark(`stream-${stream.id}.listing.start`)
+					if(USE_TIMING) { performance.mark(`stream-${requestId}.listing.start`) }
 
 					await Promise.try(group.list, user, query)
 						.then(data => {
-							performance.mark(`stream-${stream.id}.listing.end`)
+							if(USE_TIMING) {
+								performance.mark(`stream-${requestId}.listing.end`)
+								performance.mark(`stream-${requestId}.end`)
+							}
 
 							const meta = { performance: [
-								{ name: 'list', duration: performance.measure('list', `stream-${stream.id}.listing.start`, `stream-${stream.id}.listing.end`).duration}
+								// { name: 'list', duration: performance.measure(`stream-${requestId}.list`, `stream-${requestId}.listing.start`, `stream-${requestId}.listing.end`).duration},
+								// { name: 'total', duration: performance.measure(`stream-${requestId}`, `stream-${requestId}.start`, `stream-${requestId}.end`).duration}
 							]}
 
 							sendJSON_Encoded(stream, data, acceptedEncoding, meta)
 						})
 						.catch(e => {
-							//console.log(e)
+							console.log('listing error', e)
 							sendError(stream, `listing failure: ${e.message}`)
+						})
+						.finally(() => {
+							if(USE_TIMING) {
+								performance.clearMarks(`stream-${requestId}.end`)
+								performance.clearMeasures(`stream-${requestId}`)
+								performance.clearMarks(`stream-${requestId}.listing.start`)
+								performance.clearMarks(`stream-${requestId}.listing.end`)
+								performance.clearMeasures(`stream-${requestId}.list`)
+							}
 						})
 
 					return
@@ -298,19 +312,23 @@ async function handleStreamAsync(stream, header, flags) {
 						return
 					}
 
-					performance.mark(`stream-${stream.id}.body.start`)
+					if(USE_TIMING) { performance.mark(`stream-${requestId}.body.start`) }
 					const opaqueData = await requestBody(stream).json(contentType.charset)
-					performance.mark(`stream-${stream.id}.body.end`)
+					if(USE_TIMING) { performance.mark(`stream-${requestId}.body.end`) }
 
-					performance.mark(`stream-${stream.id}.create.start`)
+					if(USE_TIMING) { performance.mark(`stream-${requestId}.create.start`) }
 
 					await Promise.try(item.create, user, opaqueData, query)
 						.then(result => {
-							performance.mark(`stream-${stream.id}.create.end`)
+							if(USE_TIMING) {
+								performance.mark(`stream-${requestId}.create.end`)
+								performance.mark(`stream-${requestId}.end`)
+							}
 
 							const meta = { performance: [
-								{ name: 'body', duration: performance.measure('body', `stream-${stream.id}.body.start`, `stream-${stream.id}.body.end`).duration},
-								{ name: 'create', duration: performance.measure('create', `stream-${stream.id}.create.start`, `stream-${stream.id}.create.end`).duration}
+								// { name: 'body', duration: performance.measure(`stream-${requestId}.body`, `stream-${requestId}.body.start`, `stream-${requestId}.body.end`).duration},
+								// { name: 'create', duration: performance.measure(`stream-${requestId}.create`, `stream-${requestId}.create.start`, `stream-${requestId}.create.end`).duration},
+								// { name: 'total', duration: performance.measure(`stream-${requestId}`, `stream-${requestId}.start`, `stream-${requestId}.end`).duration}
 							]}
 
 							sendJSON(stream, result, meta)
@@ -318,6 +336,20 @@ async function handleStreamAsync(stream, header, flags) {
 						.catch(e => {
 							// console.log(e)
 							sendError(stream, `create failure ${e.message}`)
+						})
+						.finally(() => {
+							if(USE_TIMING) {
+								performance.clearMarks(`stream-${requestId}.start`)
+								performance.clearMarks(`stream-${requestId}.end`)
+								performance.clearMeasures(`stream-${requestId}`)
+
+								performance.clearMarks(`stream-${requestId}.body.start`)
+								performance.clearMarks(`stream-${requestId}.body.end`)
+								performance.clearMarks(`stream-${requestId}.create.start`)
+								performance.clearMarks(`stream-${requestId}.create.end`)
+								performance.clearMeasures(`stream-${requestId}.body`)
+								performance.clearMeasures(`stream-${requestId}.create`)
+							}
 						})
 
 					return
@@ -342,11 +374,11 @@ async function handleStreamAsync(stream, header, flags) {
 					return
 				}
 
-				// const forceIdentity = false
-				// const supportedEncodings = forceIdentity ? [] : [ ...ENCODER_MAP.keys() ]
-				// const acceptedEncoding = AcceptEncoding.select(fullAcceptEncoding, supportedEncodings)
+				const forceIdentity = false
+				const supportedEncodings = forceIdentity ? [] : [ ...ENCODER_MAP.keys() ]
+				const acceptedEncoding = AcceptEncoding.select(fullAcceptEncoding, supportedEncodings)
 
-				performance.mark(`stream-${stream.id}.get.start`)
+				if(USE_TIMING) { performance.mark(`stream-${requestId}.get.start`) }
 
 				await Promise.try(item.get, id, user, query)
 					.then(data => {
@@ -355,16 +387,34 @@ async function handleStreamAsync(stream, header, flags) {
 							return
 						}
 
-						performance.mark(`stream-${stream.id}.get.end`)
+						if(USE_TIMING) {
+							performance.mark(`stream-${requestId}.get.end`)
+							performance.mark(`stream-${requestId}.end`)
+						}
 
 						const meta = { performance: [
-							{ name: 'get', duration: performance.measure('get', `stream-${stream.id}.get.start`, `stream-${stream.id}.get.end`).duration}
+							// { name: 'get', duration: performance.measure(`stream-${requestId}.get`, `stream-${requestId}.get.start`, `stream-${requestId}.get.end`).duration},
+							// { name: 'total', duration: performance.measure(`stream-${requestId}`, `stream-${requestId}.start`, `stream-${requestId}.end`).duration}
 						]}
 
-						sendJSON(stream, data, meta)
-						// sendJSON_Encoded(stream, data, acceptedEncoding, meta)
+						// sendJSON(stream, data, meta)
+						sendJSON_Encoded(stream, data, acceptedEncoding, meta)
 					})
-					.catch(e => sendError(stream, `getter failure ${e.message}`))
+					.catch(e => {
+						console.log('geter falure', e)
+						sendError(stream, `getter failure ${e.message}`)
+					})
+					.finally(() => {
+						if(USE_TIMING) {
+							performance.clearMarks(`stream-${requestId}.start`)
+							performance.clearMarks(`stream-${requestId}.end`)
+							performance.clearMeasures(`stream-${requestId}`)
+
+							performance.clearMarks(`stream-${requestId}.get.start`)
+							performance.clearMarks(`stream-${requestId}.get.end`)
+							performance.clearMeasures(`stream-${requestId}.get`)
+						}
+					})
 
 				return
 			}
@@ -384,19 +434,33 @@ async function handleStreamAsync(stream, header, flags) {
 				}
 
 
-				performance.mark(`stream-${stream.id}.delete.start`)
+				if(USE_TIMING) { performance.mark(`stream-${requestId}.delete.start`) }
 
 				await Promise.try(item.delete, id, user, query)
 					.then(data => {
-						performance.mark(`stream-${stream.id}.delete.end`)
+						if(USE_TIMING) {
+							performance.mark(`stream-${requestId}.delete.end`)
+							performance.mark(`stream-${requestId}.end`)
+						}
 						const meta = { performance: [
-							{ name: 'delete', duration: performance.measure('delete', `stream-${stream.id}.delete.start`, `stream-${stream.id}.delete.end`).duration}
+							// { name: 'delete', duration: performance.measure(`stream-${requestId}.delete`, `stream-${requestId}.delete.start`, `stream-${requestId}.delete.end`).duration},
+							// { name: 'total', duration: performance.measure(`stream-${requestId}`, `stream-${requestId}.start`, `stream-${requestId}.end`).duration}
 						]}
 
 						sendJSON(stream, data, meta)
 					})
 					.catch(e => sendError(stream, `delete failure ${e.message}`))
+					.finally(() => {
+						if(USE_TIMING) {
+							performance.clearMarks(`stream-${requestId}.start`)
+							performance.clearMarks(`stream-${requestId}.end`)
+							performance.clearMeasures(`stream-${requestId}`)
 
+							performance.clearMarks(`stream-${requestId}.delete.start`)
+							performance.clearMarks(`stream-${requestId}.delete.end`)
+							performance.clearMeasures(`stream-${requestId}.delete`)
+						}
+					})
 
 				return
 			}
@@ -447,27 +511,49 @@ async function handleStreamAsync(stream, header, flags) {
 		return
 	}
 
-	performance.mark(`stream-${stream.id}.body.start`)
+	if(USE_TIMING) { performance.mark(`stream-${requestId}.body.start`) }
 	const opaqueData = await requestBody(stream).json(contentType.charset)
-	performance.mark(`stream-${stream.id}.body.end`)
+	if(USE_TIMING) { performance.mark(`stream-${requestId}.body.end`) }
 
-	performance.mark(`stream-${stream.id}.action.start`)
+	if(USE_TIMING) { performance.mark(`stream-${requestId}.action.start`) }
 	await Promise.try(handler, id, user, opaqueData, query)
 		.then(data => {
-			performance.mark(`stream-${stream.id}.action.end`)
+			if(USE_TIMING) {
+				performance.mark(`stream-${requestId}.action.end`)
+				performance.mark(`stream-${requestId}.end`)
+			}
+
 			const meta = { performance: [
-				{ name: 'body', duration: performance.measure('body', `stream-${stream.id}.body.start`, `stream-${stream.id}.body.end`).duration},
-				{ name: 'action', duration: performance.measure('action', `stream-${stream.id}.action.start`, `stream-${stream.id}.action.end`).duration}
+				// { name: 'body', duration: performance.measure(`stream-${requestId}.body`, `stream-${requestId}.body.start`, `stream-${requestId}.body.end`).duration},
+				// { name: 'action', duration: performance.measure(`stream-${requestId}.action`, `stream-${requestId}.action.start`, `stream-${requestId}.action.end`).duration},
+				// { name: 'total', duration: performance.measure(`stream-${requestId}`, `stream-${requestId}.start`, `stream-${requestId}.end`).duration}
 			]}
 			sendJSON(stream, data, meta)}
 		)
 		.catch(e => sendError(stream, 'action resulted in error - ' + e.message))
+		.finally(() => {
+			if(USE_TIMING) {
+				performance.clearMarks(`stream-${requestId}.start`)
+				performance.clearMarks(`stream-${requestId}.end`)
+				performance.clearMeasures(`stream-${requestId}`)
+
+				performance.clearMarks(`stream-${requestId}.body.start`)
+				performance.clearMarks(`stream-${requestId}.body.end`)
+				performance.clearMarks(`stream-${requestId}.action.start`)
+				performance.clearMarks(`stream-${requestId}.action.end`)
+				performance.clearMeasures(`stream-${requestId}.body`)
+				performance.clearMeasures(`stream-${requestId}.action`)
+			}
+		})
 }
 
 export function handleStream(stream, header, flags) {
 	handleStreamAsync(stream, header, flags)
 		.catch(e => {
 			console.warn('Error in stream handler', e)
+
+			if(stream.closed) { return }
+
 			stream.respond({
 				[HTTP2_HEADER_STATUS]: HTTP_STATUS_INTERNAL_SERVER_ERROR
 			})

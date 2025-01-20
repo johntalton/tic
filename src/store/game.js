@@ -99,27 +99,7 @@ export class CouchGameStore {
 		return response.ok
 	}
 
-	async get(id) {
-		// console.log('couch get game by id', id)
-		if(this.#useCache && this.#cache.has(id)) {
-			const doc = this.#cache.get(id)
-			const etag = doc._rev
-
-			const response = await fetch(`${this.#url}/${id}`, {
-				method: 'HEAD',
-				headers: {
-					...authorizationHeaders,
-					'Accept': '*/*',
-					'If-None-Match': `"${etag}"`
-				}
-			})
-
-			if(response.status === COUCH_HEADER_NOT_MODIFIED) {
-				console.log('couchDB cache hit')
-				return doc
-			}
-		}
-
+	async #get(id) {
 		const response = await fetch(`${this.#url}/${id}`, {
 			method: 'GET',
 			headers: {
@@ -128,18 +108,79 @@ export class CouchGameStore {
 			}
 		})
 
-		// console.log(response)
-		// const { promise, resolve, reject } = Promise.withResolvers()
-		// setTimeout(resolve, 2000)
-		// await promise
-
 		if(!response.ok) {
 			throw new Error('get game by id not ok')
 		}
 
-		const doc = await response.json()
-		this.#cache.set(id, doc)
-		return doc
+		return response.json()
+	}
+
+	async #isModified(id, etag) {
+		const response = await fetch(`${this.#url}/${id}`, {
+			method: 'HEAD',
+			headers: {
+				...authorizationHeaders,
+				'Accept': '*/*',
+				'If-None-Match': `"${etag}"`
+			}
+		})
+
+		return (response.status !== COUCH_HEADER_NOT_MODIFIED)
+	}
+
+	async get(id) {
+		const now = Date.now()
+
+		// console.log('couch get game by id', id)
+		if(this.#useCache && this.#cache.has(id)) {
+			const potential = this.#cache.get(id)
+
+			if(potential.expireAt > now) {
+				return potential.futureDoc
+			}
+
+			const doc = await potential.futureDoc
+			const etag = doc._rev
+
+			if(potential.futureIsModified === undefined) {
+
+				potential.futureIsModified = this.#isModified(id, etag)
+					.then(isModified => {
+						// console.log('clear future mod')
+						potential.futureIsModified = undefined
+
+						if(!isModified) {
+							potential.expireAt = now + (1000 * 5)
+						}
+						else {
+							console.log('refresh from modified futureDoc')
+							potential.futureDoc = this.#get(id)
+							potential.expireAt = now + (1000 * 5)
+						}
+
+						return isModified
+				})
+				.catch(error => {
+					// toss catch and throw
+					this.#cache.delete(id)
+					throw error
+				})
+			}
+
+			return potential.futureIsModified
+				.then(() => potential.futureDoc)
+		}
+
+		console.log('refresh from futureDoc', id)
+		const futureDoc = this.#get(id)
+
+		this.#cache.set(id, {
+			expireAt: now + (1000 * 5),
+			futureDoc,
+			futureIsModified: undefined
+		})
+
+		return futureDoc
 	}
 
 	async set(id, value) {
@@ -175,6 +216,10 @@ export class CouchGameStore {
 				}
 			})
 			.catch(e => {
+				if(e.code === 'ETIMEDOUT') {
+					throw new Error(`DB listing timeout: ${e.message}`, { cause: e })
+				}
+
 				throw new Error(`DB listing failure: ${e.message}`, { cause: e })
 			})
 

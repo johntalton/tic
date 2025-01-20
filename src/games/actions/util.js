@@ -11,7 +11,7 @@ export async function resolveFromStore(id, sessionUser) {
     throw new Error('invalid user token')
   }
 
-  const gameObject = await gameStore.get(id, user)
+  const gameObject = await gameStore.get(id)
   if(gameObject === undefined) { throw new Error('unknown game') }
 
   const { game } = gameObject

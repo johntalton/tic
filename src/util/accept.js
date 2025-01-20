@@ -3,9 +3,14 @@ import { parseAcceptStyleHeader } from './accept-util.js'
 export const SEPARATOR = { SUBTYPE: '/' }
 export const ANY = '*'
 
+export const WELL_KNOWN = new Map([
+	[ '*/*', [ { name: '*/*', quality: 1 } ] ],
+	[ 'application/json', [ { name: 'application/json', quality: 1 } ] ]
+])
+
 export class Accept {
 	static parse(acceptHeader) {
-		return parseAcceptStyleHeader(acceptHeader)
+		return parseAcceptStyleHeader(acceptHeader, WELL_KNOWN)
 			.map(({ name, quality, parameters }) => {
 				const [ type, subtype ] = name
 					.split(SEPARATOR.SUBTYPE)
@@ -38,18 +43,31 @@ export class Accept {
 	}
 
 	static selectFrom(accepts, supportedTypes) {
-		for(const accept of accepts) {
-			const { mimetype } = accept
-			if(supportedTypes.includes(mimetype)) {
-				return mimetype
-			 }
-		}
+		const bests = accepts.map(accept => {
+			const { type, subtype, quality } = accept
+			const st = supportedTypes.filter(supportedType => {
+				const [ stType, stSubtype ] = supportedType.split(SEPARATOR.SUBTYPE)
+				return ((stType === type || type === ANY) && (stSubtype === subtype || subtype === ANY))
+			})
 
-		return undefined
+			return {
+				supportedTypes: st,
+				quality
+			}
+		})
+		.filter(best => {
+			return best.supportedTypes.length > 0
+		})
+
+		if(bests.length === 0) { return undefined }
+		const [ first ] = bests
+		const [ firstSt ] = first.supportedTypes
+		return firstSt
 	}
 }
 
-
+// console.log(Accept.parse('text/html, application/xhtml+xml, application/xml;q=0.9, image/webp, text/*;q=.8, */*;q=0.7'))
+// console.log(Accept.select('text/html, application/xhtml+xml, application/xml;q=0.9, image/webp, text/*;q=.8, */*;q=0.7', [ 'application/json', 'text/plain' ]))
 
 // const tests = [
 // 	undefined,

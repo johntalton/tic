@@ -37,6 +37,8 @@ export const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN // '*'
 export function sendError(stream, message) {
 	console.log('500', message)
 
+	if(stream.closed) { return }
+
 	stream.respond({
 		[HTTP2_HEADER_ACCESS_CONTROL_ALLOW_ORIGIN]: ALLOWED_ORIGIN,
 		[HTTP2_HEADER_STATUS]: HTTP_STATUS_INTERNAL_SERVER_ERROR,
@@ -58,6 +60,8 @@ export function sendPreflight(stream, origin) {
 }
 
 export function sendUnauthorized(stream) {
+	console.log('Unauthorized')
+
 	stream.respond({
 		[HTTP2_HEADER_ACCESS_CONTROL_ALLOW_ORIGIN]: ALLOWED_ORIGIN,
 		[HTTP2_HEADER_STATUS]: HTTP_STATUS_UNAUTHORIZED,
@@ -67,7 +71,7 @@ export function sendUnauthorized(stream) {
 }
 
 export function sendNotFound(stream, message) {
-	// console.log('404', message)
+	console.log('404', message)
 	stream.respond({
 		[HTTP2_HEADER_ACCESS_CONTROL_ALLOW_ORIGIN]: ALLOWED_ORIGIN,
 		[HTTP2_HEADER_STATUS]: HTTP_STATUS_NOT_FOUND,
@@ -79,6 +83,7 @@ export function sendNotFound(stream, message) {
 }
 
 export function sendTooManyRequests(stream, limitInfo, ...policies) {
+	console.log('Too many requests')
 	stream.respond({
 		[HTTP2_HEADER_ACCESS_CONTROL_ALLOW_ORIGIN]: ALLOWED_ORIGIN,
 		[HTTP2_HEADER_STATUS]: HTTP_STATUS_TOO_MANY_REQUESTS,
@@ -115,6 +120,8 @@ export const ENCODER_MAP = new Map([
 ])
 
 export function sendJSON_Encoded(stream, obj, encoding, meta) {
+	if(stream.closed) { return }
+
 	const json = JSON.stringify(obj)
 
 	const useIdentity = encoding === 'identity'
@@ -127,8 +134,12 @@ export function sendJSON_Encoded(stream, obj, encoding, meta) {
 	performance.mark(`stream-${stream.id}.encode.end`)
 
 	meta.performance.push(
-		{ name: 'encode', duration: performance.measure('get', `stream-${stream.id}.encode.start`, `stream-${stream.id}.encode.end`).duration}
+		{ name: 'encode', duration: performance.measure(`stream-${stream.id}.encode`, `stream-${stream.id}.encode.start`, `stream-${stream.id}.encode.end`).duration}
 	)
+
+	performance.clearMarks(`stream-${stream.id}.encode.start`)
+	performance.clearMarks(`stream-${stream.id}.encode.end`)
+	performance.clearMeasures(`stream-${stream.id}.encode`)
 
 	stream.respond({
 		[HTTP2_HEADER_ACCESS_CONTROL_ALLOW_ORIGIN]: ALLOWED_ORIGIN,

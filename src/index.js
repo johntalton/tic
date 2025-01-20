@@ -62,9 +62,9 @@ CREDENTIALS.forEach(credential => {
 
 server.on('timeout', () => console.warn('Server Timeout'))
 server.on('tlsClientError', (error, socket) => console.log('Server TLS Error', socket.servername, socket.remoteAddress, error.code))
-server.on('sessionError', error => console.warn('Server Session Error', error))
+server.on('sessionError', error => { if(error.code !== 'ECONNRESET') { console.warn('Server Session Error', error) } })
 server.on('error', error => console.log('Server Error', (error.code === 'EADDRINUSE') ? 'Address in use' : error))
-server.on('session', session => console.log('New Session', session.alpnProtocol, session.originSet))
+// server.on('session', session => console.log('New Session', session.alpnProtocol, session.originSet))
 server.on('stream', handleStream)
 server.on('listening', () => console.log('Server Up', server.address()))
 server.on('close', () => {

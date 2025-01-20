@@ -13,6 +13,7 @@ async function fromView(url) {
 		}
 	})
 	.catch(e => {
+		console.log('user DB fetch error', e)
 		throw new Error(`User DB fetch failure: ${e.message}`, { cause: e })
 	})
 
@@ -29,6 +30,7 @@ async function fromView(url) {
 
 export class CouchUserStore {
 	#url
+	#cache = new Map()
 
 	constructor(url) { this.#url = url }
 
@@ -67,7 +69,23 @@ export class CouchUserStore {
 
 
 	async fromToken(token) {
-		return fromView(`${this.#url}/_design/basic/_view/user_by_token?key="${token}"&limit=1`)
+		const now = Date.now()
+
+		if(this.#cache.has(token)) {
+			const potential = this.#cache.get(token)
+			if(potential.expireAt > now) {
+				return potential.futureUserInfo
+			}
+		}
+
+		const futureUserInfo = fromView(`${this.#url}/_design/basic/_view/user_by_token?key="${token}"&limit=1`)
+
+		this.#cache.set(token, {
+			expireAt: now + (1000 * 60),
+			futureUserInfo
+		})
+
+		return futureUserInfo
 	}
 
 	async fromName(name) {
