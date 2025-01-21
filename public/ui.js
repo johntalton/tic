@@ -256,12 +256,18 @@ export class UI {
 		toastElem?.toggleAttribute('data-show', false)
 	}
 
-	static setLoggedIn(loggedIn = true) {
+	static setLoggedIn(user, loggedIn = true) {
 		document.querySelector('body')?.toggleAttribute('data-logged-in', loggedIn)
+
+		const usernameOutputs = document.querySelectorAll('output[data-username]')
+		for(const usernameOutput of usernameOutputs) {
+			usernameOutput.value = user.name
+		}
+
 	}
 
-	static logout() {
-		UI.setLoggedIn(false)
+	static logout(user) {
+		UI.setLoggedIn(user, false)
 
 		// game listing
 		const gameListElement = document.getElementById('GamesListing')

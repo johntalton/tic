@@ -16,6 +16,10 @@ export async function handleMove(id, sessionUser, body, query) {
 
 	const updatedGameObject = {
 		...gameObject,
+		meta: {
+			...gameObject.meta,
+			updatedAt: Date.now()
+		},
 		game: updatedGame
 	}
 

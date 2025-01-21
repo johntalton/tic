@@ -6,8 +6,8 @@ import './localized-output.js'
 
 const USER = {
 	// id: 'bob123',
-	// name: 'Bob',
-	// accessToken: 'abcd1234'
+	// displayName: 'Bob',
+	// token: 'abcd1234'
 }
 
 const COMMON_API_URL = 'https://tic.next.local:8443'
@@ -131,6 +131,23 @@ function handleLoadListing() {
 		})
 }
 
+function handleCreateGame(event) {
+	const button = event.target
+	button.disabled = true
+	setTimeout(() => button.disabled = false, 1000)
+
+	gameApi.create()
+		.then(game => {
+			UI.addGameListingItem(game, clientPort)
+			UI.activateGameField(game.id, clientPort)
+			UI.updateGameField(game, USER)
+		})
+		.catch(e => {
+			UI.showToast(e.message)
+			console.warn(e)
+		})
+}
+
 function startSSE() {
 	const sseStream = new EventSource(new URL(`/tic/v1/events?token=${USER.accessToken}`, TIC_URL), {
 		// withCredentials: true
@@ -197,7 +214,7 @@ function startSSE() {
 function simpleUserAutoLogin() {
 	const info = localStorage.getItem('simple-login')
 	if(info === null) {
-		UI.setLoggedIn(false)
+		UI.setLoggedIn(USER, false)
 		return false
 	}
 
@@ -207,7 +224,7 @@ function simpleUserAutoLogin() {
 	USER.name = displayName
 	USER.accessToken = token
 
-	UI.setLoggedIn()
+	UI.setLoggedIn(USER)
 	return true
 }
 
@@ -263,15 +280,30 @@ function handleSimpleLoginForm(event) {
 		})
 }
 
+function handleSimpleLogout(event) {
+	localStorage.removeItem('simple-login')
+	UI.logout(USER)
+	USER.id = undefined
+	USER.name = undefined
+	USER.accessToken = undefined
+}
 
 
 async function onContentLoadedAsync(params) {
 	// document.querySelector('[data-action="login"]')?.addEventListener('click', handleLogin)
 	// document.querySelector('[data-action="register"]')?.addEventListener('click', handleRegister)
 
+	//
 	globalThis.UI = UI
 
+	//
+	document.getElementById('CreateNewGame')?.addEventListener('click', handleCreateGame)
 
+	//
+	const logoutButton = document.getElementById('SimpleLogout')
+	logoutButton?.addEventListener('click', handleSimpleLogout)
+
+	//
 	const simpleDialog = document.getElementById('SimpleUser')
 	const simpleForm = simpleDialog?.querySelector('form')
 	simpleForm?.addEventListener('submit', handleSimpleLoginForm)

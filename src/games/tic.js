@@ -138,7 +138,6 @@ export class Tic {
 		// console.log('Tic::create', user)
 
 		const game = {
-			id: `game:${user}-${Date.now()}`,
 			state: STATES.NEW,
 
 			owner: user,

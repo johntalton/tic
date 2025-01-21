@@ -9,6 +9,7 @@
 		<title>Tic</title>
 		<meta name="description" content="X and O" />
 
+		<link rel="icon" type="image/svg+xml" href="./favicon.svg"></link>
 		<link rel="stylesheet" type="text/css" href="./index.css"><link>
 		<script async defer type="module" src="./index.js"></script>
 	</head>
@@ -40,11 +41,12 @@
 
 		<dialog id="SimpleLogoutConfirm">
 			<span>Sign Out?</span>
+			Currently signed in as: <output data-username></output>
 
 			<form method="dialog">
 				<button-set>
 					<button type="button" onclick="event.target.closest('dialog').close()">Cancel</button>
-					<button type="submit" onclick="UI.logout()">Logout</button>
+					<button type="submit" data-confirm id="SimpleLogout">Logout</button>
 				</button-set>
 			</form>
 		</dialog>
@@ -100,19 +102,22 @@
 		<header aria-label="main navigation">
 			<h1>Tic</h1>
 			<button-set>
-				<button data-not-logged-in onclick="document.getElementById('SimpleUser').showModal()">👤</button>
-				<button data-logged-in onclick="document.getElementById('SimpleLogoutConfirm').showModal()">👤</button>
-				<button onclick="document.body.toggleAttribute('data-aside')">🟰</button>
+				<button data-not-logged-in onclick="document.getElementById('SimpleUser').showModal()"><i>👤</i></button>
+				<button data-logged-in onclick="document.getElementById('SimpleLogoutConfirm').showModal()"><i>👤</i></button>
+				<button data-aside-toggle onclick="document.body.toggleAttribute('data-aside')"><i>🟰</i></button>
 			</button-set>
 		</header>
 		<progress id="GlobalProgress" min="0" max="100" value="25"></progress>
 		<div id="Toast" data-toast>
 			<output></output>
-			<button onclick="UI.hideToast()">❌</button>
+			<button onclick="UI.hideToast()"><i>❌</i></button>
 		</div>
 		<main>
 			<aside aria-label="User Game Listing">
-				<header>Games:</header>
+				<header>
+					<span>Games:</span>
+					<button id="CreateNewGame" data-logged-in><i>+</i> New Game</button>
+				</header>
 				<span data-no-games-listed>No Games Listed</span>
 				<ul id="GamesListing">
 					<template>
@@ -152,17 +157,17 @@
 						</game-message>
 
 						<game-board win-line="">
-							<button data-position="0"><output></output></button>
-							<button data-position="1"><output></output></button>
-							<button data-position="2"><output></output></button>
+							<button data-position="0"><i><output></output></i></button>
+							<button data-position="1"><i><output></output></i></button>
+							<button data-position="2"><i><output></output></i></button>
 
-							<button data-position="3"><output></output></button>
-							<button data-position="4"><output></output></button>
-							<button data-position="5"><output></output></button>
+							<button data-position="3"><i><output></output></i></button>
+							<button data-position="4"><i><output></output></i></button>
+							<button data-position="5"><i><output></output></i></button>
 
-							<button data-position="6"><output></output></button>
-							<button data-position="7"><output></output></button>
-							<button data-position="8"><output></output></button>
+							<button data-position="6"><i><output></output></i></button>
+							<button data-position="7"><i><output></output></i></button>
+							<button data-position="8"><i><output></output></i></button>
 						</game-board>
 					</game-field>
 				</template>

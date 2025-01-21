@@ -153,7 +153,7 @@ export class CouchGameStore {
 							potential.expireAt = now + (1000 * 5)
 						}
 						else {
-							console.log('refresh from modified futureDoc')
+							// console.log('refresh from modified futureDoc')
 							potential.futureDoc = this.#get(id)
 							potential.expireAt = now + (1000 * 5)
 						}
@@ -171,7 +171,7 @@ export class CouchGameStore {
 				.then(() => potential.futureDoc)
 		}
 
-		console.log('refresh from futureDoc', id)
+		// console.log('refresh from futureDoc', id)
 		const futureDoc = this.#get(id)
 
 		this.#cache.set(id, {

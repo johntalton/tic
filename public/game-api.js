@@ -8,7 +8,7 @@ export class GameAPI {
 	}
 
 	async listing() {
-		const response = await fetch(new URL('/tic/v1/games?filter=new|active|pending', this.#baseUrl), {
+		const response = await fetch(new URL('/tic/v1/games?filter=new|active|pending|resolved', this.#baseUrl), {
 			method: 'GET',
 			mode: 'cors',
 			headers: {
@@ -20,6 +20,28 @@ export class GameAPI {
 		if(!response.ok) {
 			const text = await response.text()
 			throw new Error(`"listing" response not ok (${response.status}) (${text})`)
+		}
+
+		return response.json()
+	}
+
+	async create() {
+		const url = new URL(`/tic/v1/game`, this.#baseUrl)
+		url.searchParams.set('t', this.#user.id)
+		url.searchParams.set('a', 'true')
+
+		const response = await fetch(url, {
+			method: 'POST',
+			mode: 'cors',
+			headers: {
+				'Accept': 'application/json',
+				'Authorization': `Bearer ${this.#user.accessToken}`
+			}
+		})
+
+		if(!response.ok) {
+			const text = await response.text()
+			throw new Error(`"create" response not ok (${response.status}) (${text})`)
 		}
 
 		return response.json()

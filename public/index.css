@@ -2,7 +2,6 @@
 
 @layer Base {
 	:root {
-		/* font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif; */
 		font-family: Arial, Helvetica, sans-serif
 	}
 
@@ -47,6 +46,7 @@
 			& > button {
 				padding-inline: 2ch;
 				padding-block: 0.3em;
+				cursor: pointer;
 
 				/* &[type="submit"] {
 					border: 2px solid hsl(from var(--background-light) h s calc(l * .5));
@@ -90,6 +90,11 @@
 			oklab(0.73 0.09 -0.07)
 			);
 
+		--game-win-line: light-dark(
+			oklab(0.47 0.18 -0.16),
+			oklab(0.52 0.21 -0.17)
+			);
+
 		--background-toast: light-dark(
 			oklab(0.65 0.29 -0.03),
 			oklab(0.47 0.21 0.01)
@@ -105,6 +110,14 @@
 		font-family: 'Noto Emoji';
 		src: url('./Noto_Emoji/NotoEmoji-VariableFont_wght.ttf') format('truetype');
 	}
+
+	i {
+		font-family: 'Noto Emoji', emoji;
+		font-variant-emoji: text;
+		font-weight: bold;
+		font-style: normal;
+	}
+
 
 	body[data-logged-in] {
 		& [data-not-logged-in] {
@@ -176,6 +189,44 @@
 			background-color: oklab(0 0 0 / 0.18);
 			backdrop-filter: blur(10px);
 		}
+
+		& button {
+			border: none;
+			border-radius: 0.25em;
+			color: inherit;
+			border: 1px solid var(--background-light);
+			background-color: var(--background-light);
+			color: var(--color-light);
+			padding-inline: 1em;
+			padding-block: 0.5em;
+			cursor: pointer;
+
+			&:disabled {
+				background-color: oklab(0 0 0 / 0.26);
+				color: oklab(0.48 0 0);
+			}
+
+			&:not(:disabled):active {
+				background-color: oklab(from var(--background-light) calc(l * 1.25) a b);
+				transform: translateX(3px) translateY(3px);
+			}
+
+			&:has(i) {
+				padding-inline: 1em 1.5em;
+			}
+
+			& > i {
+				font-size: 1.5em;
+			}
+
+			@media (hover: hover) {
+				&:not(:disabled):not(:active):hover {
+					border: 1px solid var(--background-light);
+					background-color: var(--background-lighter);
+					color: var(--color-lighter);
+				}
+			}
+		}
 	}
 
 
@@ -210,11 +261,11 @@
 			gap: 0.25em;
 
 			& > button {
-				font-family: 'Noto Emoji';
 				color: inherit;
 				background-color: inherit;
 				border: none;
 				border-radius: 0.25em;
+				cursor: pointer;
 
 
 				&:active {
@@ -253,12 +304,6 @@
 		background-color: transparent;
 		transition: left 300ms, background-color 300ms;
 
-		@media (min-width: 1000px) {
-			position: unset;
-			background-color: var(--background-lighter);
-			max-width: 40ch;
-		}
-
 		& > [data-no-games-listed] {
 			display: flex;
 			justify-content: center;
@@ -272,11 +317,63 @@
 		}
 
 		& > header {
-			margin-inline-start: 1ch;
+			display: flex;
+			justify-content: space-between;
+			margin-inline: 1ch 1em;
 			margin-block-end: 1em;
-			font-weight: bolder;
-			font-size: 1.5em;
-			text-transform: uppercase;
+
+			& > span {
+				font-weight: bolder;
+				font-size: 1.5em;
+				text-transform: uppercase;
+				align-self: center;
+			}
+
+			& > button {
+				border: none;
+				border-radius: 0.25em;
+				color: inherit;
+				border: 1px solid var(--background-light);
+				background-color: var(--background-light);
+				color: var(--color-light);
+				padding-inline: 1em 1.5em;
+				padding-block: 0.5em .75em;
+				cursor: pointer;
+
+				&:disabled {
+					background-color: oklab(0 0 0 / 0.26);
+					color: oklab(0.48 0 0);
+				}
+
+				&:not(:disabled):active {
+					background-color: oklab(from var(--background-light) calc(l * 1.25) a b);
+					transform: translateX(3px) translateY(3px);
+				}
+
+				& > i {
+					font-size: 1.5em;
+				}
+
+				@media (hover: hover) {
+					&:not(:disabled):not(:active):hover {
+						border: 1px solid var(--background-light);
+						background-color: var(--background-lighter);
+						color: var(--color-lighter);
+					}
+				}
+			}
+		}
+	}
+
+	@media (min-width: 800px) {
+		aside {
+			position: unset;
+			background-color: var(--background-lighter);
+			max-width: 40ch;
+		}
+
+		[data-aside-toggle] {
+			display: none;
 		}
 	}
 
@@ -289,6 +386,7 @@
 			grid-template-columns: 1fr;
 			grid-template-rows: 1fr 1fr;
 			gap: 0.5em; */
+			cursor: pointer;
 
 			padding: 1em;
 			border-block-end: 1px solid var(--background-light);
@@ -315,14 +413,15 @@
 
 		& > output {
 			margin-block: auto;
+			margin-inline-end: 1em;
 		}
 
 		& > button {
-			font-family: 'Noto Emoji';
 			padding: 0.5em;
 			background-color: var(--background-toast);
 			color: var(--text-toast);
 			border: none;
+			cursor: pointer;
 		}
 	}
 
@@ -362,6 +461,8 @@
 		/* margin-block-end: 2em; */
 
 		& > button {
+			cursor: pointer;
+
 			padding-inline: 1ch;
 			padding-block: 0.75em;
 
@@ -424,7 +525,7 @@
 		background-color: var(--grid-color);
 
 		& > button {
-			font-family: 'Noto Emoji';
+			cursor: pointer;
 			color: var(--grid-mark-color);
 
 			min-height: 1.5em;
@@ -485,7 +586,7 @@
 		&:after {
 			content: '';
 			position: absolute;
-			border: .25em solid red;
+			border: .25em solid var(--game-win-line);
 			height: 0em;
 			width: 100%;
 			border-radius: 1em;
