@@ -11,13 +11,13 @@
 
 		<link rel="icon" type="image/svg+xml" href="./favicon.svg"></link>
 		<link rel="stylesheet" type="text/css" href="./index.css"><link>
-		<script async defer type="module" src="./index.js"></script>
+		<script async type="module" src="./index.js"></script>
 	</head>
 	<body data-aside data-logged-in>
 		<dialog id="WebAuthN">
 			<form>
 				<label for="UserName">User Name</label>
-				<input id="UserName" type="text" placeholder="user name"/>
+				<input id="UserName" type="text" autocomplete="given-name" placeholder="user name"/>
 
 				<button data-action="register">Register User</button>
 				<div data-or-divider>-- Or --</div>
@@ -104,24 +104,61 @@
 			<button-set>
 				<button data-not-logged-in onclick="document.getElementById('SimpleUser').showModal()"><i>👤</i></button>
 				<button data-logged-in onclick="document.getElementById('SimpleLogoutConfirm').showModal()"><i>👤</i></button>
-				<button data-aside-toggle onclick="document.body.toggleAttribute('data-aside')"><i>🟰</i></button>
+				<button data-aside-toggle onclick="document.body.toggleAttribute('data-aside')">
+					<!-- <img data-icon src="./icons/burger.svg" alt="Menu"> -->
+					 <i>🟰</i>
+				</button>
 			</button-set>
 		</header>
 		<progress id="GlobalProgress" min="0" max="100" value="25"></progress>
 		<div id="Toast" data-toast>
 			<output></output>
-			<button onclick="UI.hideToast()"><i>❌</i></button>
+			<button onclick="UI.hideToast()">
+				<!-- <img data-icon src="./icons/close.svg" alt="Close"/> -->
+				 <i>❌</i>
+			</button>
 		</div>
 		<main>
 			<aside aria-label="User Game Listing">
 				<header>
 					<span>Games:</span>
-					<button id="CreateNewGame" data-logged-in><i>+</i> New Game</button>
+					<!-- <button><i>⛭</i></button> -->
+					<button id="CreateNewGame" data-logged-in>
+						<!-- <img data-icon src="./icons/plus.svg" alt="New Game"/> -->
+						 <i>+</i>
+						New Game
+					</button>
 				</header>
+
+				<details data-filter-state open>
+					<summary>Filter By</summary>
+					<form id="ListFilterForm" data-chip-group onchange="console.log(new FormData(event.target.closest('form')).getAll('ListFilter'))">
+						<label for="ListFilter-New">New</label>
+						<input id="ListFilter-New" name="ListFilter" value="new" type="checkbox" checked />
+
+						<label for="ListFilter-Pending">Pending</label>
+						<input id="ListFilter-Pending" name="ListFilter" value="pending" type="checkbox" checked />
+
+						<label for="ListFilter-Active">Active</label>
+						<input id="ListFilter-Active" name="ListFilter" value="active" type="checkbox" checked />
+
+						<label for="ListFilter-Resolved">Resolved</label>
+						<input id="ListFilter-Resolved" name="ListFilter" value="resolved" type="checkbox" />
+
+					</form>
+				</details>
+
 				<span data-no-games-listed>No Games Listed</span>
 				<ul id="GamesListing">
 					<template>
 						<li data-game-id="">
+							<header title="Game Name">
+								<output data-game-name></output>
+								<output data-game-subname></output>
+							</header>
+							<i title="Owner"><output data-game-owner></output></i>
+							<elapsed-time data-created-at time=""></elapsed-time>
+							<i data-game-has-update="no" title="Has Update">🟢</i>
 						</li>
 					</template>
 

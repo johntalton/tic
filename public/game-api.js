@@ -7,8 +7,11 @@ export class GameAPI {
 		this.#baseUrl = baseUrl
 	}
 
-	async listing() {
-		const response = await fetch(new URL('/tic/v1/games?filter=new|active|pending|resolved', this.#baseUrl), {
+	async listing(filter) {
+		const url = new URL('/tic/v1/games', this.#baseUrl)
+		url.searchParams.set('filter', filter.join('|'))
+
+		const response = await fetch(url, {
 			method: 'GET',
 			mode: 'cors',
 			headers: {

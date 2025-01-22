@@ -129,11 +129,14 @@ export class CouchGameStore {
 	}
 
 	async get(id) {
+		// console.log('get game', { id })
 		const now = Date.now()
 
 		// console.log('couch get game by id', id)
 		if(this.#useCache && this.#cache.has(id)) {
 			const potential = this.#cache.get(id)
+
+			// console.log('from cache', potential)
 
 			if(potential.expireAt > now) {
 				return potential.futureDoc
@@ -185,6 +188,7 @@ export class CouchGameStore {
 
 	async set(id, value) {
 		// clear from cache
+		// console.log('clear cache', { id })
 		this.#cache.delete(id)
 
 		const response = await fetch(`${this.#url}`, {
@@ -199,7 +203,7 @@ export class CouchGameStore {
 		return response.ok
 	}
 
-	async list(user, query) {
+	async list(user) {
 		const limit = 100
 		const includeDocs = false
 
@@ -242,11 +246,7 @@ export class CouchGameStore {
 			active: row.active?.includes(user)
 		}))
 
-		if(query === undefined || query === null || query === '') { return full }
-
-		const anyQuery = query.split('|')
-
-		return full.filter(row => anyQuery.includes(row.state))
+		return full
 	}
 }
 

@@ -1,29 +1,63 @@
 export class UI {
-	static addGameListingItem(game, port) {
+	static addGameListingItem(game, user, port) {
 		const gameListElement = document.getElementById('GamesListing')
+		const gameListingItemTemplate = gameListElement?.querySelector('template')
+		if(gameListingItemTemplate === null || gameListingItemTemplate === undefined) { throw new Error('missing Game List Item Template') }
+		const templateDocument = gameListingItemTemplate?.content.cloneNode(true)
+		const li = templateDocument.querySelector('li')
 
-		const li = document.createElement('LI')
-			li.textContent = 'Game:' + game.id
-			li.setAttribute('data-game-id', game.id)
-			gameListElement?.appendChild(li)
+		const nameOutput = li.querySelector('output[data-game-name]')
+		const subNameOutput = li.querySelector('output[data-game-subname]')
+		const isOwnerOutput = li.querySelector('output[data-game-owner]')
+		const elapsedTime = li.querySelector('elapsed-time[data-created-at]')
+		const hasUpdateElem = li.querySelector('[data-game-has-update]')
 
-			li.addEventListener('click', event => {
-				// console.log('click for game', game.id, port)
-				port.postMessage({
-					type: 'activate',
-					gameId: game.id
-				})
+		const isOwner = game.owner === user.id
+		const hasUpdate = false
+
+		const title = game.players.length > 0 ? game.players.join(' vs ') : 'Pending'
+
+		nameOutput.value = title
+		subNameOutput.value = game.id
+		isOwnerOutput.value = isOwner ? '🔑' : '' // 🔑 🔒 🔓 🗝️
+		isOwnerOutput.setAttribute('title', 'Owner')
+		elapsedTime.setAttribute('time', game.createdAt)
+		hasUpdateElem.setAttribute('data-game-has-update', hasUpdate ? 'yes' : 'no')
+
+
+		li.setAttribute('data-game-id', game.id)
+
+		gameListElement?.appendChild(li)
+
+		li.addEventListener('click', event => {
+			// console.log('click for game', game.id, port)
+			port.postMessage({
+				type: 'activate',
+				gameId: game.id
 			})
+		})
 	}
 
 	static updateGameListingItem(gameId) {
 
 	}
 
-	static updateGameListing(listing, port) {
+	static updateGameListing(listing, user, port) {
 		listing.games.forEach(game => {
-			UI.addGameListingItem(game, port)
+			UI.addGameListingItem(game, user, port)
 		})
+	}
+
+	static clearGameListing() {
+		const gameListElement = document.getElementById('GamesListing')
+		const lis = gameListElement?.querySelectorAll('li')
+		lis?.forEach(li => li.remove())
+	}
+
+	static listFilters() {
+		const filterForm = document.getElementById('ListFilterForm')
+		const fd = new FormData(filterForm)
+		return fd.getAll('ListFilter')
 	}
 
 	static createNewGameField(gameId, port) {
@@ -270,9 +304,7 @@ export class UI {
 		UI.setLoggedIn(user, false)
 
 		// game listing
-		const gameListElement = document.getElementById('GamesListing')
-		const lis = gameListElement?.querySelectorAll('li')
-		lis?.forEach(li => li.remove())
+		UI.clearGameListing()
 
 		// games
 		const gameFieldsElem = document.getElementById('GameFields')

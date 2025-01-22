@@ -122,9 +122,18 @@ function handleActivateGameField(gameId) {
 		})
 }
 
+function handleFilterChange() {
+	// debounce
+	handleLoadListing()
+}
+
 function handleLoadListing() {
-	gameApi.listing()
-		.then(result => UI.updateGameListing(result, clientPort))
+	const filter = UI.listFilters()
+	console.log('update game listing from filter', filter)
+
+	UI.clearGameListing()
+	gameApi.listing(filter)
+		.then(result => UI.updateGameListing(result, USER, clientPort))
 		.catch(e => {
 			UI.showToast(e.message)
 			console.warn(e)
@@ -138,7 +147,7 @@ function handleCreateGame(event) {
 
 	gameApi.create()
 		.then(game => {
-			UI.addGameListingItem(game, clientPort)
+			UI.addGameListingItem(game, USER, clientPort)
 			UI.activateGameField(game.id, clientPort)
 			UI.updateGameField(game, USER)
 		})
@@ -298,6 +307,9 @@ async function onContentLoadedAsync(params) {
 
 	//
 	document.getElementById('CreateNewGame')?.addEventListener('click', handleCreateGame)
+
+	//
+	document.getElementById('ListFilterForm')?.addEventListener('change', handleFilterChange)
 
 	//
 	const logoutButton = document.getElementById('SimpleLogout')

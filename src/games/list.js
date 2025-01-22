@@ -1,4 +1,3 @@
-import { isViewable } from './tic.js'
 import { gameStore } from '../store/game.js'
 import { userStore } from '../store/user.js'
 
@@ -8,13 +7,14 @@ export async function handleList(sessionUser, query) {
 		throw new Error('invalid user token')
 	}
 
-	const state = query.get('filter') ?? undefined
-	const allGames = await gameStore.list(user, state)
+	const allGames = await gameStore.list(user)
 
-	// console.log({ allGames })
-	// const games = allGames.filter(game => isViewable(game, user))
+	const stateFilter = query.get('f') ?? query.get('filter') ?? undefined
+	const stateFilterList = stateFilter.split('|')
+	const games = allGames.filter(row => stateFilterList.includes(row.state))
+
 
 	return {
-		games: allGames
+		games
 	}
 }

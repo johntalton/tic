@@ -118,6 +118,13 @@
 		font-style: normal;
 	}
 
+	img[data-icon] {
+		display: inline flex;
+		height: 1em;
+		width: 1em;
+		align-self: center;
+	}
+
 
 	body[data-logged-in] {
 		& [data-not-logged-in] {
@@ -139,18 +146,28 @@
 		/* margin-block: 0.25em; */
 
 		width: 100%;
-		height: 0.5em;
+		height: 0.75em;
 		margin-block-start: -1px;
 		appearance: none;
+		border: 0;
 
 
+		background-color: oklab(from var(--background-light) calc(l * 1.25) a b);
 
 		&::-webkit-progress-bar {
 			background-color: oklab(from var(--background-light) calc(l * 1.25) a b);
 		}
 
 		&::-webkit-progress-value {
+			transition: width 0.5s;
 			background-color: hsl(from var(--background-light) h s calc(l * .5));
+			/* background: hsl(from var(--background-light) h s calc(l * .5)); */
+			border-radius: 0 1em 1em 0;
+		}
+
+		&::-moz-progress-bar {
+			transition: width 0.5s;
+			background: hsl(from var(--background-light) h s calc(l * .5));
 			border-radius: 0 1em 1em 0;
 		}
 	}
@@ -158,10 +175,11 @@
 	dialog {
 		z-index: 10;
 
+		max-height: calc(100vh - 4em);
 		background-color: var(--background-lighter);
 		color: var(--text-lighter);
 		margin-block-start: -100%;
-		transition: margin-block-start .5s;
+		transition: margin-block-start 500ms;
 		margin-inline: auto;
 
 		max-width: min(420px, 80vw);
@@ -182,7 +200,7 @@
 
 		&[open] {
 			/* display: flex; */
-			margin-block-start: 6em;
+			margin-block-start: 2em;
 		}
 
 		&::backdrop {
@@ -261,6 +279,7 @@
 			gap: 0.25em;
 
 			& > button {
+				display: flex;
 				color: inherit;
 				background-color: inherit;
 				border: none;
@@ -285,6 +304,70 @@
 	body[data-aside] aside {
 		left: 0;
 		background-color: var(--background-lighter);
+	}
+
+	[data-chip-group] {
+		display: flex;
+		flex-direction: row;
+		flex-wrap: wrap;
+		gap: 0.5em;
+		justify-content: flex-start;
+		/* margin-block-end: 1em; */
+    /* margin-inline: 1em; */
+		padding: 1em;
+    background-color: #0000001a;
+
+		& > input[type="checkbox"] {
+			appearance: none;
+		}
+
+		& > label {
+			border: 1px solid black;
+			background-color: var(--background-lighter);
+			color: var(--color-lighter);
+			padding-inline: 1em;
+      padding-block: 0.25em;
+			border-radius: .75em;
+
+			&:not(:disabled) {
+				cursor: pointer;
+			}
+		}
+
+		&:has(> #ListFilter-New:checked) label[for="ListFilter-New"] {
+			background-color: var(--background-light);
+			color: var(--color-light);
+		}
+		&:has(> #ListFilter-Pending:checked) label[for="ListFilter-Pending"] {
+			background-color: var(--background-light);
+			color: var(--color-light);
+		}
+		&:has(> #ListFilter-Active:checked) label[for="ListFilter-Active"] {
+			background-color: var(--background-light);
+			color: var(--color-light);
+		}
+		&:has(> #ListFilter-Resolved:checked) label[for="ListFilter-Resolved"] {
+			background-color: var(--background-light);
+			color: var(--color-light);
+		}
+	}
+
+	details[data-filter-state] {
+
+		/* &[open] {
+
+		} */
+
+		& > summary {
+			/* list-style-type: '⬆ '; */
+			/* list-style-type: '➡ '; */
+			padding-block: 0.5em;
+			padding-inline: 1em;
+		}
+
+		/* &[open] > summary {
+			list-style-type: '⬇ ';
+		} */
 	}
 
 	aside {
@@ -330,6 +413,10 @@
 			}
 
 			& > button {
+				display: flex;
+				gap: 1ch;
+				align-items: baseline;
+
 				border: none;
 				border-radius: 0.25em;
 				color: inherit;
@@ -382,17 +469,46 @@
 		border-block-start: 1px solid var(--background-light);
 
 		& > li {
-			/* display: grid;
-			grid-template-columns: 1fr;
+			display: grid;
+			grid-template-columns: 1fr min-content;
 			grid-template-rows: 1fr 1fr;
-			gap: 0.5em; */
+			column-gap: 2em;
+			row-gap: 0.5em;
+			align-items: center;
+
 			cursor: pointer;
 
 			padding: 1em;
 			border-block-end: 1px solid var(--background-light);
 
-			text-overflow: ellipsis;
-      overflow: hidden;
+
+			& > header {
+				overflow: hidden;
+				display: flex;
+				flex-direction: column;
+
+				& > output {
+					overflow: hidden;
+					text-overflow: ellipsis;
+					white-space: nowrap;
+				}
+
+				& > [data-game-subname] {
+					font-size: 0.75em;
+				}
+			}
+
+			& > i:has([data-game-owner]) {
+				color: goldenrod;
+			}
+
+			& > [data-game-has-update] {
+				color: oklab(0 0 0 / 0.14);
+
+				&[data-game-has-update="yes"] {
+					color: oklab(0.62 -0.2 0.15);
+				}
+			}
 		}
 	}
 
@@ -540,6 +656,9 @@
 				background-color: lavenderblush;
 			}
 
+			&:disabled {
+				cursor: initial;
+			}
 		}
 
 		&:where(:not([win-line]), [win-line=""]):after {
