@@ -64,20 +64,12 @@
 @layer App {
 	:root {
 		color-scheme: light dark;
-		accent-color: rgb(174, 14, 214);
+		/* accent-color: rgb(174, 14, 214); */
 
-		--background-lighter: light-dark(
-			oklab(0.91 0.02 -0.03),
-			/* oklab(0.3 0.06 -0.17) */
-			oklab(0.4 0.07 -0.05)
-			);
-		--text-lighter: light-dark(black, white);
+		--background-lighter: light-dark(white, silver);
+		--text-lighter: light-dark(black, black);
 
-		--background-light: light-dark(
-			oklab(0.75 0.05 -0.04),
-			/* oklab(0.22 0.08 -0.08) */
-			oklab(0.28 0.09 -0.06)
-			);
+		--background-light: light-dark(grey, black);
 		--text-light: light-dark(black, white);
 
 		--grid-size: 10px;
@@ -95,12 +87,49 @@
 			oklab(0.52 0.21 -0.17)
 			);
 
+
 		--background-toast: light-dark(
 			oklab(0.65 0.29 -0.03),
 			oklab(0.47 0.21 0.01)
 		);
 		--text-toast: light-dark(black, white);
 	}
+
+	[data-theme="plum"] {
+		--background-light: light-dark(oklab(0.75 0.05 -0.04), oklab(0.28 0.09 -0.06));
+		--text-light: light-dark(black, white);
+		--background-lighter: light-dark(oklab(0.91 0.02 -0.03), oklab(0.4 0.07 -0.05));
+		--text-lighter: light-dark(black, white);
+
+		& > header {
+			background-image: linear-gradient(to right, oklab(0.91 0.02 -0.03), oklab(0.94 0.05 -0.03));
+			color: black;
+		}
+	}
+
+	[data-theme="slate"] {
+		--background-light: light-dark(oklab(0.95 0 -0.01), oklab(0.32 0.01 -0.04));
+		--text-lighter: light-dark(black, white);
+		--background-lighter: light-dark(oklab(0.92 0 -0.02), oklab(0.39 0.01 -0.05));
+		--text-light: light-dark(black, white);
+
+		& > header {
+			background-image: linear-gradient(to right, oklab(0.64 0.05 -0.14), oklab(0.63 0.14 -0.05));
+		}
+
+		@media (min-width: 800px) {
+			& aside {
+				border-radius: 1em;
+				margin-inline-start: 0.5em;
+				margin-block-start: 1em;
+				margin-block-end: 1em;
+				height: auto;
+				border: 1px solid #12121f;
+				box-shadow: 1px 1px 5px 2px #0000005c;
+			}
+		}
+	}
+
 
 	html {
 
@@ -214,7 +243,7 @@
 			color: inherit;
 			border: 1px solid var(--background-light);
 			background-color: var(--background-light);
-			color: var(--color-light);
+			color: var(--text-light);
 			padding-inline: 1em;
 			padding-block: 0.5em;
 			cursor: pointer;
@@ -241,7 +270,7 @@
 				&:not(:disabled):not(:active):hover {
 					border: 1px solid var(--background-light);
 					background-color: var(--background-lighter);
-					color: var(--color-lighter);
+					color: var(--text-lighter);
 				}
 			}
 		}
@@ -301,10 +330,6 @@
 		}
 	}
 
-	body[data-aside] aside {
-		left: 0;
-		background-color: var(--background-lighter);
-	}
 
 	[data-chip-group] {
 		display: flex;
@@ -324,7 +349,7 @@
 		& > label {
 			border: 1px solid black;
 			background-color: var(--background-lighter);
-			color: var(--color-lighter);
+			color: var(--text-lighter);
 			padding-inline: 1em;
       padding-block: 0.25em;
 			border-radius: .75em;
@@ -336,19 +361,19 @@
 
 		&:has(> #ListFilter-New:checked) label[for="ListFilter-New"] {
 			background-color: var(--background-light);
-			color: var(--color-light);
+			color: var(--text-light);
 		}
 		&:has(> #ListFilter-Pending:checked) label[for="ListFilter-Pending"] {
 			background-color: var(--background-light);
-			color: var(--color-light);
+			color: var(--text-light);
 		}
 		&:has(> #ListFilter-Active:checked) label[for="ListFilter-Active"] {
 			background-color: var(--background-light);
-			color: var(--color-light);
+			color: var(--text-light);
 		}
 		&:has(> #ListFilter-Resolved:checked) label[for="ListFilter-Resolved"] {
 			background-color: var(--background-light);
-			color: var(--color-light);
+			color: var(--text-light);
 		}
 	}
 
@@ -368,6 +393,12 @@
 		/* &[open] > summary {
 			list-style-type: '⬇ ';
 		} */
+	}
+
+	body[data-aside] aside {
+		left: 0;
+		background-color: var(--background-lighter);
+		color: var(--text-lighter);
 	}
 
 	aside {
@@ -422,7 +453,7 @@
 				color: inherit;
 				border: 1px solid var(--background-light);
 				background-color: var(--background-light);
-				color: var(--color-light);
+				color: var(--text-light);
 				padding-inline: 1em 1.5em;
 				padding-block: 0.5em .75em;
 				cursor: pointer;
@@ -445,7 +476,7 @@
 					&:not(:disabled):not(:active):hover {
 						border: 1px solid var(--background-light);
 						background-color: var(--background-lighter);
-						color: var(--color-lighter);
+						color: var(--text-lighter);
 					}
 				}
 			}
@@ -456,6 +487,7 @@
 		aside {
 			position: unset;
 			background-color: var(--background-lighter);
+			color: var(--text-lighter);
 			max-width: 40ch;
 		}
 
@@ -482,6 +514,11 @@
 			border-block-end: 1px solid var(--background-light);
 
 
+			&[data-active] {
+				background-color: var(--background-light);
+				color: var(--text-light);
+			}
+
 			& > header {
 				overflow: hidden;
 				display: flex;
@@ -499,7 +536,7 @@
 			}
 
 			& > i:has([data-game-owner]) {
-				color: goldenrod;
+				color: light-dark(oklab(0.49 0.02 0.11), oklab(0.69 0.03 0.15));
 			}
 
 			& > [data-game-has-update] {

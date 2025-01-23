@@ -4,19 +4,20 @@ import { UI } from './ui.js'
 
 import './localized-output.js'
 
+const COMMON_API_URL = 'https://tic.next.local:8443'
+const SIMPLE_LOGIN_URL = COMMON_API_URL
+const WEB_AUTH_N_URL = COMMON_API_URL
+const TIC_URL = COMMON_API_URL
+
 const USER = {
 	// id: 'bob123',
 	// displayName: 'Bob',
 	// token: 'abcd1234'
 }
 
-const COMMON_API_URL = 'https://tic.next.local:8443'
-const SIMPLE_LOGIN_URL = COMMON_API_URL
-const WEB_AUTH_N_URL = COMMON_API_URL
-const TIC_URL = COMMON_API_URL
-
 const gameApi = new GameAPI(USER, TIC_URL)
-
+const notificationGameIdSet = new Set()
+var sseStream = undefined
 const { port1: gamePort, port2: clientPort } = new MessageChannel()
 
 gamePort.start()
@@ -46,78 +47,79 @@ gamePort.addEventListener('message', message => {
 
 function handleAccept(gameId) {
 	gameApi.accept(gameId)
-		.then(updatedGame => UI.updateGameField(updatedGame, USER))
+		.then(updatedGame => UI.Field.updateGameField(updatedGame, USER))
 		.catch(e => {
-			UI.showToast(e.message)
+			UI.Global.showToast(e.message)
 			console.warn(e)
 		})
 }
 
 function handleDecline(gameId) {
 	gameApi.decline(gameId)
-		.then(updatedGame => UI.updateGameField(updatedGame, USER))
+		.then(updatedGame => UI.Field.updateGameField(updatedGame, USER))
 		.catch(e => {
-			UI.showToast(e.message)
+			UI.Global.showToast(e.message)
 			console.warn(e)
 		})
 }
 
 function handleClose(gameId, confirmed = false, reason = undefined) {
 	if(!confirmed) {
-		UI.confirmClose(gameId, clientPort)
+		UI.Dialog.confirmClose(gameId, clientPort)
 		return
 	}
 
 	gameApi.close(gameId, reason)
-		.then(updatedGame => UI.updateGameField(updatedGame, USER))
+		.then(updatedGame => UI.Field.updateGameField(updatedGame, USER))
 		.catch(e => {
-			UI.showToast(e.message)
+			UI.Global.showToast(e.message)
 			console.warn(e)
 		})
 }
 
 function handleForfeit(gameId, confirmed = false) {
 	if(!confirmed) {
-		UI.confirmForfeit(gameId, clientPort)
+		UI.Dialog.confirmForfeit(gameId, clientPort)
 		return
 	}
 
 	gameApi.forfeit(gameId)
-		.then(updatedGame => UI.updateGameField(updatedGame, USER))
+		.then(updatedGame => UI.Field.updateGameField(updatedGame, USER))
 		.catch(e => {
-			UI.showToast(e.message)
+			UI.Global.showToast(e.message)
 			console.warn(e)
 		})
 }
 
 function handleOffer(gameId, targets) {
 	if(targets === undefined) {
-		UI.startOffer(gameId, clientPort)
+		UI.Dialog.startOffer(gameId, clientPort)
 		return
 	}
 
 	console.log('offing game to', targets)
 	gameApi.offer(gameId, targets)
-		.then(updatedGame => UI.updateGameField(updatedGame, USER))
+		.then(updatedGame => UI.Field.updateGameField(updatedGame, USER))
 		.catch(e => console.warn(e))
 }
 
-
 function handleGameMove(gameId, position) {
 	gameApi.move(gameId, position)
-		.then(updatedGame => UI.updateGameField(updatedGame, USER))
+		.then(updatedGame => UI.Field.updateGameField(updatedGame, USER))
 		.catch(e => {
-			UI.showToast(e.message)
+			UI.Global.showToast(e.message)
 			console.warn(e)
 		})
 }
 
 function handleActivateGameField(gameId) {
-	UI.activateGameField(gameId, clientPort)
+	UI.Listing.clearGameListingItemNotification(gameId)
+	UI.Listing.selectGameListingItem(gameId)
+	UI.Field.activateGameField(gameId, clientPort)
 	gameApi.fetch(gameId)
-		.then(game => UI.updateGameField(game, USER))
+		.then(game => UI.Field.updateGameField(game, USER))
 		.catch(e => {
-			UI.showToast(e.message)
+			UI.Global.showToast(e.message)
 			console.warn(e)
 		})
 }
@@ -128,17 +130,21 @@ function handleFilterChange() {
 }
 
 function handleLoadListing() {
-	const filter = UI.listFilters()
+	const filter = UI.Listing.listFilters()
 	console.log('update game listing from filter', filter)
 
-	UI.clearGameListing()
+	// UI.clearGameListing()
 	gameApi.listing(filter)
-		.then(result => UI.updateGameListing(result, USER, clientPort))
+		.then(result => UI.Listing.updateGameListing(result, USER, notificationGameIdSet, clientPort))
 		.catch(e => {
-			UI.showToast(e.message)
+			UI.Global.showToast(e.message)
 			console.warn(e)
 		})
 }
+
+
+
+
 
 function handleCreateGame(event) {
 	const button = event.target
@@ -147,44 +153,58 @@ function handleCreateGame(event) {
 
 	gameApi.create()
 		.then(game => {
-			UI.addGameListingItem(game, USER, clientPort)
-			UI.activateGameField(game.id, clientPort)
-			UI.updateGameField(game, USER)
+			notificationGameIdSet.add(game.id)
+
+			UI.Listing.addGameListingItem(game, USER, notificationGameIdSet, clientPort)
+			UI.Field.activateGameField(game.id, clientPort)
+			UI.Field.updateGameField(game, USER)
 		})
 		.catch(e => {
-			UI.showToast(e.message)
+			UI.Global.showToast(e.message)
 			console.warn(e)
 		})
 }
 
+function handleSSEUpdate(message) {
+	const { lastEventId, data } = message
+	const json = JSON.parse(data)
+	const { id: gameId } = json
+
+	console.log('sse event update', json)
+
+	// todo if game not listed skip
+
+	gameApi.fetch(gameId)
+		.then(game => {
+			notificationGameIdSet.add(game.id)
+
+			UI.Listing.addOrUpdateGameListingItem(game , USER, notificationGameIdSet, clientPort)
+
+			if(UI.Field.hasGameField(game.id)) {
+				UI.Field.updateGameField(game, USER)
+			}
+		})
+		.catch(e => {
+			// UI.showToast(e.message)
+			console.warn(e)
+		})
+
+}
+
 function startSSE() {
-	const sseStream = new EventSource(new URL(`/tic/v1/events?token=${USER.accessToken}`, TIC_URL), {
+	const url = new URL('/tic/v1/events', TIC_URL)
+	url.searchParams.set('token', USER.accessToken)
+	sseStream = new EventSource(url, {
 		// withCredentials: true
 	})
 	sseStream.onerror = error => console.warn(error)
 	sseStream.onmessage = msg => console.log(msg)
-	sseStream.addEventListener('update', msg => {
-		const { lastEventId, data } = msg
-		const json = JSON.parse(data)
-		const { id: gameId } = json
+	sseStream.addEventListener('update', handleSSEUpdate)
+}
 
-		// if(!UI.hasGameListingItem(gameId)) {
-
-		// }
-
-		if(!UI.hasGameField(gameId)) {
-			// game is not in the game field
-			return
-		}
-
-		gameApi.fetch(gameId)
-			.then(game => UI.updateGameField(game, USER))
-			.catch(e => {
-				// UI.showToast(e.message)
-				console.warn(e)
-			})
-
-	})
+function stopSSE() {
+	sseStream.close()
+	sseStream = undefined
 }
 
 
@@ -223,7 +243,7 @@ function startSSE() {
 function simpleUserAutoLogin() {
 	const info = localStorage.getItem('simple-login')
 	if(info === null) {
-		UI.setLoggedIn(USER, false)
+		UI.Global.setLoggedIn(USER, false)
 		return false
 	}
 
@@ -233,28 +253,16 @@ function simpleUserAutoLogin() {
 	USER.name = displayName
 	USER.accessToken = token
 
-	UI.setLoggedIn(USER)
+	UI.Global.setLoggedIn(USER)
 	return true
 }
 
 function handleSimpleLoginForm(event) {
-	// event.preventDefault()
-
-	// const dialogElem = document.getElementById('SimpleUser')
-	// dialogElem.close()
-
-	// const usernameElem = document.getElementById('SimpleUserName')
-	// const name = usernameElem?.value
-	// if(name === undefined || name.length < 5) {
-	// 	UI.showToast('User Name invalid')
-	// 	return
-	// }
-
 
 	const fd = new FormData(event.target)
 	const name = fd.get('username')
 	if(name === null || typeof name != 'string') {
-		UI.showToast('Missing User Name')
+		UI.Global.showToast('Missing User Name')
 		return
 	}
 
@@ -285,13 +293,16 @@ function handleSimpleLoginForm(event) {
 		})
 		.catch(e => {
 			console.warn(e)
-			UI.showToast(`simple login error: ${e.message}`)
+			UI.Global.showToast(`simple login error: ${e.message}`)
 		})
 }
 
 function handleSimpleLogout(event) {
 	localStorage.removeItem('simple-login')
-	UI.logout(USER)
+	UI.Global.logout(USER)
+	stopSSE()
+	notificationGameIdSet.clear()
+
 	USER.id = undefined
 	USER.name = undefined
 	USER.accessToken = undefined
@@ -330,7 +341,7 @@ function onContentLoaded() {
 	onContentLoadedAsync()
 		.catch(e => {
 			console.warn(e)
-			UI.showToast(`Failed to load application: ${e.message}`)
+			UI.Global.showToast(`Failed to load application: ${e.message}`)
 		})
 }
 
