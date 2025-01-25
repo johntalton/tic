@@ -34,6 +34,8 @@ const {
 export const SERVER_NAME = process.env.SERVER_NAME
 export const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN // '*'
 
+export const DEFAULT_METHODS = ['GET', 'POST', 'PATCH', 'DELETE']
+
 export function sendError(stream, message) {
 	console.log('500', message)
 
@@ -49,10 +51,10 @@ export function sendError(stream, message) {
 	stream.end()
 }
 
-export function sendPreflight(stream, origin) {
+export function sendPreflight(stream, origin, methods = DEFAULT_METHODS) {
 	stream.respond({
 		[HTTP2_HEADER_ACCESS_CONTROL_ALLOW_ORIGIN]: ALLOWED_ORIGIN,
-		[HTTP2_HEADER_ACCESS_CONTROL_ALLOW_METHODS]: ['GET', 'POST', 'PATCH', 'DELETE'].join(','),
+		[HTTP2_HEADER_ACCESS_CONTROL_ALLOW_METHODS]: methods.join(','),
 		[HTTP2_HEADER_ACCESS_CONTROL_ALLOW_HEADERS]: ['Authorization', HTTP2_HEADER_CONTENT_TYPE].join(','),
 		[HTTP2_HEADER_SERVER]: SERVER_NAME
 	})
@@ -83,7 +85,7 @@ export function sendNotFound(stream, message) {
 }
 
 export function sendTooManyRequests(stream, limitInfo, ...policies) {
-	console.log('Too many requests')
+	// console.log('Too many requests')
 	stream.respond({
 		[HTTP2_HEADER_ACCESS_CONTROL_ALLOW_ORIGIN]: ALLOWED_ORIGIN,
 		[HTTP2_HEADER_STATUS]: HTTP_STATUS_TOO_MANY_REQUESTS,

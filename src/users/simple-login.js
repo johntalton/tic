@@ -1,34 +1,57 @@
 import { userStore } from '../store/user.js'
+import { ID } from '../util/id.js'
 
+
+const DEFAULT_ELO = 100
 
 export async function simpleLogin(sessionUser, body, query) {
 	const name = query.get('name')
 
 	console.log('--- attemping simple login for', name)
 
-	const user = await userStore.fromName(name)
-		.catch(e => undefined)
+	const fromId = name.startsWith('user:')
 
-	if(user === undefined) {
-		// create new user
-	}
-	else {
-		// await userStore.get(user)
-	}
+	if(fromId) {
+		//
+	} else {
+		const newUserId = `user:${ID.generate()}`
+		const accessToken = `token:access:${ID.generate()}`
+		const sseToken = `token:sse:${ID.generate()}`
+		const displayName = name
+		const { id } = await userStore.create(newUserId, {
+			'type': 'user.tic.v1',
+			'user': {
+				'displayName': displayName,
+				// 'glyph': '👩🏻‍❤️‍💋‍👩🏼',
+				'friends': [
+					// 'alice.one'
+				],
+				// 'webauthn': {
+				// 	'userId': webAuthNuserId
+				// },
+				'elo': DEFAULT_ELO
+			},
+			'session': {
+			// 	'key': ',
+				'token': accessToken,
+				'refreshToken': '',
+				'sseToken': sseToken,
+			// 	'expiresAt': ',
+			// 	'lastLogin': ',
+			// 	'fromAddresses': []
+			},
+			meta: {
+				createdAt: Date.now()
+			}
+		})
 
-	if(name === 'bob123') {
+
+		// console.log('created user', user)
+
 		return {
-			id: 'bob123',
-			displayName: name,
-			token: 'abcd1234'
-		}
-	}
-
-	if(name === 'alice') {
-		return {
-			id: 'alice.one',
-			displayName: name,
-			token: 'umbrella'
+			id,
+			displayName,
+			accessToken
 		}
 	}
 

@@ -4,12 +4,20 @@ import { isViewable } from './tic.js'
 import { userStore } from '../store/user.js'
 
 
-export async function handleGameFeed(stream, sessionUser, query) {
+export async function handleGameFeed(matches, sessionUser, body, query, stream) {
 	const channel = new BroadcastChannel('SSE')
 
 	const user = await userStore.fromToken(sessionUser.token)
+		.catch(error => {
+			return undefined
+		})
+
 	if(user === undefined) {
-		throw new Error('invalid user token')
+		// throw new Error('invalid user token')
+		// console.warn('invalid user')
+		stream.close()
+		channel.close()
+		return
 	}
 
 	stream.on('error', error => {

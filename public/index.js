@@ -247,11 +247,11 @@ function simpleUserAutoLogin() {
 		return false
 	}
 
-	const { id, displayName, token } = JSON.parse(info)
+	const { id, displayName, accessToken } = JSON.parse(info)
 
 	USER.id = id
-	USER.name = displayName
-	USER.accessToken = token
+	USER.displayName = displayName
+	USER.accessToken = accessToken
 
 	UI.Global.setLoggedIn(USER)
 	return true
@@ -304,7 +304,7 @@ function handleSimpleLogout(event) {
 	notificationGameIdSet.clear()
 
 	USER.id = undefined
-	USER.name = undefined
+	USER.displayName = undefined
 	USER.accessToken = undefined
 }
 

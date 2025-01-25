@@ -397,7 +397,7 @@ class UIGlobal {
 		const usernameOutputs = document.querySelectorAll('output[data-username]')
 		for(const usernameOutput of usernameOutputs) {
 			if(!(usernameOutput instanceof HTMLOutputElement)) { continue }
-			usernameOutput.value = user.name
+			usernameOutput.value = user.displayName
 		}
 	}
 
