@@ -44,13 +44,13 @@ class UIListing {
 		const isOwner = game.owner === user.id
 		const hasUpdateValue = notificationGameIdSet.has(game.id) ? 'yes' : 'no'
 
-		const title = game.players.length > 0 ? game.players.join(' vs ') : 'Pending'
+		const title = game.state === 'resolved' ? 'Closed' : (game.players.length > 0 ? game.players.join(' vs ') : 'Pending')
 
 		nameOutput.value = title
 		subNameOutput.value = game.id
 		isOwnerOutput.value = isOwner ? '🔑' : '' // 🔑 🔒 🔓 🗝️
 		isOwnerOutput.setAttribute('title', 'Owner')
-		elapsedTime.setAttribute('time', game.createdAt)
+		elapsedTime?.setAttribute('time', game.createdAt)
 		hasUpdateElem.setAttribute('data-game-has-update', hasUpdateValue)
 
 	}

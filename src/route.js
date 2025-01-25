@@ -19,18 +19,23 @@ import { handleGameFeed } from './games/feed.js'
 
 import {
 	getUser,
+	handleAddFriend,
+	handleAddUserAsFriend,
+	handleListFriends,
+	handleRemoveFriend,
+	handleRemoveUserAsFriend,
 	listUsers,
 	patchUser
 } from './users/index.js'
 
-import { simpleLogin } from './users/simple-login.js'
+import { handleSimpleLogin } from './users/simple-login.js'
 
-const gamesRoute =  {
+const GAMES_ROUTE =  {
 	[GET]: (matches, user, body, query) => handleList(user, query),
 	//[POST]: (matches, user, body, query) => handleNew(user, body, query)
 }
 
-const gameRoute = {
+const GAME_ROUTE = {
 	[POST]: (matches, user, body, query) => handleNew(user, body, query),
 	[MATCH]: {
 		[NAME]: 'gameId',
@@ -54,44 +59,61 @@ const gameRoute = {
 	}
 }
 
+const FRIENDS_ROUTE = {
+	friends: {
+		[GET]: handleListFriends
+	},
+	friend: {
+		[PATCH]: handleAddUserAsFriend,
+		[DELETE]: handleRemoveUserAsFriend,
+		[MATCH]: {
+			[NAME]: 'friendId',
+			[PATCH]: handleAddFriend,
+			[DELETE]: handleRemoveFriend
+		}
+	}
+}
+
+const USERS_ROUTE = {
+	[GET]: (matches, user, body, query) => listUsers(user, query),
+}
+
+const USER_ROUTE = {
+	[MATCH]: {
+		[NAME]: 'userId',
+		[PATCH]: (matches, user, body, query) => patchUser(matches.get('userId'), user, body, query),
+		[GET]: (matches, user, body, query) => getUser(matches.get('userId'), user, query),
+		...FRIENDS_ROUTE
+	}
+}
+
 export const ROUTES = {
+	authentication: {
+		'simple-login': {
+			[POST]: handleSimpleLogin
+		}
+	},
 	'tic': {
 		v1: {
 			events: {
 				[METADATA]: { sse: true, bom: true, active: true },
 				[GET]: handleGameFeed
 			},
-			games: gamesRoute,
-			game: gameRoute,
-			g: {
-				...gamesRoute,
-			  ...gameRoute
-			},
-			// 'users': {
-			// 	[GET]: () => console.log('get User'),
-			// },
-			// user: {
-			// 	[MATCH]: {
-			// 		[NAME]: 'userId',
-			// 		[POST]: () => console.log(),
-			// 		[PATCH]: () => console.log(),
-			// 		[GET]: () => console.log(),
-			// 		[DELETE]: () => console.log(),
 
-			// 		friends: {
-			// 			[GET]: () => console.log('get friends of userId')
-			// 		},
-			// 		friend: {
-			// 			[POST]: () => console.log('Add userId as friend'),
-			// 			[DELETE]: () => console.log('Remove userId as friend'),
-			// 			[MATCH]: {
-			// 				[NAME]: 'friendId',
-			// 				[POST]: () => console.log('Add friendId to userId'),
-			// 				[DELETE]: () => console.log('remove friend')
-			// 			}
-			// 		}
-			// 	}
-			// }
+			games: GAMES_ROUTE,
+			game: GAME_ROUTE,
+			g: {
+				...GAMES_ROUTE,
+			  ...GAME_ROUTE
+			},
+
+			users: USERS_ROUTE,
+			user: USER_ROUTE,
+			u: {
+				...USERS_ROUTE,
+				...USER_ROUTE
+			}
 		}
 	}
 }
+

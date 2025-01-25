@@ -4,7 +4,7 @@ import { ID } from '../util/id.js'
 
 const DEFAULT_ELO = 100
 
-export async function simpleLogin(sessionUser, body, query) {
+export async function handleSimpleLogin(matches, sessionUser, body, query) {
 	const name = query.get('name')
 
 	console.log('--- attemping simple login for', name)

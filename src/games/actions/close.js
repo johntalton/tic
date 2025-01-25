@@ -6,7 +6,6 @@ export async function handleClose(id, sessionUser, body, query) {
 	const { user, game, gameObject } = await resolveFromStore(id, sessionUser)
 
 	const reason = query.get('reason')
-	// console.log('closing game', game.id, reason)
 	const updatedGame = Tic.close(game, user, reason)
 
 	const updatedGameObject = {

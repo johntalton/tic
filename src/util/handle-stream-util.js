@@ -34,7 +34,7 @@ const {
 export const SERVER_NAME = process.env.SERVER_NAME
 export const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN // '*'
 
-export const DEFAULT_METHODS = ['GET', 'POST', 'PATCH', 'DELETE']
+export const DEFAULT_METHODS = [ 'HEAD', 'GET', 'POST', 'PATCH', 'DELETE' ]
 
 export function sendError(stream, message) {
 	console.log('500', message)
@@ -47,7 +47,12 @@ export function sendError(stream, message) {
 		[HTTP2_HEADER_CONTENT_TYPE]: CONTENT_TYPE_TEXT,
 		[HTTP2_HEADER_SERVER]: SERVER_NAME
 	})
-	if(message !== undefined) { stream.write(message) }
+
+	// protect against HEAD calls
+	if(!stream.endAfterHeaders && stream.writable) {
+		if(message !== undefined) { stream.write(message) }
+	}
+
 	stream.end()
 }
 

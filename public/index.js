@@ -3,6 +3,7 @@ import { GameAPI } from './game-api.js'
 import { UI } from './ui.js'
 
 import './localized-output.js'
+// import './elapsed-time.js'
 
 const COMMON_API_URL = 'https://tic.next.local:8443'
 const SIMPLE_LOGIN_URL = COMMON_API_URL
@@ -113,11 +114,14 @@ function handleGameMove(gameId, position) {
 }
 
 function handleActivateGameField(gameId) {
-	UI.Listing.clearGameListingItemNotification(gameId)
 	UI.Listing.selectGameListingItem(gameId)
 	UI.Field.activateGameField(gameId, clientPort)
 	gameApi.fetch(gameId)
-		.then(game => UI.Field.updateGameField(game, USER))
+		.then(game => {
+			notificationGameIdSet.delete(gameId)
+			UI.Listing.clearGameListingItemNotification(gameId)
+			UI.Field.updateGameField(game, USER)
+		})
 		.catch(e => {
 			UI.Global.showToast(e.message)
 			console.warn(e)
@@ -131,7 +135,6 @@ function handleFilterChange() {
 
 function handleLoadListing() {
 	const filter = UI.Listing.listFilters()
-	console.log('update game listing from filter', filter)
 
 	// UI.clearGameListing()
 	gameApi.listing(filter)
@@ -266,7 +269,7 @@ function handleSimpleLoginForm(event) {
 		return
 	}
 
-	const url = new URL('/simple-login', SIMPLE_LOGIN_URL)
+	const url = new URL('/authentication/simple-login', SIMPLE_LOGIN_URL)
 	url.searchParams.set('name', name)
 
 	fetch(url, {
@@ -298,7 +301,7 @@ function handleSimpleLoginForm(event) {
 }
 
 function handleSimpleLogout(event) {
-	localStorage.removeItem('simple-login')
+	// localStorage.removeItem('simple-login')
 	UI.Global.logout(USER)
 	stopSSE()
 	notificationGameIdSet.clear()
@@ -309,12 +312,22 @@ function handleSimpleLogout(event) {
 }
 
 
+function loadTheme() {
+	const themeName = localStorage.getItem('theme')
+	if(themeName === null) { return }
+	document.body.dataset.theme = themeName
+}
+
+
 async function onContentLoadedAsync(params) {
 	// document.querySelector('[data-action="login"]')?.addEventListener('click', handleLogin)
 	// document.querySelector('[data-action="register"]')?.addEventListener('click', handleRegister)
 
 	//
 	globalThis.UI = UI
+
+	//
+	loadTheme()
 
 	//
 	document.getElementById('CreateNewGame')?.addEventListener('click', handleCreateGame)

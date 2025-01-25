@@ -93,7 +93,9 @@ async function handleStreamAsync(stream, header, flags) {
 	// 	fullContentType
 	// })
 
+	// stream.on('close', () => console.log('stream close'))
 	stream.on('error', error => console.log('stream error', error))
+	stream.on('aborted', () => console.log('stream aborted'))
 
 	// Options pre-flight
 	if(method === HTTP2_METHOD_OPTIONS) {
@@ -154,7 +156,7 @@ async function handleStreamAsync(stream, header, flags) {
 
 	// core handler
 	const handlerStart = performance.now()
-	await Promise.try(handler, matches, user, body, requestUrl.searchParams, stream)
+	return Promise.try(handler, matches, user, body, requestUrl.searchParams, stream)
 		.then(data => {
 			const handlerEnd = performance.now()
 			const meta = { performance: [
@@ -177,8 +179,9 @@ async function handleStreamAsync(stream, header, flags) {
 export function handleStream(stream, header, flags) {
 	handleStreamAsync(stream, header, flags)
 		.catch(e => {
-			console.warn('Error in stream handler', e)
-			sendError(stream, 'top level error')
+			// console.warn('Error in stream handler', stream.writable, stream.closed, stream.aborted, stream.destroyed, stream.endAfterHeaders)
+			sendError(stream, `top level error: ${e.message}`)
+
 			// stream.session.destroy()
 		})
 }

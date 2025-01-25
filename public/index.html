@@ -130,7 +130,7 @@
 					</button>
 				</header>
 
-				<details data-filter-state open>
+				<details data-logged-in data-filter-state open>
 					<summary>Filter By</summary>
 					<form id="ListFilterForm" data-chip-group onchange="console.log(new FormData(event.target.closest('form')).getAll('ListFilter'))">
 						<label for="ListFilter-New">New</label>
@@ -157,7 +157,8 @@
 								<output data-game-subname></output>
 							</header>
 							<i title="Owner"><output data-game-owner></output></i>
-							<elapsed-time data-created-at time=""></elapsed-time>
+							<!-- <elapsed-time data-created-at time=""></elapsed-time> -->
+							 <span></span>
 							<i data-game-has-update="no" title="Has Update">🟢</i>
 						</li>
 					</template>
