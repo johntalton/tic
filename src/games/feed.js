@@ -7,6 +7,7 @@ import { userStore } from '../store/user.js'
 export async function handleGameFeed(matches, sessionUser, body, query, stream) {
 	const channel = new BroadcastChannel('SSE')
 
+
 	const user = await userStore.fromToken(sessionUser.token)
 		.catch(error => {
 			return undefined
@@ -20,12 +21,21 @@ export async function handleGameFeed(matches, sessionUser, body, query, stream) 
 		return
 	}
 
-	stream.on('error', error => {
-		console.log('Game Feed Closed')
+	// stream.on('aborted', () => console.log('game feed stream aborted'))
+
+	stream.on('close', () => {
+		// console.log('SSE Game Feed Closed')
 		stream.close()
 		channel.close()
 	})
 
+	stream.on('error', error => {
+		console.warn('Game Feed Error')
+		stream.close()
+		channel.close()
+	})
+
+	// console.log('new Game SSE for', user)
 	ServerSentEvents.messageToEventStreamLines({
 		comment: `SSE for ${user}`,
 		retryMs: 1000 * 10
@@ -35,7 +45,7 @@ export async function handleGameFeed(matches, sessionUser, body, query, stream) 
 		const { data } = msg
 		const { game } = data
 
-		// console.log('SSE', data)
+		// console.log('SSE', data.game.id)
 
 		if(!isViewable(game, user)) { return }
 

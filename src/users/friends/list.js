@@ -1,3 +1,4 @@
+import { MATCHES } from '../../route.js'
 import { userStore } from '../../store/user.js'
 
 export async function handleListFriends(matches, sessionUser, body, query) {
@@ -6,7 +7,7 @@ export async function handleListFriends(matches, sessionUser, body, query) {
 		throw new Error('invalid user token')
 	}
 
-	const userId = matches.get('userId')
+	const userId = matches.get(MATCHES.USER_ID)
 
 	const isSelf = user === userId
 

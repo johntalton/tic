@@ -12,7 +12,7 @@ export const METADATA = Symbol.for('METADATA')
 
 export function _dig(route, key, keys, matches) {
 	const next = route[key] ?? route[MATCH]
-	if(next === undefined) { throw new Error(`dig: no match "${key}"`) }
+	if(next === undefined) { throw new Error(`dig: no route "${key}"`) }
 
 	const name = next[NAME]
 	if(name !== undefined) { matches.set(name, key) }
@@ -27,7 +27,7 @@ export function dig(routes, method, path) {
 	const [ key, ...keys ] = path.substring(1).split('/')
 	const leaf = _dig(routes, key, keys, matches)
 	const handler = leaf[Symbol.for(method)]
-	if(handler === undefined) { throw new Error(`dig: no matching method "${method}"`) }
+	if(handler === undefined) { throw new Error(`dig: no method "${method}"`) }
 
 	const metadata = leaf[METADATA]
 

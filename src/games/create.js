@@ -2,7 +2,7 @@ import { Tic } from './tic.js'
 import { gameStore } from '../store/game.js'
 import { userStore } from '../store/user.js'
 
-export async function handleNew(sessionUser, body, query) {
+export async function handleNew(matches, sessionUser, body, query) {
 	const user = await userStore.fromToken(sessionUser.token)
 	if(user === undefined) {
 		throw new Error('invalid user token')

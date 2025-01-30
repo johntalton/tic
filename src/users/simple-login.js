@@ -7,7 +7,7 @@ const DEFAULT_ELO = 100
 export async function handleSimpleLogin(matches, sessionUser, body, query) {
 	const name = query.get('name')
 
-	console.log('--- attemping simple login for', name)
+	console.log('--- attempting simple login for', name)
 
 	const fromId = name.startsWith('user:')
 

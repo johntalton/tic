@@ -1,20 +1,49 @@
+export const DEFAULT_BYTE_LIMIT = 1024 * 1024 //
 
-export function requestBody(stream) {
+export function requestBody(stream, options) {
+	const signal = options?.signal
+	const byteLimit = options?.byteLimit ?? DEFAULT_BYTE_LIMIT
+
+	const stats = {
+		byteLength: 0
+	}
+
 	const reader = new ReadableStream({
 		start(controller) {
+			const listener = () => {
+				controller.error(new Error('Abort Signal Timed out'))
+			}
+
+			signal?.addEventListener('abort', listener, { once: true })
+
 			stream.on('data', chunk => {
+				if(signal?.aborted) {
+					controller.error(new Error('Chunk read Abort Signal Timed out'))
+					return
+				}
+
 				// chunk is a node Buffer (which is a TypedArray)
-				if(!(chunk instanceof Buffer)) { controller.error('invalid chunk type') }
+				if(!ArrayBuffer.isView(chunk)) { controller.error('invalid chunk type') }
+
+				stats.byteLength += chunk.byteLength
+				if(stats.byteLength > byteLimit) {
+					controller.error(new Error('body exceed byte limit'))
+					return
+				}
+
 				controller.enqueue(chunk)
 			})
 
 			stream.on('end', () => {
+				signal?.removeEventListener('abort', listener)
 				controller.close()
 			})
 		},
 	})
 
+
 	return {
+		body: reader,
 		blob: (mimetype) => bodyBlob(reader, mimetype),
 		arrayBuffer: () => bodyArrayBuffer(reader),
 		bytes: () => bodyUint8Array(reader),

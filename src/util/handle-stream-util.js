@@ -15,9 +15,12 @@ import { HTTP_HEADER_RATE_LIMIT, HTTP_HEADER_RATE_LIMIT_POLICY, RateLimit, RateL
 const {
 	HTTP2_HEADER_STATUS,
 	HTTP2_HEADER_CONTENT_TYPE,
+	HTTP2_HEADER_CONTENT_ENCODING,
+	HTTP2_HEADER_VARY,
 	HTTP2_HEADER_ACCESS_CONTROL_ALLOW_ORIGIN,
 	HTTP2_HEADER_ACCESS_CONTROL_ALLOW_METHODS,
 	HTTP2_HEADER_ACCESS_CONTROL_ALLOW_HEADERS,
+	HTTP2_HEADER_ACCESS_CONTROL_ALLOW_CREDENTIALS,
 	HTTP2_HEADER_SERVER,
 	HTTP2_HEADER_RETRY_AFTER
 } = http2.constants
@@ -49,7 +52,7 @@ export function sendError(stream, message) {
 	})
 
 	// protect against HEAD calls
-	if(!stream.endAfterHeaders && stream.writable) {
+	if(stream.writable) {
 		if(message !== undefined) { stream.write(message) }
 	}
 
@@ -106,18 +109,6 @@ export function sendTooManyRequests(stream, limitInfo, ...policies) {
 
 export function sendJSON(stream, obj, meta) {
 	return sendJSON_Encoded(stream, obj, 'identity', meta)
-
-	// const json = JSON.stringify(obj)
-
-	// stream.respond({
-	// 	[HTTP2_HEADER_ACCESS_CONTROL_ALLOW_ORIGIN]: ALLOWED_ORIGIN,
-	// 	[HTTP2_HEADER_CONTENT_TYPE]: CONTENT_TYPE_JSON,
-	// 	[HTTP2_HEADER_STATUS]: HTTP_STATUS_OK,
-	// 	[HTTP2_HEADER_SERVER]: SERVER_NAME,
-	// 	[HTTP_HEADER_SERVER_TIMING]: ServerTiming.encode(meta?.performance)
-	// })
-	// stream.write(json)
-	// stream.end()
 }
 
 export const ENCODER_MAP = new Map([
@@ -136,30 +127,26 @@ export function sendJSON_Encoded(stream, obj, encoding, meta) {
 	const hasEncoder = encoder !== undefined
 	const actualEncoding = hasEncoder ? encoding : undefined
 
-	performance.mark(`stream-${stream.id}.encode.start`)
+	const encodeStart = performance.now()
 	const encodedData = hasEncoder && !useIdentity ? encoder(json) : json
-	performance.mark(`stream-${stream.id}.encode.end`)
+	const encodeEnd = performance.now()
 
 	meta.performance.push(
-		{ name: 'encode', duration: performance.measure(`stream-${stream.id}.encode`, `stream-${stream.id}.encode.start`, `stream-${stream.id}.encode.end`).duration}
+		{ name: 'encode', duration: encodeEnd - encodeStart }
 	)
-
-	performance.clearMarks(`stream-${stream.id}.encode.start`)
-	performance.clearMarks(`stream-${stream.id}.encode.end`)
-	performance.clearMeasures(`stream-${stream.id}.encode`)
 
 	stream.respond({
 		[HTTP2_HEADER_ACCESS_CONTROL_ALLOW_ORIGIN]: ALLOWED_ORIGIN,
 		[HTTP2_HEADER_CONTENT_TYPE]: CONTENT_TYPE_JSON,
-		'Content-Encoding': actualEncoding,
-		'Vary': 'Accept, Accept-Encoding',
+		[HTTP2_HEADER_CONTENT_ENCODING]: actualEncoding,
+		[HTTP2_HEADER_VARY]: 'Accept, Accept-Encoding',
 		[HTTP2_HEADER_STATUS]: HTTP_STATUS_OK,
 		[HTTP2_HEADER_SERVER]: SERVER_NAME,
 		[HTTP_HEADER_SERVER_TIMING]: ServerTiming.encode(meta?.performance)
 	})
 
-	stream.write(encodedData)
-	stream.end()
+	// stream.write(encodedData)
+	stream.end(encodedData)
 }
 
 export function sendSSE(stream, origin, options) {
@@ -168,6 +155,7 @@ export function sendSSE(stream, origin, options) {
 	// stream.session.socket.setKeepAlive(true)
 
 	// stream.on('close', () => console.log('SSE stream closed'))
+	// stream.on('aborted', () => console.log('SSE stream aborted'))
 
 	const activeStream = options?.active ?? true
 	const sendBOM = options?.bom ?? true
@@ -176,7 +164,7 @@ export function sendSSE(stream, origin, options) {
 		[HTTP2_HEADER_ACCESS_CONTROL_ALLOW_ORIGIN]: ALLOWED_ORIGIN,
 		[HTTP2_HEADER_CONTENT_TYPE]: SSE_MIME,
 		[HTTP2_HEADER_STATUS]: activeStream ? HTTP_STATUS_OK : HTTP_STATUS_NO_CONTENT, // SSE_INACTIVE_STATUS_CODE
-		'Access-Control-Allow-Credentials': true
+		[HTTP2_HEADER_ACCESS_CONTROL_ALLOW_CREDENTIALS]: true
 	 })
 
 	 if(!activeStream) {

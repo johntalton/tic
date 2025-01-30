@@ -1,4 +1,7 @@
-import { GET, POST, PATCH, DELETE, MATCH, NAME, METADATA } from './util/dig.js'
+import {
+	GET, POST, PATCH, DELETE,
+	MATCH, NAME, METADATA
+} from './util/dig.js'
 
 import {
 	handleGame,
@@ -30,21 +33,27 @@ import {
 
 import { handleSimpleLogin } from './users/simple-login.js'
 
+export const MATCHES = {
+	USER_ID: 'userId',
+	GAME_ID: 'gameId',
+	FRIEND_ID: 'friendId'
+}
+
 const GAMES_ROUTE =  {
-	[GET]: (matches, user, body, query) => handleList(user, query),
-	//[POST]: (matches, user, body, query) => handleNew(user, body, query)
+	[GET]: handleList,
+	//[POST]: handleNew
 }
 
 const GAME_ROUTE = {
-	[POST]: (matches, user, body, query) => handleNew(user, body, query),
+	[POST]: handleNew,
 	[MATCH]: {
-		[NAME]: 'gameId',
-		[GET]: (matches, user, body, query) => handleGame(matches.get('gameId'), user, query),
+		[NAME]: MATCHES.GAME_ID,
+		[GET]: handleGame,
 		[MATCH]: {
 			[NAME]: 'action',
 			[PATCH]: (matches, user, body, query) => {
 				const action = matches.get('action')
-				const gameId = matches.get('gameId')
+				const gameId = matches.get(MATCHES.GAME_ID)
 				switch(action) {
 					case 'accept': return handleAccept(gameId, user, body, query)
 					case 'close': return handleClose(gameId, user, body, query)
@@ -67,7 +76,7 @@ const FRIENDS_ROUTE = {
 		[PATCH]: handleAddUserAsFriend,
 		[DELETE]: handleRemoveUserAsFriend,
 		[MATCH]: {
-			[NAME]: 'friendId',
+			[NAME]: MATCHES.FRIEND_ID,
 			[PATCH]: handleAddFriend,
 			[DELETE]: handleRemoveFriend
 		}
@@ -75,14 +84,14 @@ const FRIENDS_ROUTE = {
 }
 
 const USERS_ROUTE = {
-	[GET]: (matches, user, body, query) => listUsers(user, query),
+	[GET]: listUsers,
 }
 
 const USER_ROUTE = {
 	[MATCH]: {
-		[NAME]: 'userId',
-		[PATCH]: (matches, user, body, query) => patchUser(matches.get('userId'), user, body, query),
-		[GET]: (matches, user, body, query) => getUser(matches.get('userId'), user, query),
+		[NAME]: MATCHES.USER_ID,
+		[PATCH]: patchUser,
+		[GET]: getUser,
 		...FRIENDS_ROUTE
 	}
 }

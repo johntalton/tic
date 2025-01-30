@@ -130,7 +130,7 @@ export class CouchContinuous extends EventTarget {
 	}
 
 	#failure(status, message) {
-		console.log('couch continuous', status, message)
+		// console.log('couch continuous', status, message)
 		if(this.#readyState !== CLOSED) { this.#readyState = CLOSED }
 		this.dispatchEvent(new Event('error'))
 	}

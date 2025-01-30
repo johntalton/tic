@@ -1,3 +1,4 @@
+import { MATCHES } from '../../route.js'
 import { userStore } from '../../store/user.js'
 import { addFriend } from './alter.js'
 
@@ -9,8 +10,8 @@ export async function handleAddFriend(matches, sessionUser, body, query) {
     throw new Error('invalid user token')
   }
 
-	const friendId = matches.get('friendId')
-	const userId = matches.get('userId')
+	const friendId = matches.get(MATCHES.FRIEND_ID)
+	const userId = matches.get(MATCHES.USER_ID)
 
 	if(userId !== user) {
 		throw new Error('unable to modify other peoples friends')
@@ -32,7 +33,7 @@ export async function handleAddUserAsFriend(matches, sessionUser, body, query) {
     throw new Error('invalid user token')
   }
 
-	const userId = matches.get('userId')
+	const userId = matches.get(MATCHES.USER_ID)
 
 	if(userId === user) {
 		// Friending yourself, thats nice

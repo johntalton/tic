@@ -24,8 +24,8 @@ class CredentialsCache {
 	static cache = new Map()
 
 	static #load(host) {
-		const key = fs.readFileSync(`${host}-privkey.pem`, 'utf-8')
-		const cert = fs.readFileSync(`${host}-cert.pem`, 'utf-8')
+		const key = fs.readFileSync(`./certificates/${host}-privkey.pem`, 'utf-8')
+		const cert = fs.readFileSync(`./certificates/${host}-cert.pem`, 'utf-8')
 		return { key, cert }
 	}
 
@@ -47,8 +47,19 @@ const options = {
 		enablePush: false
 	},
 
-	// ALPNCallback
-	// SNICallback: (serverName, callback)
+	ALPNProtocols: [ 'h2' ],
+	// ALPNCallback: ({ servername, protocols }) => {
+	// 	if(!protocols.includes('h2')) {
+	// 		console.log('non h2 request', servername, protocols)
+	// 		return undefined
+	// 	}
+	// 	return 'h2'
+	// },
+	// SNICallback: (serverName, callback) => {}
+
+	// maxSessionMemory: 1,
+	// maxSessionInvalidFrames: 1,
+
 
 	// enableTrace: false,
 	// noDelay: false,
@@ -62,9 +73,9 @@ CREDENTIALS.forEach(credential => {
 })
 
 server.on('timeout', () => console.warn('Server Timeout'))
-server.on('tlsClientError', (error, socket) => console.log('Server TLS Error', socket.servername, socket.remoteAddress, error.code))
+server.on('tlsClientError', (error, socket) => console.warn('Server TLS Error', socket.servername, socket.remoteAddress, error.code))
 server.on('sessionError', error => { if(error.code !== 'ECONNRESET') { console.warn('Server Session Error', error) } })
-server.on('error', error => console.log('Server Error', (error.code === 'EADDRINUSE') ? 'Address in use' : error))
+server.on('error', error => console.warn('Server Error', (error.code === 'EADDRINUSE') ? 'Address in use' : error))
 // server.on('session', session => console.log('New Session', session.alpnProtocol, session.originSet))
 server.on('stream', handleStream)
 server.on('listening', () => console.log('Server Up', server.address()))

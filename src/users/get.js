@@ -1,6 +1,8 @@
+import { MATCHES } from '../route.js'
 import { userStore } from '../store/user.js'
 
-export async function getUser(id, sessionUser, query) {
+export async function getUser(matches, sessionUser, body, query) {
+	const id = matches.get(MATCHES.USER_ID)
 	const user = await userStore.fromToken(sessionUser.token)
 	if (user === undefined) {
 		throw new Error('invalid user token')

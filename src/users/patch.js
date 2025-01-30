@@ -1,8 +1,11 @@
+import { MATCHES } from '../route.js'
 import { userStore } from '../store/user.js'
 
 const VALID_PATCH_KEYS = [ 'displayName', 'glyph' ]
 
-export async function patchUser(id, sessionUser, body, query) {
+export async function patchUser(matches, sessionUser, body, query) {
+	const id = matches.get(MATCHES.USER_ID)
+
 	const user = await userStore.fromToken(sessionUser.token)
 	if (user === undefined) {
 		throw new Error('invalid user token')

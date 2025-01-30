@@ -2,15 +2,15 @@
 <html>
 	<head>
 		<meta charset="utf-8" />
-		<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no, viewport-fit=cover">
+		<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no, viewport-fit=cover" />
 		<meta name="view-transition" content="same-origin" />
-		<meta content="light dark" name="color-scheme">
+		<meta content="light dark" name="color-scheme" />
 
 		<title>Tic</title>
 		<meta name="description" content="X and O" />
 
-		<link rel="icon" type="image/svg+xml" href="./favicon.svg"></link>
-		<link rel="stylesheet" type="text/css" href="./index.css"><link>
+		<link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+		<link rel="stylesheet" type="text/css" href="./index.css" />
 		<script async type="module" src="./index.js"></script>
 	</head>
 	<body data-aside data-logged-in data-theme="plum">
@@ -56,13 +56,14 @@
 
 			<form method="dialog">
 				<label for="offerToSelf">Include Self as Player</label>
-				<input id="offerToSelf" type="checkbox" name="offerToSelf" />
+				<input id="offerToSelf" type="checkbox" name="offerToSelf" checked />
 
 				<label for="offerToUser">Select User to Offer game to</label>
 				<select id="offerToUser" name="offerTo" required multiple>
 					<!-- <option value="">-</option> -->
 					<option value="alice.one">Alice</option>
 					<option value="bob123">Bob</option>
+					<option value="user:Agent">Agent</option>
 				</select>
 
 

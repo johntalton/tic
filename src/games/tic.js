@@ -70,7 +70,21 @@ export class Action {
 	}
 }
 
-const EMPTY = 0
+export const EMPTY = 0
+
+export const WIN_CONDITIONS = [
+	{ name: 'row0', condition: [0, 1, 2] },
+	{ name: 'row1', condition: [3, 4, 5] },
+	{ name: 'row2', condition: [6, 7, 8] },
+
+	{ name: 'col0', condition: [0, 3, 6] },
+	{ name: 'col1', condition: [1, 4, 7] },
+	{ name: 'col2', condition: [2, 5, 8] },
+
+	{ name: 'backSlash', condition: [0, 4, 8] },
+
+	{ name: 'forwardSlash', condition: [2, 4, 6] }
+]
 
 export class Board {
 	static emptyBoard() { return [
@@ -79,26 +93,8 @@ export class Board {
 		EMPTY, EMPTY, EMPTY
 	]}
 
-	static isFull(board) { return !board.includes(EMPTY) }
-
-	static isWin(board) { return Board.winner(board).user !== EMPTY }
-
 	static winner(board) {
-		const winConditions = [
-			{ name: 'row0', condition: [0, 1, 2] },
-			{ name: 'row1', condition: [3, 4, 5] },
-			{ name: 'row2', condition: [6, 7, 8] },
-
-			{ name: 'col0', condition: [0, 3, 6] },
-			{ name: 'col1', condition: [1, 4, 7] },
-			{ name: 'col2', condition: [2, 5, 8] },
-
-			{ name: 'backSlash', condition: [0, 4, 8] },
-
-			{ name: 'forwardSlash', condition: [2, 4, 6] }
-		]
-
-		for(const { name, condition } of winConditions) {
+		for(const { name, condition } of WIN_CONDITIONS) {
 			const [ a, b, c ] = condition.map(index => board[index])
 			if(a !== EMPTY && a === b && b === c) { return { name, user: a } }
 		}
@@ -106,20 +102,29 @@ export class Board {
 		return { user: EMPTY }
 	}
 
-	static isDraw(board) {
-		if(!Board.isFull(board)) { return false }
-		return !Board.isWin(board)
-	}
+	static isFull(board) { return !board.includes(EMPTY) }
 
-	static isResolved(board) { return Board.isFull(board) || Board.isWin(board) }
+	static #isWin(winner) { return winner.user !== EMPTY }
+	static #isDraw(full, win) { return full && !win }
+	static #isResolved(full, win) { return full || win }
+
+	static isWin(board) { return Board.#isWin(Board.winner(board)) }
+	static isDraw(board) { return Board.#isDraw(Board.isFull(board), Board.isWin(board)) }
+	static isResolved(board) { return Board.#isResolved(Board.isFull(board), Board.isWin(board)) }
 
 	static resolution(board) {
+		const winner = Board.winner(board)
+		const full = Board.isFull(board)
+		const win = Board.#isWin(winner)
+		const draw = Board.#isDraw(full, win)
+		const resolved = Board.#isResolved(full, win)
+
 		return {
-			full: Board.isFull(board),
-			resolved: Board.isResolved(board),
-			draw: Board.isDraw(board),
-			win: Board.isWin(board),
-			winner: Board.winner(board)
+			full,
+			resolved,
+			draw,
+			win,
+			winner
 		}
 	}
 }

@@ -349,6 +349,8 @@ class UIDialog {
 		offerForm?.addEventListener('submit', event => {
 			const fd = new FormData(offerForm)
 			const targets = fd.getAll('offerTo')
+			const offerToSelf = fd.get('offerToSelf')
+			const includeSelf = (offerToSelf === 'on')
 
 			if(targets === undefined || targets.length <= 0) {
 				console.log('empty target')
@@ -358,7 +360,8 @@ class UIDialog {
 			port.postMessage({
 				type: 'offer',
 				gameId,
-				targets
+				targets,
+				includeSelf
 			})
 
 			offerForm.reset()

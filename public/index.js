@@ -29,6 +29,7 @@ gamePort.addEventListener('message', message => {
 		position,
 		confirmed,
 		targets,
+		includeSelf,
 		reason
 	} = message.data
 
@@ -39,7 +40,7 @@ gamePort.addEventListener('message', message => {
 		case 'close': handleClose(gameId, confirmed, reason); break
 		case 'decline': handleDecline(gameId); break
 		case 'forfeit': handleForfeit(gameId, confirmed); break
-		case 'offer': handleOffer(gameId, targets); break
+		case 'offer': handleOffer(gameId, targets, includeSelf); break
 		case 'move': handleGameMove(gameId, position); break
 		default:
 			console.warn('unhandled message', type)
@@ -92,14 +93,17 @@ function handleForfeit(gameId, confirmed = false) {
 		})
 }
 
-function handleOffer(gameId, targets) {
+function handleOffer(gameId, targets, includeSelf) {
 	if(targets === undefined) {
 		UI.Dialog.startOffer(gameId, clientPort)
 		return
 	}
 
-	console.log('offing game to', targets)
-	gameApi.offer(gameId, targets)
+	const fullTargets = includeSelf ? [ USER.id, ...targets ] : targets
+
+	console.log('offing game to', fullTargets)
+
+	gameApi.offer(gameId, fullTargets)
 		.then(updatedGame => UI.Field.updateGameField(updatedGame, USER))
 		.catch(e => console.warn(e))
 }

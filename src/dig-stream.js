@@ -93,9 +93,12 @@ async function handleStreamAsync(stream, header, flags) {
 	// 	fullContentType
 	// })
 
+	// used for requestBody for now
+	const signal = AbortSignal.timeout(1000)
+
 	// stream.on('close', () => console.log('stream close'))
-	stream.on('error', error => console.log('stream error', error))
-	stream.on('aborted', () => console.log('stream aborted'))
+	stream.on('error', error => console.warn('stream error', error))
+	// stream.on('aborted', () => console.log('stream aborted'))
 
 	// Options pre-flight
 	if(method === HTTP2_METHOD_OPTIONS) {
@@ -133,14 +136,14 @@ async function handleStreamAsync(stream, header, flags) {
 	const supportedEncodings = forceIdentity ? [] : [ ...ENCODER_MAP.keys() ]
 	const acceptedEncoding = AcceptEncoding.select(fullAcceptEncoding, supportedEncodings)
 	const accept = Accept.select(fullAccept, [ MIME_TYPE_JSON, MIME_TYPE_XML, MIME_TYPE_TEXT, MIME_TYPE_EVENT_STREAM ])
-	const acceptedLanguage= AcceptLanguage.select(fullAcceptLanguage, [ 'en-US', 'en' ])
+	const acceptedLanguage = AcceptLanguage.select(fullAcceptLanguage, [ 'en-US', 'en' ])
 
 	//
 	const preambleEnd = performance.now()
 
 	// body
 	const bodyStart = performance.now()
-	const body = await requestBody(stream).json(contentType.charset)
+	const body = await requestBody(stream, { signal }).json(contentType.charset)
 	const bodyEnd = performance.now()
 
 	// SSE
