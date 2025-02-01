@@ -3,7 +3,7 @@ import { userStore } from '../store/user.js'
 
 const VALID_PATCH_KEYS = [ 'displayName', 'glyph' ]
 
-export async function patchUser(matches, sessionUser, body, query) {
+export async function patchUser(matches, sessionUser, requestBody, query) {
 	const id = matches.get(MATCHES.USER_ID)
 
 	const user = await userStore.fromToken(sessionUser.token)
@@ -13,6 +13,7 @@ export async function patchUser(matches, sessionUser, body, query) {
 
 	if(user !== id) { throw new Error('can only patch self') }
 
+	const body = await requestBody.json()
 
 	const keys = Object.keys(body)
 	if(keys.length <= 0) { throw new Error('no data in body') }

@@ -32,6 +32,7 @@ import {
 } from './users/index.js'
 
 import { handleSimpleLogin } from './users/simple-login.js'
+import { MIME_TYPE_EVENT_STREAM } from './util/content-type.js'
 
 export const MATCHES = {
 	USER_ID: 'userId',
@@ -47,6 +48,7 @@ const GAMES_ROUTE =  {
 const GAME_ROUTE = {
 	[POST]: handleNew,
 	[MATCH]: {
+		// [METADATA]: { encodings: [ ] },
 		[NAME]: MATCHES.GAME_ID,
 		[GET]: handleGame,
 		[MATCH]: {
@@ -105,7 +107,7 @@ export const ROUTES = {
 	'tic': {
 		v1: {
 			events: {
-				[METADATA]: { sse: true, bom: true, active: true },
+				[METADATA]: { sse: true, bom: true, active: true, mimeTypes: [ MIME_TYPE_EVENT_STREAM ] },
 				[GET]: handleGameFeed
 			},
 

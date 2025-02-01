@@ -89,7 +89,7 @@ class GameAgent {
 			case 'Accept':
 				console.log('handleAction - Accept')
 				const acceptedGame = await this.#api.accept(game.id)
-				console.log({ acceptedGame })
+				// console.log({ acceptedGame })
 				break
 			case 'Decline':
 				break
@@ -121,10 +121,11 @@ class GameAgent {
 		this.#sse?.addEventListener('update', update => {
 			const { lastEventId, data } = update
 			const json = JSON.parse(data)
-			console.log('sse update', json)
+			// console.log('sse update', json)
 
 			this.#api.fetch(json.id)
 				.then(async game => {
+					// console.log(game)
 					await this.#handleGame(game)
 				})
 				.catch(error => console.warn('error in sse update handler', error))
@@ -139,7 +140,7 @@ class GameAgent {
 
 
 		const knownGames = await this.#api.listing([ 'new', 'pending', 'active' ])
-		// console.log(knownGames)
+		// console.log({ knownGames })
 
 		for (const knownGame of knownGames.games) {
 			const game = await this.#api.fetch(knownGame.id)

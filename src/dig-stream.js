@@ -41,13 +41,17 @@ const {
 	HTTP2_HEADER_REFERER,
 	HTTP2_HEADER_AUTHORITY,
 	HTTP2_HEADER_SCHEME,
-	HTTP2_HEADER_HOST
+	HTTP2_HEADER_HOST,
+	HTTP2_HEADER_CONTENT_LENGTH
 } = http2.constants
 
 const HTTP_HEADER_ORIGIN = 'origin'
 const HTTP_HEADER_USER_AGENT = 'user-agent'
 
 const CONTENT_TYPE_ASSUMED = CONTENT_TYPE_JSON
+const DEFAULT_SUPPORTED_LANGUAGES = [ 'en-US', 'en' ]
+const DEFAULT_SUPPORTED_MIME_TYPES = [ MIME_TYPE_JSON, MIME_TYPE_XML, MIME_TYPE_TEXT ]
+const DEFAULT_SUPPORTED_ENCODINGS = [ ...ENCODER_MAP.keys() ]
 
 const ipRateStore = new Map()
 const ipRequestPerSecondPolicy = {
@@ -64,6 +68,7 @@ async function handleStreamAsync(stream, header, flags) {
 	const method = header[HTTP2_HEADER_METHOD]
 	const fullPathAndQuery = header[HTTP2_HEADER_PATH]
 	const fullContentType = header[HTTP2_HEADER_CONTENT_TYPE]
+	const fullContentLength = header[HTTP2_HEADER_CONTENT_LENGTH]
 	const fullAccept = header[HTTP2_HEADER_ACCEPT]
 	const fullAcceptEncoding = header[HTTP2_HEADER_ACCEPT_ENCODING]
 	const fullAcceptLanguage = header[HTTP2_HEADER_ACCEPT_LANGUAGE]
@@ -81,6 +86,7 @@ async function handleStreamAsync(stream, header, flags) {
 
 	const requestUrl = new URL(fullPathAndQuery, `${scheme}://${authority}`)
 
+	// console.log(Object.keys(header))
 	// console.log({
 	// 	method, url:
 	// 	requestUrl.pathname,
@@ -93,12 +99,12 @@ async function handleStreamAsync(stream, header, flags) {
 	// 	fullContentType
 	// })
 
-	// used for requestBody for now
-	const signal = AbortSignal.timeout(1000)
-
 	// stream.on('close', () => console.log('stream close'))
-	stream.on('error', error => console.warn('stream error', error))
+	stream.on('error', error => {
+		console.warn('stream error', error)
+	})
 	// stream.on('aborted', () => console.log('stream aborted'))
+	// stream.on('end', () => console.log('stream end '))
 
 	// Options pre-flight
 	if(method === HTTP2_METHOD_OPTIONS) {
@@ -133,18 +139,22 @@ async function handleStreamAsync(stream, header, flags) {
 	const contentType = parseContentType(hasContentType ? fullContentType : CONTENT_TYPE_ASSUMED)
 
 	const forceIdentity = false
-	const supportedEncodings = forceIdentity ? [] : [ ...ENCODER_MAP.keys() ]
-	const acceptedEncoding = AcceptEncoding.select(fullAcceptEncoding, supportedEncodings)
-	const accept = Accept.select(fullAccept, [ MIME_TYPE_JSON, MIME_TYPE_XML, MIME_TYPE_TEXT, MIME_TYPE_EVENT_STREAM ])
-	const acceptedLanguage = AcceptLanguage.select(fullAcceptLanguage, [ 'en-US', 'en' ])
+	const supportedEncodings = forceIdentity ? [] : DEFAULT_SUPPORTED_ENCODINGS
+	const acceptedEncoding = AcceptEncoding.select(fullAcceptEncoding, metadata.encodings ?? supportedEncodings)
+	const accept = Accept.select(fullAccept, metadata.mimeTypes ?? DEFAULT_SUPPORTED_MIME_TYPES)
+	const acceptedLanguage = AcceptLanguage.select(fullAcceptLanguage, metadata.languages ?? DEFAULT_SUPPORTED_LANGUAGES)
 
 	//
 	const preambleEnd = performance.now()
 
-	// body
-	const bodyStart = performance.now()
-	const body = await requestBody(stream, { signal }).json(contentType.charset)
-	const bodyEnd = performance.now()
+	// setup future body
+	const contentLength = parseInt(fullContentLength, 10)
+	const body = requestBody(stream, {
+		signal: AbortSignal.timeout(2 * 1000),
+		charset: contentType.charset,
+		contentLength,
+		byteLimit: 1000 * 1000
+	})
 
 	// SSE
 	const isSSE = metadata?.sse ?? false
@@ -165,7 +175,7 @@ async function handleStreamAsync(stream, header, flags) {
 			const meta = { performance: [
 				{ name: 'dig', duration: digEnd - digStart },
 				{ name: 'preamble', duration: preambleEnd - preambleStart },
-				{ name: 'body', duration: bodyEnd - bodyStart },
+				{ name: 'body', duration: body.duration },
 				{ name: 'handler', duration: handlerEnd - handlerStart  }
 			] }
 
@@ -174,7 +184,7 @@ async function handleStreamAsync(stream, header, flags) {
 			}
 		})
 		.catch(e => {
-			console.warn(e)
+			// console.warn(e)
 			sendError(stream, 'Error: ' + e.message)
 		})
 }

@@ -8,7 +8,7 @@ import {
 	ENDING,
 } from '@johntalton/sse-util'
 
-import { CONTENT_TYPE_JSON, CONTENT_TYPE_TEXT } from './content-type.js'
+import { CHARSET_UTF8, CONTENT_TYPE_JSON, CONTENT_TYPE_TEXT } from './content-type.js'
 import { ServerTiming, HTTP_HEADER_SERVER_TIMING } from './server-timing.js'
 import { HTTP_HEADER_RATE_LIMIT, HTTP_HEADER_RATE_LIMIT_POLICY, RateLimit, RateLimitPolicy } from './rate-limit.js'
 
@@ -40,7 +40,7 @@ export const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN // '*'
 export const DEFAULT_METHODS = [ 'HEAD', 'GET', 'POST', 'PATCH', 'DELETE' ]
 
 export function sendError(stream, message) {
-	console.log('500', message)
+	console.log('500', stream.closed, stream.writable, message)
 
 	if(stream.closed) { return }
 
@@ -57,6 +57,8 @@ export function sendError(stream, message) {
 	}
 
 	stream.end()
+	// stream.destroy()
+	if(!stream.closed) { stream.close() }
 }
 
 export function sendPreflight(stream, origin, methods = DEFAULT_METHODS) {
@@ -112,9 +114,9 @@ export function sendJSON(stream, obj, meta) {
 }
 
 export const ENCODER_MAP = new Map([
-	[ 'br', data => brotliCompressSync(Buffer.from(data, 'utf-8')) ],
-	[ 'gzip', data => gzipSync(Buffer.from(data, 'utf-8')) ],
-	[ 'deflate', data => deflateSync(Buffer.from(data, 'utf-8')) ]
+	[ 'br', (data, charset) => brotliCompressSync(Buffer.from(data, charset)) ],
+	[ 'gzip', (data, charset) => gzipSync(Buffer.from(data, charset)) ],
+	[ 'deflate', (data, charset) => deflateSync(Buffer.from(data, charset)) ]
 ])
 
 export function sendJSON_Encoded(stream, obj, encoding, meta) {
@@ -128,7 +130,7 @@ export function sendJSON_Encoded(stream, obj, encoding, meta) {
 	const actualEncoding = hasEncoder ? encoding : undefined
 
 	const encodeStart = performance.now()
-	const encodedData = hasEncoder && !useIdentity ? encoder(json) : json
+	const encodedData = hasEncoder && !useIdentity ? encoder(json, CHARSET_UTF8) : json
 	const encodeEnd = performance.now()
 
 	meta.performance.push(

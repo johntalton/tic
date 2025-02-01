@@ -19,8 +19,12 @@ export class GameAPI {
 			headers: {
 				'Accept': 'application/json',
 				'Authorization': `Bearer ${this.#user.accessToken}`
-			}
+			},
+			// signal: AbortSignal.timeout(1000)
 		})
+
+		// console.log(response)
+
 
 		if (!response.ok) {
 			const text = await response.text()
@@ -53,6 +57,7 @@ export class GameAPI {
 	}
 
 	async fetch(gameId) {
+		// console.log('fetching game', gameId)
 		const response = await Fetch2.fetch(new URL(`/tic/v1/game/${gameId}`, this.#baseUrl), {
 			method: 'GET',
 			mode: 'cors',
@@ -61,6 +66,8 @@ export class GameAPI {
 				'Authorization': `Bearer ${this.#user.accessToken}`
 			}
 		})
+
+		// console.log('fetch game', response)
 
 		if (!response.ok) {
 			const text = await response.text()

@@ -29,7 +29,7 @@ export function dig(routes, method, path) {
 	const handler = leaf[Symbol.for(method)]
 	if(handler === undefined) { throw new Error(`dig: no method "${method}"`) }
 
-	const metadata = leaf[METADATA]
+	const metadata = leaf[METADATA] ?? {}
 
 	return {
 		handler,

@@ -62,7 +62,7 @@ export class Fetch2 {
 		const { resolve, reject, promise } = Promise.withResolvers()
 
 		promise.finally(() => {
-		// 	console.log('f2 promise finally')
+			// console.log('f2 promise finally')
 			client.close()
 		// 	req.end()
 		})
@@ -86,11 +86,19 @@ export class Fetch2 {
 			// console.log('response ... body')
 			const body = requestBody(req, { signal })
 
+			// console.log('resolve with body', body)
 			resolve({
 				ok: (status >= 200 && status < 300),
 				status,
 				headers: new Map(Object.entries(headers)),
-				...body
+
+				get body() { return body.body },
+				arrayBuffer: () => body.arrayBuffer(),
+				bytes: () => body.bytes(),
+				text: () => body.text(),
+				formData: undefined,
+				json: () => body.json()
+
 			})
 		})
 

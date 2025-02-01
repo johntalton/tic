@@ -1,15 +1,28 @@
+import { CHARSET_UTF8 } from './content-type.js'
+
 export const DEFAULT_BYTE_LIMIT = 1024 * 1024 //
 
 export function requestBody(stream, options) {
 	const signal = options?.signal
 	const byteLimit = options?.byteLimit ?? DEFAULT_BYTE_LIMIT
+	const contentLength = options?.contentLength
+	const charset = options?.charset ?? CHARSET_UTF8
+
+	// if(contentLength > byteLimit) {
+	// 	console.log(contentLength)
+	// 	throw new Error('contentLength exceeds limit')
+	// }
 
 	const stats = {
-		byteLength: 0
+		byteLength: 0,
+		closed: false,
+		duration: 0
 	}
 
-	const reader = new ReadableStream({
+	// console.log('create body reader, underlying source')
+	const underlyingSource = {
 		start(controller) {
+			// console.log('body reader start')
 			const listener = () => {
 				controller.error(new Error('Abort Signal Timed out'))
 			}
@@ -18,47 +31,97 @@ export function requestBody(stream, options) {
 
 			stream.on('data', chunk => {
 				if(signal?.aborted) {
+					console.log('body reader aborted')
 					controller.error(new Error('Chunk read Abort Signal Timed out'))
+					stats.closed = true
+					return
+				}
+
+				if(stats.closed) {
+					console.log('late chunk already closed')
+					stats.closed = true
 					return
 				}
 
 				// chunk is a node Buffer (which is a TypedArray)
-				if(!ArrayBuffer.isView(chunk)) { controller.error('invalid chunk type') }
+				if(!ArrayBuffer.isView(chunk)) {
+					controller.error('invalid chunk type')
+					stats.closed = true
+				}
 
 				stats.byteLength += chunk.byteLength
+
 				if(stats.byteLength > byteLimit) {
+					console.log('body exceed byte limit', stats.byteLength)
 					controller.error(new Error('body exceed byte limit'))
+					// stream.close()
+					stats.closed = true
 					return
 				}
 
+				// console.log('body reader chunk', stats.byteLength)
 				controller.enqueue(chunk)
 			})
 
 			stream.on('end', () => {
+				// console.log('body reader end')
 				signal?.removeEventListener('abort', listener)
-				controller.close()
-			})
-		},
-	})
 
+				if(!stats.closed) {
+					// console.log('body reader close on end')
+					stats.closed = true
+					controller.close()
+				}
+			})
+
+			// stream.on('close', () => console.log('body reader stream close'))
+			// stream.on('aborted', () => console.log('body reader stream aborted'))
+		},
+
+		cancel(reason) {
+			console.log('body reader canceled', reason)
+		}
+	}
+
+	function makeReader() {
+		// console.log('makeReader')
+		return new ReadableStream(underlyingSource)
+	}
+
+	async function wrap(futureFn) {
+		const start = performance.now()
+		const reader = makeReader()
+		// console.log(reader)
+		const result = await futureFn(reader)
+		// console.log(result)
+		const end = performance.now()
+		const duration = end - start
+		stats.duration = duration
+		return result
+	}
 
 	return {
-		body: reader,
-		blob: (mimetype) => bodyBlob(reader, mimetype),
-		arrayBuffer: () => bodyArrayBuffer(reader),
-		bytes: () => bodyUint8Array(reader),
-		text: (encoding) => bodyText(reader, encoding),
+		get duration() { return stats.duration },
+		get body() { return makeReader() },
+
+		blob: (mimetype) => wrap(reader => bodyBlob(reader, mimetype)),
+		arrayBuffer: () => wrap(reader => bodyArrayBuffer(reader)),
+		bytes: () => wrap(reader => bodyUint8Array(reader)),
+		text: () => wrap(reader => bodyText(reader, charset)),
 		formData: undefined,
-		json: (encoding) => bodyJSON(reader, encoding)
+		json: () => wrap(reader => bodyJSON(reader, charset))
 	}
 }
+
 
 async function bodyBlob(reader, mimetype) {
 	const parts = []
 	for await (const part of reader) {
+		// console.log('push part', part.length)
 		parts.push(part)
 	}
 
+	// console.log('Blob')
 	return new Blob(parts, { type: mimetype ?? '' })
 }
 
@@ -91,16 +154,17 @@ async function bodyUint8Array(reader) {
 	// return buffer
 }
 
-async function bodyText(reader, encoding) {
+async function bodyText(reader, charset) {
 	// const blob = await bodyBlob(reader)
 	// return blob.text()
 
 	const u8 = await bodyUint8Array(reader)
-	const decoder = new TextDecoder(encoding ?? 'utf-8', { fatal: true })
+	const decoder = new TextDecoder(charset ?? CHARSET_UTF8, { fatal: true })
 	return decoder.decode(u8)
 }
 
-async function bodyJSON(reader, encoding) {
-	const text = await bodyText(reader, encoding)
+async function bodyJSON(reader, charset) {
+	// console.log('bodyJSON')
+	const text = await bodyText(reader, charset)
 	return (text === '') ? {} : JSON.parse(text)
 }

@@ -2,13 +2,15 @@ export const MIME_TYPE_JSON = 'application/json'
 export const MIME_TYPE_TEXT = 'text/plain'
 export const MIME_TYPE_EVENT_STREAM = 'text/event-stream'
 export const MIME_TYPE_XML = 'application/xml'
+export const MIME_TYPE_FORM_DATA = 'application/x-www-form-urlencoded'
 
 const SEPARATOR = {
 	SUBTYPE: '/',
 	PARAMETER: ';',
 	KVP: '='
 }
-const CHARSET_UTF8 = 'utf8'
+
+export const CHARSET_UTF8 = 'utf8'
 const CHARSET = 'charset'
 const PARAMETER_CHARSET_UTF8 = `${CHARSET}${SEPARATOR.KVP}${CHARSET_UTF8}`
 export const CONTENT_TYPE_JSON = `${MIME_TYPE_JSON}${SEPARATOR.PARAMETER}${PARAMETER_CHARSET_UTF8}`
