@@ -1,6 +1,6 @@
 import { gameStore } from '../../store/game.js'
 import { Tic } from '../tic.js'
-import { resolveFromStore } from './util.js'
+import { computeAndUpdateELO, resolveFromStore } from './util.js'
 
 export async function handleMove(id, sessionUser, body, query) {
 	const { user, game, gameObject } = await resolveFromStore(id, sessionUser)
@@ -26,6 +26,8 @@ export async function handleMove(id, sessionUser, body, query) {
 	await gameStore.set(game.id, updatedGameObject)
 
 	const actionableGame = Tic.actionable(updatedGame, user)
+
+	await computeAndUpdateELO(actionableGame)
 
 	return {
     ...actionableGame

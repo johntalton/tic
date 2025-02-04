@@ -1,5 +1,5 @@
 import { Tic, isViewable } from '../tic.js'
-
+import { ELO, WIN, LOSE, DRAW } from '../elo.js'
 import { gameStore } from '../../store/game.js'
 import { userStore } from '../../store/user.js'
 
@@ -20,4 +20,55 @@ export async function resolveFromStore(id, sessionUser) {
   if(!isViewable(game, user)) { throw new Error('not viewable') }
 
   return { user, game, gameObject }
+}
+
+export async function computeAndUpdateELO(actionableGame) {
+  // resolved, compute and update players ELO
+	const { resolution } = actionableGame
+	if(resolution.resolved) {
+		const [ playerAObject, playerBObject ] = await Promise.all(actionableGame.players.map(playerId => userStore.get(playerId)))
+
+		const scoreA = resolution.draw ? DRAW : ((resolution.winner.user === playerAObject._id) ? WIN : LOSE)
+		const scoreB = 1 - scoreA
+
+		const nextELO = ELO.compute(
+			{ rating: playerAObject.user.elo, score: scoreA },
+			{ rating: playerBObject.user.elo, score: scoreB })
+
+		// console.log('winner', resolution.winner.user)
+		// console.log(playerAObject._id, playerAObject.user.displayName, playerAObject.user.elo, scoreA)
+		// console.log(playerBObject._id, playerBObject.user.displayName, playerBObject.user.elo, scoreB)
+		// console.log(nextELO)
+
+		const updatedAt = Date.now()
+
+		const updatedPlayerAObject = {
+			...playerAObject,
+			user: {
+				...playerAObject.user,
+				elo: nextELO.ratingA
+			},
+			meta: {
+				...playerAObject.meta,
+				updatedAt
+			}
+		}
+
+		const updatedPlayerBObject = {
+			...playerBObject,
+			user: {
+				...playerBObject.user,
+				elo: nextELO.ratingB
+			},
+			meta: {
+				...playerBObject.meta,
+				updatedAt
+			}
+		}
+
+		return Promise.all([
+			userStore.set(updatedPlayerAObject._id, updatedPlayerAObject),
+			userStore.set(updatedPlayerBObject._id, updatedPlayerBObject)
+		])
+	}
 }
