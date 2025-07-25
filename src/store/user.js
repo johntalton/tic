@@ -7,6 +7,7 @@ const authorizationHeaders = CouchUtil.basicAuthHeader(username, password)
 
 
 async function fromView(url) {
+	// console.log('fromView', url)
 	const response = await fetch(url, {
 		method: 'GET',
 		headers: {
@@ -14,7 +15,7 @@ async function fromView(url) {
 		}
 	})
 	.catch(e => {
-		console.log('user DB fetch error', e)
+		// console.log('user DB fetch error', e)
 		throw new Error(`User DB fetch failure: ${e.message}`, { cause: e })
 	})
 
@@ -24,7 +25,7 @@ async function fromView(url) {
 
 	// console.log(result)
 
-	if(result.rows.length !== 1) { throw new Error('USer DB invalid rows length') }
+	if(result.rows.length !== 1) { throw new Error('User DB invalid rows length') }
 	return result.rows[0].value
 }
 
@@ -134,6 +135,7 @@ export class CouchUserStore {
 	}
 
 	async fromToken(token) {
+		// console.log('fromToken', this.#accessTokenCache)
 		const now = Date.now()
 
 		if(this.#accessTokenCache.has(token)) {

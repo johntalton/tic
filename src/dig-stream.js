@@ -22,6 +22,7 @@ import { ROUTES } from './route.js'
 import { dig, digOptions } from './util/dig.js'
 import { RateLimiter } from './util/rate-limiter.js'
 import { accessToken } from './util/access-token.js'
+import { Forwarded, FORWARDED_KEY_FOR, KNOWN_FORWARDED_KEYS, SKIP_ANY } from './util/forwarded.js'
 
 
 const { HTTP2_METHOD_OPTIONS } = http2.constants
@@ -47,6 +48,14 @@ const {
 
 const HTTP_HEADER_ORIGIN = 'origin'
 const HTTP_HEADER_USER_AGENT = 'user-agent'
+
+const HTTP_HEADER_FORWARDED = 'forwarded'
+
+const FORWARDED_KEY_SECRET = 'secret'
+const FORWARDED_ACCEPTABLE_KEYS = [ ...KNOWN_FORWARDED_KEYS, FORWARDED_KEY_SECRET ]
+const FORWARDED_REQUIRED = process.env.FORWARDED_REQUIRED === 'true'
+const FORWARDED_DROP_RIGHTMOST = (process.env.FORWARDED_SKIP_LIST ?? '').split(',').map(s => s.trim()).filter(s => s.length > 0)
+const FORWARDED_SECRET = process.env.FORWARDED_SECRET
 
 const CONTENT_TYPE_ASSUMED = CONTENT_TYPE_JSON
 const DEFAULT_SUPPORTED_LANGUAGES = [ 'en-US', 'en' ]
@@ -79,6 +88,7 @@ async function handleStreamAsync(stream, header, flags) {
 	// const lastEventID = header[SSE_LAST_EVENT_ID.toLowerCase()]
 	const UA = header[HTTP_HEADER_USER_AGENT]
 	const referer = header[HTTP2_HEADER_REFERER]
+	const fullForwarded = header[HTTP_HEADER_FORWARDED]
 
 	const ip = stream.session.socket.remoteAddress
 	const port = stream.session.socket.remotePort
@@ -106,26 +116,59 @@ async function handleStreamAsync(stream, header, flags) {
 	// stream.on('aborted', () => console.log('stream aborted'))
 	// stream.on('end', () => console.log('stream end '))
 
+	//
+	// Forwarded
+	//
+	const forwardedList = Forwarded.parse(fullForwarded, FORWARDED_ACCEPTABLE_KEYS)
+	const forwarded = Forwarded.selectRightMost(forwardedList, FORWARDED_DROP_RIGHTMOST)
+	const forwardedFor = forwarded?.get(FORWARDED_KEY_FOR)
+	const forwardedSecret = forwarded?.get(FORWARDED_KEY_SECRET)
+
+	if(FORWARDED_REQUIRED && forwarded === undefined) {
+		sendError(stream, 'missing forwarded')
+		return
+	}
+
+	if(FORWARDED_REQUIRED && forwardedFor === undefined) {
+		sendError(stream, 'missing forwarded for')
+		return
+	}
+
+	if(FORWARDED_SECRET !== undefined && forwardedSecret !== FORWARDED_SECRET) {
+		sendError(stream, 'invalid forwarded secret')
+		return
+	}
+
+	if(forwardedFor !== undefined) { console.log('Forwarded for', forwardedFor) }
+
+	//
 	// Options pre-flight
+	//
 	if(method === HTTP2_METHOD_OPTIONS) {
 		const allowedMethods = digOptions(ROUTES, requestUrl.pathname)
 		sendPreflight(stream, origin, allowedMethods)
 		return
 	}
 
+	//
 	// Rate Limit (IP)
+	//
 	const limitInfo = RateLimiter.test(ipRateStore, ip, ipRequestPerSecondPolicy)
 	if(limitInfo.exhausted) {
 		sendTooManyRequests(stream, limitInfo, ipRequestPerSecondPolicy)
 		return
 	}
 
+	//
 	// Dig
+	//
 	const digStart = performance.now()
 	const { handler, matches, metadata } = dig(ROUTES, method, requestUrl.pathname)
 	const digEnd = performance.now()
 
+	//
 	// Access Token
+	//
 	const token = accessToken(authorization, requestUrl.searchParams)
 	if(token === undefined) {
 		sendUnauthorized(stream)
@@ -134,7 +177,9 @@ async function handleStreamAsync(stream, header, flags) {
 
 	const user = { token }
 
+	//
 	// content negotiation
+	//
 	const hasContentType =  (fullContentType !== undefined) && (fullContentType !== '')
 	const contentType = parseContentType(hasContentType ? fullContentType : CONTENT_TYPE_ASSUMED)
 
@@ -147,7 +192,9 @@ async function handleStreamAsync(stream, header, flags) {
 	//
 	const preambleEnd = performance.now()
 
+	//
 	// setup future body
+	//
 	const contentLength = parseInt(fullContentLength, 10)
 	const body = requestBody(stream, {
 		signal: AbortSignal.timeout(2 * 1000),
@@ -156,7 +203,9 @@ async function handleStreamAsync(stream, header, flags) {
 		byteLimit: 1000 * 1000
 	})
 
+	//
 	// SSE
+	//
 	const isSSE = metadata?.sse ?? false
 	if(isSSE) {
 		if(accept !== MIME_TYPE_EVENT_STREAM) {
@@ -167,7 +216,9 @@ async function handleStreamAsync(stream, header, flags) {
 		sendSSE(stream, origin, metadata)
 	}
 
+	//
 	// core handler
+	//
 	const handlerStart = performance.now()
 	return Promise.try(handler, matches, user, body, requestUrl.searchParams, stream)
 		.then(data => {
