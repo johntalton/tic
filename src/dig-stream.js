@@ -139,7 +139,7 @@ async function handleStreamAsync(stream, header, flags) {
 		return
 	}
 
-	if(forwardedFor !== undefined) { console.log('Forwarded for', forwardedFor) }
+	// if(forwardedFor !== undefined) { console.log('Forwarded for', forwardedFor) }
 
 	//
 	// Options pre-flight
@@ -167,7 +167,7 @@ async function handleStreamAsync(stream, header, flags) {
 	const digEnd = performance.now()
 
 	//
-	// Access Token
+	// Access Token (exists, not validated)
 	//
 	const token = accessToken(authorization, requestUrl.searchParams)
 	if(token === undefined) {

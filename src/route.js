@@ -21,6 +21,7 @@ import {
 import { handleGameFeed } from './games/feed.js'
 
 import {
+	getSelf,
 	getUser,
 	handleAddFriend,
 	handleAddUserAsFriend,
@@ -30,6 +31,7 @@ import {
 	listUsers,
 	patchUser
 } from './users/index.js'
+
 
 import { handleSimpleLogin } from './users/simple-login.js'
 import { MIME_TYPE_EVENT_STREAM } from './util/content-type.js'
@@ -90,6 +92,9 @@ const USERS_ROUTE = {
 }
 
 const USER_ROUTE = {
+	self: {
+		[GET]: getSelf
+	},
 	[MATCH]: {
 		[NAME]: MATCHES.USER_ID,
 		[PATCH]: patchUser,
