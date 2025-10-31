@@ -1,5 +1,21 @@
 import { parseAcceptStyleHeader } from './accept-util.js'
 
+/**
+ * @import { AcceptStyleItem } from './accept-util.js'
+ */
+
+/**
+ * @typedef {Object} AcceptExtensionItem
+ * @property {string} mimetype
+ * @property {string} type
+ * @property {string} subtype
+ */
+
+/**
+ * @typedef {AcceptStyleItem & AcceptExtensionItem} AcceptItem
+ */
+
+
 export const SEPARATOR = { SUBTYPE: '/' }
 export const ANY = '*'
 
@@ -9,6 +25,10 @@ export const WELL_KNOWN = new Map([
 ])
 
 export class Accept {
+	/**
+	 * @param {string} acceptHeader
+	 * @returns {Array<AcceptItem>}
+	 */
 	static parse(acceptHeader) {
 		return parseAcceptStyleHeader(acceptHeader, WELL_KNOWN)
 			.map(({ name, quality, parameters }) => {
@@ -32,16 +52,26 @@ export class Accept {
 				}
 
 				// B - A descending order
-				return entryB.quality - entryA.quality
+				const qualityB = entryB.quality ?? 0
+				const qualityA = entryA.quality ?? 0
+				return qualityB - qualityA
+				// return entryB.quality - entryA.quality
 			})
 	}
 
-
+	/**
+	 * @param {string} acceptHeader
+	 * @param {Array<string>} supportedTypes
+	 */
 	static select(acceptHeader, supportedTypes) {
 		const accepts = Accept.parse(acceptHeader)
 		return this.selectFrom(accepts, supportedTypes)
 	}
 
+	/**
+	 * @param {Array<AcceptItem>} accepts
+	 * @param {Array<string>} supportedTypes
+	 */
 	static selectFrom(accepts, supportedTypes) {
 		const bests = accepts.map(accept => {
 			const { type, subtype, quality } = accept

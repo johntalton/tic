@@ -1,6 +1,10 @@
 const SPACE_CHAR = ' '
 const BEARER = 'Bearer'
 
+/**
+ * @param {string} authorizationHeader
+ * @param {URLSearchParams} query
+ */
 export function accessToken(authorizationHeader, query) {
 	if(authorizationHeader !== undefined) {
 		const [ bearer, token ] = authorizationHeader.split(SPACE_CHAR)

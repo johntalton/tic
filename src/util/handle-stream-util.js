@@ -39,6 +39,29 @@ export const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN // '*'
 
 export const DEFAULT_METHODS = [ 'HEAD', 'GET', 'POST', 'PATCH', 'DELETE' ]
 
+/**
+ * @import { ServerHttp2Stream } from 'node:http2'
+ */
+
+/**
+ * @typedef {Object} MetadataPerformanceItem
+ */
+
+/**
+ * @typedef {Object} Metadata
+ * @property {Array<MetadataPerformanceItem>} performance
+ */
+
+/**
+ * @typedef {Object} SSEOptions
+ * @property {boolean} [active]
+ * @property {boolean} [bom]
+ */
+
+/**
+ * @param {ServerHttp2Stream} stream
+ * @param {string} message
+ */
 export function sendError(stream, message) {
 	console.log('500', stream.closed, stream.writable, message)
 
@@ -61,6 +84,11 @@ export function sendError(stream, message) {
 	if(!stream.closed) { stream.close() }
 }
 
+/**
+ * @param {ServerHttp2Stream} stream
+ * @param {string} origin
+ * @param {Array<string>} [methods=DEFAULT_METHODS]
+ */
 export function sendPreflight(stream, origin, methods = DEFAULT_METHODS) {
 	stream.respond({
 		[HTTP2_HEADER_ACCESS_CONTROL_ALLOW_ORIGIN]: ALLOWED_ORIGIN,
@@ -71,6 +99,9 @@ export function sendPreflight(stream, origin, methods = DEFAULT_METHODS) {
 	stream.end()
 }
 
+/**
+ * @param {ServerHttp2Stream} stream
+ */
 export function sendUnauthorized(stream) {
 	console.log('Unauthorized')
 
@@ -82,6 +113,10 @@ export function sendUnauthorized(stream) {
 	stream.end()
 }
 
+/**
+ * @param {ServerHttp2Stream} stream
+ * @param {string} message
+ */
 export function sendNotFound(stream, message) {
 	console.log('404', message)
 	stream.respond({
@@ -94,6 +129,11 @@ export function sendNotFound(stream, message) {
 	stream.end()
 }
 
+/**
+ * @param {ServerHttp2Stream} stream
+ * @param {*} limitInfo
+ * @param {...*} policies
+ */
 export function sendTooManyRequests(stream, limitInfo, ...policies) {
 	// console.log('Too many requests')
 	stream.respond({
@@ -109,23 +149,40 @@ export function sendTooManyRequests(stream, limitInfo, ...policies) {
 	stream.end()
 }
 
+/**
+ * @param {ServerHttp2Stream} stream
+ * @param {Object} obj
+ * @param {Metadata} meta
+ */
 export function sendJSON(stream, obj, meta) {
 	return sendJSON_Encoded(stream, obj, 'identity', meta)
 }
 
+
+/**
+ * @typedef {  (data: any, charset: BufferEncoding) => Buffer } EncoderFun
+ */
+
+/** @type {Map<string, EncoderFun>} */
 export const ENCODER_MAP = new Map([
 	[ 'br', (data, charset) => brotliCompressSync(Buffer.from(data, charset)) ],
 	[ 'gzip', (data, charset) => gzipSync(Buffer.from(data, charset)) ],
 	[ 'deflate', (data, charset) => deflateSync(Buffer.from(data, charset)) ]
 ])
 
+/**
+ * @param {ServerHttp2Stream} stream
+ * @param {Object} obj
+ * @param {string|undefined} encoding
+ * @param {Metadata} meta
+ */
 export function sendJSON_Encoded(stream, obj, encoding, meta) {
 	if(stream.closed) { return }
 
 	const json = JSON.stringify(obj)
 
 	const useIdentity = encoding === 'identity'
-	const encoder = ENCODER_MAP.get(encoding)
+	const encoder = encoding !== undefined ? ENCODER_MAP.get(encoding) : undefined
 	const hasEncoder = encoder !== undefined
 	const actualEncoding = hasEncoder ? encoding : undefined
 
@@ -151,8 +208,13 @@ export function sendJSON_Encoded(stream, obj, encoding, meta) {
 	stream.end(encodedData)
 }
 
+/**
+ * @param {ServerHttp2Stream} stream
+ * @param {string} origin
+ * @param {SSEOptions} options
+ */
 export function sendSSE(stream, origin, options) {
-	stream.session.socket.setTimeout(0)
+	stream.session?.socket.setTimeout(0)
 	// stream.session.socket.setNoDelay(true)
 	// stream.session.socket.setKeepAlive(true)
 
@@ -166,7 +228,7 @@ export function sendSSE(stream, origin, options) {
 		[HTTP2_HEADER_ACCESS_CONTROL_ALLOW_ORIGIN]: ALLOWED_ORIGIN,
 		[HTTP2_HEADER_CONTENT_TYPE]: SSE_MIME,
 		[HTTP2_HEADER_STATUS]: activeStream ? HTTP_STATUS_OK : HTTP_STATUS_NO_CONTENT, // SSE_INACTIVE_STATUS_CODE
-		[HTTP2_HEADER_ACCESS_CONTROL_ALLOW_CREDENTIALS]: true
+		[HTTP2_HEADER_ACCESS_CONTROL_ALLOW_CREDENTIALS]: 'true'
 	 })
 
 	 if(!activeStream) {

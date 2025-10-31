@@ -31,6 +31,9 @@ export const WELL_KNOWN = new Map([
 ])
 
 
+/**
+ * @param {string} contentTypeHeader
+ */
 export function parseContentType(contentTypeHeader) {
 	if(contentTypeHeader === undefined) { return {} }
 

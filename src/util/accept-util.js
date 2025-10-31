@@ -7,6 +7,18 @@ export const SEPARATOR = {
 
 export const DEFAULT_QUALITY_STRING = '1'
 
+/**
+ * @typedef {Object} AcceptStyleItem
+ * @property {string} name
+ * @property {number} [quality]
+ * @property {Map<string, string>} [parameters]
+ */
+
+/**
+ * @param {string} header
+ * @param {Map<string, Array<AcceptStyleItem>>} [wellKnown]
+ * @returns {Array<AcceptStyleItem>}
+ */
 export function parseAcceptStyleHeader(header, wellKnown) {
 	if(header === undefined) { return [] }
 

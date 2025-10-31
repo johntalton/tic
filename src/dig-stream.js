@@ -24,6 +24,9 @@ import { RateLimiter } from './util/rate-limiter.js'
 import { accessToken } from './util/access-token.js'
 import { Forwarded, FORWARDED_KEY_FOR, KNOWN_FORWARDED_KEYS, SKIP_ANY } from './util/forwarded.js'
 
+/**
+ * @import { ServerHttp2Stream, IncomingHttpHeaders } from 'node:http2'
+ */
 
 const { HTTP2_METHOD_OPTIONS } = http2.constants
 
@@ -43,7 +46,8 @@ const {
 	HTTP2_HEADER_AUTHORITY,
 	HTTP2_HEADER_SCHEME,
 	HTTP2_HEADER_HOST,
-	HTTP2_HEADER_CONTENT_LENGTH
+	HTTP2_HEADER_CONTENT_LENGTH,
+	HTTP2_HEADER_VIA
 } = http2.constants
 
 const HTTP_HEADER_ORIGIN = 'origin'
@@ -70,29 +74,34 @@ const ipRequestPerSecondPolicy = {
 	size: 50
 }
 
+/**
+ * @param {ServerHttp2Stream} stream
+ * @param {IncomingHttpHeaders} header
+ * @param {number} flags
+ */
 async function handleStreamAsync(stream, header, flags) {
 	const preambleStart = performance.now()
 
-	const authorization = header[HTTP2_HEADER_AUTHORIZATION]
+	const authorization = header[HTTP2_HEADER_AUTHORIZATION] ?? ''
 	const method = header[HTTP2_HEADER_METHOD]
-	const fullPathAndQuery = header[HTTP2_HEADER_PATH]
-	const fullContentType = header[HTTP2_HEADER_CONTENT_TYPE]
-	const fullContentLength = header[HTTP2_HEADER_CONTENT_LENGTH]
-	const fullAccept = header[HTTP2_HEADER_ACCEPT]
-	const fullAcceptEncoding = header[HTTP2_HEADER_ACCEPT_ENCODING]
-	const fullAcceptLanguage = header[HTTP2_HEADER_ACCEPT_LANGUAGE]
-	const origin = header[HTTP_HEADER_ORIGIN]
+	const fullPathAndQuery = header[HTTP2_HEADER_PATH] ?? ''
+	const fullContentType = header[HTTP2_HEADER_CONTENT_TYPE] ?? ''
+	const fullContentLength = header[HTTP2_HEADER_CONTENT_LENGTH] ?? ''
+	const fullAccept = header[HTTP2_HEADER_ACCEPT] ?? ''
+	const fullAcceptEncoding = header[HTTP2_HEADER_ACCEPT_ENCODING] ?? ''
+	const fullAcceptLanguage = header[HTTP2_HEADER_ACCEPT_LANGUAGE] ?? ''
+	const origin = header[HTTP_HEADER_ORIGIN] ?? ''
 	// const host = header[HTTP2_HEADER_HOST]
 	const authority = header[HTTP2_HEADER_AUTHORITY]
 	const scheme = header[HTTP2_HEADER_SCHEME]
 	// const lastEventID = header[SSE_LAST_EVENT_ID.toLowerCase()]
 	const UA = header[HTTP_HEADER_USER_AGENT]
 	const referer = header[HTTP2_HEADER_REFERER]
-	const fullForwarded = header[HTTP_HEADER_FORWARDED]
+	const fullForwarded = header[HTTP_HEADER_FORWARDED] ?? ''
 
-	const ip = stream.session.socket.remoteAddress
-	const port = stream.session.socket.remotePort
-	const host = stream.session.socket.servername
+	const ip = stream.session?.socket.remoteAddress
+	const port = stream.session?.socket.remotePort
+	const host = stream.session?.socket.servername // TLS SNI
 
 	const requestUrl = new URL(fullPathAndQuery, `${scheme}://${authority}`)
 
@@ -230,9 +239,10 @@ async function handleStreamAsync(stream, header, flags) {
 				{ name: 'handler', duration: handlerEnd - handlerStart  }
 			] }
 
-			if(!isSSE) {
-				sendJSON_Encoded(stream, data, acceptedEncoding, meta)
-			}
+			// SSE header/response send above via sendSSE
+			if(isSSE) { return }
+
+			sendJSON_Encoded(stream, data, acceptedEncoding, meta)
 		})
 		.catch(e => {
 			// console.warn(e)
@@ -240,6 +250,11 @@ async function handleStreamAsync(stream, header, flags) {
 		})
 }
 
+/**
+ * @param {ServerHttp2Stream} stream
+ * @param {IncomingHttpHeaders} header
+ * @param {number} flags
+ */
 export function handleStream(stream, header, flags) {
 	handleStreamAsync(stream, header, flags)
 		.catch(e => {

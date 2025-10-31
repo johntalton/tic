@@ -1,20 +1,35 @@
 import { parseAcceptStyleHeader } from './accept-util.js'
 
+/**
+ * @import { AcceptStyleItem } from './accept-util.js'
+ */
+
 const WELL_KNOWN = new Map([
 	[ 'gzip, deflate, br, zstd', [ { name: 'gzip' }, { name: 'deflate' }, { name: 'br' }, { name: 'zstd' } ] ],
 	[ 'gzip, deflate, br', [ { name: 'gzip' }, { name: 'deflate' }, { name: 'br' } ] ]
 ])
 
 export class AcceptEncoding {
+	/**
+	 * @param {string} acceptEncodingHeader
+	 */
 	static parse(acceptEncodingHeader) {
 		return parseAcceptStyleHeader(acceptEncodingHeader, WELL_KNOWN)
 	}
 
+	/**
+	 * @param {string} acceptEncodingHeader
+	 * @param {Array<string>} supportedTypes
+	 */
 	static select(acceptEncodingHeader, supportedTypes) {
 		const accepts = AcceptEncoding.parse(acceptEncodingHeader)
 		return this.selectFrom(accepts, supportedTypes)
 	}
 
+	/**
+	 * @param {Array<AcceptStyleItem>} acceptEncodings
+	 * @param {Array<string>} supportedTypes
+	 */
 	static selectFrom(acceptEncodings, supportedTypes) {
 		for(const acceptEncoding of acceptEncodings) {
 			const { name } = acceptEncoding

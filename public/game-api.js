@@ -1,12 +1,32 @@
+/**
+ * @typedef {Object} User
+ * @property {string} id
+ * @property {string} accessToken
+ */
+
+/**
+ * @typedef {string} GameId
+ */
+
+
+
 export class GameAPI {
 	#baseUrl
+	/** @type {User} */
 	#user
 
+	/**
+	 * @param {User} user
+	 * @param {string|URL} baseUrl
+	 */
 	constructor(user, baseUrl) {
 		this.#user = user
 		this.#baseUrl = baseUrl
 	}
 
+	/**
+	 * @param {Array<string>} filter
+	 */
 	async listing(filter) {
 		const url = new URL('/tic/v1/games', this.#baseUrl)
 		url.searchParams.set('filter', filter.join('|'))
@@ -50,6 +70,9 @@ export class GameAPI {
 		return response.json()
 	}
 
+	/**
+	 * @param {string} gameId
+	 */
 	async fetch(gameId) {
 		const response = await fetch(new URL(`/tic/v1/game/${gameId}`, this.#baseUrl), {
 			method: 'GET',
@@ -68,6 +91,11 @@ export class GameAPI {
 		return response.json()
 	}
 
+	/**
+	 * @param {GameId} gameId
+	 * @param {string} action
+	 * @param {URLSearchParams} [query]
+	 */
 	async #action(gameId, action, query) {
 		const url = new URL(`/tic/v1/game/${gameId}/${action}`, this.#baseUrl)
 		if(query !== undefined) { url.search = query }
@@ -93,30 +121,51 @@ export class GameAPI {
 		// return json
 	}
 
+	/**
+	 * @param {GameId} gameId
+	 */
 	async accept(gameId) {
 		return this.#action(gameId, 'accept')
 	}
 
+	/**
+	 * @param {GameId} gameId
+	 */
 	async decline(gameId) {
 		return this.#action(gameId, 'decline')
 	}
 
+	/**
+	 * @param {GameId} gameId
+	 * @param {string} reason
+	 */
 	async close(gameId, reason) {
 		const sp = new URLSearchParams()
 		if((reason !== undefined) && (reason !== '')) { sp.set('reason', reason) }
 		return this.#action(gameId, 'close', sp)
 	}
 
+	/**
+	 * @param {GameId} gameId
+	 */
 	async forfeit(gameId) {
 		return this.#action(gameId, 'forfeit')
 	}
 
+	/**
+	 * @param {GameId} gameId
+	 * @param {Array<string>} targets
+	 */
 	async offer(gameId, targets) {
 		const sp = new URLSearchParams()
 		targets.forEach(target => sp.append('t', target))
 		return this.#action(gameId, 'offer', sp)
 	}
 
+	/**
+	 * @param {GameId} gameId
+	 * @param {string} position
+	 */
 	async move(gameId, position) {
 		const sp = new URLSearchParams()
 		sp.set('position', position)

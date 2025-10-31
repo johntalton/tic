@@ -1,6 +1,15 @@
 export  const HTTP_HEADER_RATE_LIMIT = 'RateLimit'
 export const HTTP_HEADER_RATE_LIMIT_POLICY = 'RateLimit-Policy'
 
+/**
+ * @typedef {Object} RateLimitInfo
+ * @property {string} name
+ * @property {number} remaining
+ * @property {number} resetSeconds
+ * @property {string} partitionKey
+ */
+
+
 export const LIMIT_PARAMETERS = {
 	REMAINING_QUOTA: 'r',
 	TIME_TILL_RESET_SECONDS: 't',
@@ -21,6 +30,9 @@ export const QUOTA_UNIT = {
 }
 
 export class RateLimit {
+	/**
+	 * @param {RateLimitInfo} limitInfo
+	 */
 	static from(limitInfo) {
 		const { name, remaining, resetSeconds, partitionKey } = limitInfo
 

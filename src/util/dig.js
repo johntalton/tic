@@ -9,7 +9,16 @@ export const MATCH = Symbol.for('MATCH')
 export const NAME = Symbol.for('NAME')
 export const METADATA = Symbol.for('METADATA')
 
+/**
+ * @typedef {{ [key:string|symbol]: RouteDefinition }} RouteDefinition
+ */
 
+/**
+ * @param {RouteDefinition} route
+ * @param {string} key
+ * @param {Array<string>} keys
+ * @param {Map<RouteDefinition, string>} matches
+ */
 export function _dig(route, key, keys, matches) {
 	const next = route[key] ?? route[MATCH]
 	if(next === undefined) { throw new Error(`dig: no route "${key}"`) }
@@ -22,6 +31,11 @@ export function _dig(route, key, keys, matches) {
 	return _dig(next, nextKey, rest, matches)
 }
 
+/**
+ * @param {RouteDefinition} routes
+ * @param {string} method
+ * @param {string} path
+ */
 export function dig(routes, method, path) {
 	const matches = new Map()
 	const [ key, ...keys ] = path.substring(1).split('/')
@@ -38,6 +52,10 @@ export function dig(routes, method, path) {
 	}
 }
 
+/**
+ * @param {RouteDefinition} routes
+ * @param {string} path
+ */
 export function digOptions(routes, path) {
 	const matches = new Map()
 	const [ key, ...keys ] = path.substring(1).split('/')

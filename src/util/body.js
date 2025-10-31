@@ -2,6 +2,22 @@ import { CHARSET_UTF8 } from './content-type.js'
 
 export const DEFAULT_BYTE_LIMIT = 1024 * 1024 //
 
+/**
+ * @import { Readable } from 'node:stream'
+ */
+
+/**
+ * @typedef {Object} BodyOptions
+ * @property {AbortSignal} signal
+ * @property {number} byteLimit
+ * @property {number} contentLength
+ * @property {string} charset
+ */
+
+/**
+ * @param {Readable} stream
+ * @param {BodyOptions} [options]
+ */
 export function requestBody(stream, options) {
 	const signal = options?.signal
 	const byteLimit = options?.byteLimit ?? DEFAULT_BYTE_LIMIT
@@ -20,6 +36,8 @@ export function requestBody(stream, options) {
 	}
 
 	// console.log('create body reader, underlying source')
+
+	/** @type {UnderlyingDefaultSource} */
 	const underlyingSource = {
 		start(controller) {
 			// console.log('body reader start')
@@ -83,11 +101,19 @@ export function requestBody(stream, options) {
 		}
 	}
 
+	/**
+	 * @returns {ReadableStream}
+	 */
 	function makeReader() {
 		// console.log('makeReader')
 		return new ReadableStream(underlyingSource)
 	}
 
+	/**
+	 * @template T
+	 * @param {(reader: ReadableStream) => T} futureFn
+	 * @returns {Promise<T>}
+	 */
 	async function wrap(futureFn) {
 		const start = performance.now()
 		const reader = makeReader()
@@ -113,7 +139,10 @@ export function requestBody(stream, options) {
 	}
 }
 
-
+/**
+ * @param {ReadableStream} reader
+ * @param {string} [mimetype]
+ */
 async function bodyBlob(reader, mimetype) {
 	const parts = []
 	for await (const part of reader) {
@@ -125,6 +154,9 @@ async function bodyBlob(reader, mimetype) {
 	return new Blob(parts, { type: mimetype ?? '' })
 }
 
+/**
+ * @param {ReadableStream} reader
+ */
 async function bodyArrayBuffer(reader) {
 	const blob = await bodyBlob(reader)
 	return blob.arrayBuffer()
@@ -133,6 +165,9 @@ async function bodyArrayBuffer(reader) {
 	// return u8.buffer
 }
 
+/**
+ * @param {ReadableStream} reader
+ */
 async function bodyUint8Array(reader) {
 	const buffer = await bodyArrayBuffer(reader)
 	return new Uint8Array(buffer)
@@ -154,6 +189,10 @@ async function bodyUint8Array(reader) {
 	// return buffer
 }
 
+/**
+ * @param {ReadableStream} reader
+ * @param {string} [charset]
+ */
 async function bodyText(reader, charset) {
 	// const blob = await bodyBlob(reader)
 	// return blob.text()
@@ -163,6 +202,10 @@ async function bodyText(reader, charset) {
 	return decoder.decode(u8)
 }
 
+/**
+ * @param {ReadableStream} reader
+ * @param {string} [charset]
+ */
 async function bodyJSON(reader, charset) {
 	// console.log('bodyJSON')
 	const text = await bodyText(reader, charset)
