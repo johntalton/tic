@@ -2,6 +2,11 @@ import { Tic } from '../tic.js'
 import { resolveFromStore } from './util.js'
 import { gameStore } from '../../store/game.js'
 
+/**
+ * @import { HandlerFn } from '../../util/dig.js'
+ */
+
+/** @type {HandlerFn} */
 export async function handleClose(id, sessionUser, body, query) {
 	const { user, game, gameObject } = await resolveFromStore(id, sessionUser)
 

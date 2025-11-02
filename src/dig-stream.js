@@ -82,22 +82,22 @@ const ipRequestPerSecondPolicy = {
 async function handleStreamAsync(stream, header, flags) {
 	const preambleStart = performance.now()
 
-	const authorization = header[HTTP2_HEADER_AUTHORIZATION] ?? ''
+	const authorization = header[HTTP2_HEADER_AUTHORIZATION]
 	const method = header[HTTP2_HEADER_METHOD]
-	const fullPathAndQuery = header[HTTP2_HEADER_PATH] ?? ''
-	const fullContentType = header[HTTP2_HEADER_CONTENT_TYPE] ?? ''
-	const fullContentLength = header[HTTP2_HEADER_CONTENT_LENGTH] ?? ''
-	const fullAccept = header[HTTP2_HEADER_ACCEPT] ?? ''
-	const fullAcceptEncoding = header[HTTP2_HEADER_ACCEPT_ENCODING] ?? ''
-	const fullAcceptLanguage = header[HTTP2_HEADER_ACCEPT_LANGUAGE] ?? ''
-	const origin = header[HTTP_HEADER_ORIGIN] ?? ''
+	const fullPathAndQuery = header[HTTP2_HEADER_PATH]
+	const fullContentType = header[HTTP2_HEADER_CONTENT_TYPE]
+	const fullContentLength = header[HTTP2_HEADER_CONTENT_LENGTH]
+	const fullAccept = header[HTTP2_HEADER_ACCEPT]
+	const fullAcceptEncoding = header[HTTP2_HEADER_ACCEPT_ENCODING]
+	const fullAcceptLanguage = header[HTTP2_HEADER_ACCEPT_LANGUAGE]
+	const origin = header[HTTP_HEADER_ORIGIN]
 	// const host = header[HTTP2_HEADER_HOST]
 	const authority = header[HTTP2_HEADER_AUTHORITY]
 	const scheme = header[HTTP2_HEADER_SCHEME]
 	// const lastEventID = header[SSE_LAST_EVENT_ID.toLowerCase()]
 	const UA = header[HTTP_HEADER_USER_AGENT]
 	const referer = header[HTTP2_HEADER_REFERER]
-	const fullForwarded = header[HTTP_HEADER_FORWARDED] ?? ''
+	const fullForwarded = header[HTTP_HEADER_FORWARDED]
 
 	const ip = stream.session?.socket.remoteAddress
 	const port = stream.session?.socket.remotePort

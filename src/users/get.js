@@ -1,6 +1,11 @@
 import { MATCHES } from '../route.js'
 import { userStore } from '../store/user.js'
 
+/**
+ * @import { HandlerFn } from '../util/dig.js'
+ */
+
+/** @type {HandlerFn} */
 export async function getUser(matches, sessionUser, body, query) {
 	const id = matches.get(MATCHES.USER_ID)
 	const user = await userStore.fromToken(sessionUser.token)

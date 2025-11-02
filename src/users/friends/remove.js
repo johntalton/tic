@@ -3,8 +3,13 @@ import { MATCHES } from '../../route.js'
 import { userStore } from '../../store/user.js'
 import { removeFriend } from './alter.js'
 
+/**
+ * @import { HandlerFn } from '../../util/dig.js'
+ */
+
 // /u/USER/friend/FRIEND
 // removing FRIEND to USER
+/** @type {HandlerFn} */
 export async function handleRemoveFriend(matches, sessionUser, body, query) {
   const user = await userStore.fromToken(sessionUser.token)
   if (user === undefined) {
@@ -28,6 +33,7 @@ export async function handleRemoveFriend(matches, sessionUser, body, query) {
 
 // /u/USER
 // removing USER as friend to Self
+/** @type {HandlerFn} */
 export async function handleRemoveUserAsFriend(matches, sessionUser, body, query) {
   const user = await userStore.fromToken(sessionUser.token)
   if (user === undefined) {

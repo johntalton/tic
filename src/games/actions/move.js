@@ -2,11 +2,17 @@ import { gameStore } from '../../store/game.js'
 import { Tic } from '../tic.js'
 import { computeAndUpdateELO, resolveFromStore } from './util.js'
 
+/**
+ * @import { HandlerFn } from '../../util/dig.js'
+ */
+
+/** @type {HandlerFn} */
 export async function handleMove(id, sessionUser, body, query) {
 	const { user, game, gameObject } = await resolveFromStore(id, sessionUser)
 
 	// console.log('handleMove - ', body, query)
 	const positionStr = query.get('position')
+	if(positionStr === null) { throw new Error('missing move position') }
 	const position = parseInt(positionStr, 10)
 	const positionPlayerId = game.board[position]
 	if(positionPlayerId !== 0) { throw new Error('invalid move position') }

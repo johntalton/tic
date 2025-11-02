@@ -44,12 +44,12 @@ export const DEFAULT_METHODS = [ 'HEAD', 'GET', 'POST', 'PATCH', 'DELETE' ]
  */
 
 /**
- * @typedef {Object} MetadataPerformanceItem
+ * @import { TimingsInfo } from './server-timing.js'
  */
 
 /**
  * @typedef {Object} Metadata
- * @property {Array<MetadataPerformanceItem>} performance
+ * @property {Array<TimingsInfo>} performance
  */
 
 /**
@@ -86,7 +86,7 @@ export function sendError(stream, message) {
 
 /**
  * @param {ServerHttp2Stream} stream
- * @param {string} origin
+ * @param {string|undefined} origin
  * @param {Array<string>} [methods=DEFAULT_METHODS]
  */
 export function sendPreflight(stream, origin, methods = DEFAULT_METHODS) {
@@ -210,7 +210,7 @@ export function sendJSON_Encoded(stream, obj, encoding, meta) {
 
 /**
  * @param {ServerHttp2Stream} stream
- * @param {string} origin
+ * @param {string|undefined} origin
  * @param {SSEOptions} options
  */
 export function sendSSE(stream, origin, options) {

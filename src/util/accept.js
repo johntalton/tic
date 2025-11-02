@@ -26,7 +26,7 @@ export const WELL_KNOWN = new Map([
 
 export class Accept {
 	/**
-	 * @param {string} acceptHeader
+	 * @param {string|undefined} acceptHeader
 	 * @returns {Array<AcceptItem>}
 	 */
 	static parse(acceptHeader) {
@@ -60,7 +60,7 @@ export class Accept {
 	}
 
 	/**
-	 * @param {string} acceptHeader
+	 * @param {string|undefined} acceptHeader
 	 * @param {Array<string>} supportedTypes
 	 */
 	static select(acceptHeader, supportedTypes) {

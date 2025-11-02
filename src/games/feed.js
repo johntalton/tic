@@ -3,7 +3,11 @@ import { ServerSentEvents } from '@johntalton/sse-util'
 import { isViewable } from './tic.js'
 import { userStore } from '../store/user.js'
 
+/**
+ * @import { HandlerFn } from '../util/dig.js'
+ */
 
+/** @type {HandlerFn} */
 export async function handleGameFeed(matches, sessionUser, body, query, stream) {
 	const channel = new BroadcastChannel('SSE')
 

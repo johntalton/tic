@@ -2,6 +2,11 @@ import { gameStore } from '../../store/game.js'
 import { Tic } from '../tic.js'
 import { resolveFromStore } from './util.js'
 
+/**
+ * @import { HandlerFn } from '../../util/dig.js'
+ */
+
+/** @type {HandlerFn} */
 export async function handleDecline(id, sessionUser, body, query) {
 	const { user, game, gameObject } = await resolveFromStore(id, sessionUser)
 

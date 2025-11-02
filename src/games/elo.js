@@ -6,14 +6,29 @@ const BASE = 10
 const DIVISOR = 400
 const K_FACTOR = 32
 
+/**
+ * @typedef {Object} ELOInfo
+ * @property {number} rating
+ * @property {number} score
+ */
+
 // https://en.wikipedia.org/wiki/Elo_rating_system
 export class ELO {
+	/**
+	 * @param {number} ratingFor
+	 * @param {number} ratingAgainst
+	 * @param {number} divisor
+	 */
 	static #expected(ratingFor, ratingAgainst, divisor) {
 		const exponent = (ratingAgainst - ratingFor) / divisor
 		return 1 / (1 + Math.pow(BASE, exponent))
 	}
 
-
+	/**
+	 * @param {ELOInfo} A
+	 * @param {ELOInfo} B
+	 * @param {number} [kFactor=K_FACTOR]
+	 */
 	static compute(A, B, kFactor = K_FACTOR) {
 		const expectedA = ELO.#expected(A.rating, B.rating, DIVISOR)
 		const expectedB = ELO.#expected(B.rating, A.rating, DIVISOR)

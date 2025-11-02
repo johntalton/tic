@@ -21,7 +21,7 @@ export const SEPARATOR = {
 
 export class Forwarded {
 	/**
-	 * @param {string} header
+	 * @param {string|undefined} header
 	 * @param {Array<string>} acceptedKeys
 	 * @returns {Array<Map<string, string>>}
 	 */

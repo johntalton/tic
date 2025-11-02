@@ -1,5 +1,20 @@
+/**
+ * @import { RateLimitPolicyInfo } from './rate-limit.js'
+ */
+
+/**
+ * @typedef {Object} BucketInfo
+ * @property {number} tokenCount
+ * @property {number} lastRefillTime
+ */
+
 
 export class Bucket {
+	/**
+	 * @param {BucketInfo} bucket
+	 * @param {RateLimitPolicyInfo} policy
+	 * @param {number} [count=1]
+	 */
 	static getToken(bucket, policy, count = 1) {
 		// console.log(`${policy.name}: get ${count}`, policy)
 
@@ -35,6 +50,11 @@ export class Bucket {
 }
 
 export class RateLimiter {
+	/**
+	 * @param {Map<string, BucketInfo>} store
+	 * @param {string} key
+	 * @param {RateLimitPolicyInfo} policy
+	 */
 	static test(store, key, policy) {
 		if(!store.has(key)) {
 			store.set(key, {

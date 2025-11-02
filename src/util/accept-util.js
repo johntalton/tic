@@ -15,7 +15,7 @@ export const DEFAULT_QUALITY_STRING = '1'
  */
 
 /**
- * @param {string} header
+ * @param {string|undefined} header
  * @param {Map<string, Array<AcceptStyleItem>>} [wellKnown]
  * @returns {Array<AcceptStyleItem>}
  */

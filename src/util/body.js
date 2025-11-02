@@ -15,13 +15,27 @@ export const DEFAULT_BYTE_LIMIT = 1024 * 1024 //
  */
 
 /**
+ * @typedef {Object} BodyFuture
+ * @property {number} duration
+ * @property { ReadableStream } body
+ * @property { (mimetype: string) => Promise<Blob> } blob
+ * @property { () => Promise<ArrayBufferLike> } arrayBuffer
+ * @property { () => Promise<Uint8Array> } bytes
+ * @property { () => Promise<string> } text
+ * @property {undefined} formData
+ * @property { () => Promise<any> } json
+ */
+
+
+/**
  * @param {Readable} stream
  * @param {BodyOptions} [options]
+ * @returns {BodyFuture}
  */
 export function requestBody(stream, options) {
 	const signal = options?.signal
 	const byteLimit = options?.byteLimit ?? DEFAULT_BYTE_LIMIT
-	const contentLength = options?.contentLength
+	// const contentLength = options?.contentLength
 	const charset = options?.charset ?? CHARSET_UTF8
 
 	// if(contentLength > byteLimit) {
@@ -105,14 +119,14 @@ export function requestBody(stream, options) {
 	 * @returns {ReadableStream}
 	 */
 	function makeReader() {
+		if(stats.closed) { throw new Error('body already consumed') }
 		// console.log('makeReader')
 		return new ReadableStream(underlyingSource)
 	}
 
 	/**
 	 * @template T
-	 * @param {(reader: ReadableStream) => T} futureFn
-	 * @returns {Promise<T>}
+	 * @param {(reader: ReadableStream) => Promise<T>} futureFn
 	 */
 	async function wrap(futureFn) {
 		const start = performance.now()
@@ -130,7 +144,7 @@ export function requestBody(stream, options) {
 		get duration() { return stats.duration },
 		get body() { return makeReader() },
 
-		blob: (mimetype) => wrap(reader => bodyBlob(reader, mimetype)),
+		blob: (/** @type {string | undefined} */ mimetype) => wrap(reader => bodyBlob(reader, mimetype)),
 		arrayBuffer: () => wrap(reader => bodyArrayBuffer(reader)),
 		bytes: () => wrap(reader => bodyUint8Array(reader)),
 		text: () => wrap(reader => bodyText(reader, charset)),

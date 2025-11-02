@@ -3,6 +3,11 @@ import { userStore } from '../store/user.js'
 
 const VALID_PATCH_KEYS = [ 'displayName', 'glyph' ]
 
+/**
+ * @import { HandlerFn } from '../util/dig.js'
+ */
+
+/** @type {HandlerFn} */
 export async function patchUser(matches, sessionUser, requestBody, query) {
 	const id = matches.get(MATCHES.USER_ID)
 

@@ -9,7 +9,17 @@ export const SEPARATOR = {
 	KVP: '='
 }
 
+/**
+ * @typedef {Object} TimingsInfo
+ * @property {string} name
+ * @property {number|undefined} duration
+ * @property {string|undefined} [description]
+ */
+
 export class ServerTiming {
+	/**
+	 * @param {Array<TimingsInfo>} timings
+	 */
 	static encode(timings) {
 		if(timings === undefined) { return undefined }
 		if(timings.length <= 0) { return undefined }

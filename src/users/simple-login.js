@@ -4,8 +4,14 @@ import { ID } from '../util/id.js'
 
 const DEFAULT_ELO = 100
 
+/**
+ * @import { HandlerFn } from '../util/dig.js'
+ */
+
+/** @type {HandlerFn} */
 export async function handleSimpleLogin(matches, sessionUser, body, query) {
 	const name = query.get('name')
+	if(name === null) { throw new Error('missing name') }
 
 	console.log('--- attempting simple login for', name)
 

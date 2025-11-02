@@ -11,14 +11,14 @@ const WELL_KNOWN = new Map([
 
 export class AcceptEncoding {
 	/**
-	 * @param {string} acceptEncodingHeader
+	 * @param {string|undefined} acceptEncodingHeader
 	 */
 	static parse(acceptEncodingHeader) {
 		return parseAcceptStyleHeader(acceptEncodingHeader, WELL_KNOWN)
 	}
 
 	/**
-	 * @param {string} acceptEncodingHeader
+	 * @param {string|undefined} acceptEncodingHeader
 	 * @param {Array<string>} supportedTypes
 	 */
 	static select(acceptEncodingHeader, supportedTypes) {

@@ -9,6 +9,15 @@ export const HTTP_HEADER_RATE_LIMIT_POLICY = 'RateLimit-Policy'
  * @property {string} partitionKey
  */
 
+/**
+ * @typedef {Object} RateLimitPolicyInfo
+ * @property {string} name
+ * @property {number} quota
+ * @property {number} size
+ * @property {number} quotaUnits
+ * @property {number} windowSeconds
+ * @property {string} [partitionKey]
+ */
 
 export const LIMIT_PARAMETERS = {
 	REMAINING_QUOTA: 'r',
@@ -45,6 +54,9 @@ export class RateLimit {
 }
 
 export class RateLimitPolicy {
+	/**
+	 * @param {...RateLimitPolicyInfo} policies
+	 */
 	static from(...policies) {
 		if(policies === undefined) { return undefined }
 
