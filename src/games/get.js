@@ -9,6 +9,7 @@ import { MATCHES } from '../route.js'
 /** @type {HandlerFn} */
 export async function handleGame(matches, sessionUser, requestBody, query) {
 	const id = matches.get(MATCHES.GAME_ID)
+	if(id === undefined) { throw new Error('id invalid') }
 	const { user, game } = await resolveFromStore(id, sessionUser)
 
 	if(!isViewable(game, user)) {

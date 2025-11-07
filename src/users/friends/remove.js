@@ -28,6 +28,8 @@ export async function handleRemoveFriend(matches, sessionUser, body, query) {
     throw new Error('you cant unfriend yourself')
   }
 
+  if(friendId === undefined) { throw new Error('unknown friend') }
+
   return removeFriend(userId, friendId)
 }
 
@@ -41,6 +43,10 @@ export async function handleRemoveUserAsFriend(matches, sessionUser, body, query
   }
 
   const userId = matches.get(MATCHES.USER_ID)
+
+  if(userId === undefined) {
+    throw new Error('unknown user id')
+  }
 
   if(userId === user) {
     // Friending yourself, thats nice

@@ -1,11 +1,52 @@
 import { CouchUtil } from './couch.js'
 
+/**
+ * @typedef {string} StoreUserId
+ */
+
+/**
+ * @typedef {Object} StoreUserInfo
+ * @property {string} displayName
+ * @property {Array<string>} friends
+ * @property {number} elo
+ */
+
+/**
+ * @typedef {Object} StoreUserSessionInfo
+ * @property {string} token
+ * @property {string} refreshToken
+ * @property {string} sseToken
+ */
+
+/**
+ * @typedef {Object} StoreUserMetadata
+ * @property {number} createdAt
+ * @property {number} updatedAt
+ */
+
+/**
+ * @typedef {Object} StoreUser
+ * @property {'user.tic.v1'} type
+ * @property {StoreUserInfo} user
+ * @property {StoreUserSessionInfo} session
+ * @property {StoreUserMetadata} meta
+ */
+
+/**
+ * @typedef {Object} StoreUserListItem
+ * @property {string} displayName
+ * @property {number} elo
+ */
+
 const couchURL = process.env.COUCH_URL
 const username = process.env.COUCH_USER
 const password = process.env.COUCH_PASSWORD
 const authorizationHeaders = CouchUtil.basicAuthHeader(username, password)
 
 
+/**
+ * @param {string} url
+ */
 async function fromView(url) {
 	// console.log('fromView', url)
 	const response = await fetch(url, {
@@ -35,8 +76,16 @@ export class CouchUserStore {
 	#accessTokenCache = new Map()
 	#userCache = new Map()
 
+	/**
+	 * @param {string} url
+	 */
 	constructor(url) { this.#url = url }
 
+	/**
+	 * @param {StoreUserId} id
+	 * @param {StoreUser} userObject
+	 * @returns {Promise<StoreUser|undefined>}
+	 */
 	async create(id, userObject) {
 		const response = await fetch(`${this.#url}`, {
 			method: 'POST',
@@ -59,6 +108,10 @@ export class CouchUserStore {
 		return response.json()
 	}
 
+	/**
+	 * @param {StoreUserId} id
+	 * @param {StoreUser} userObject
+	 */
 	async set(id, userObject) {
 		this.#userCache.delete(id)
 
@@ -74,6 +127,10 @@ export class CouchUserStore {
 		return response.ok
 	}
 
+	/**
+	 * @param {StoreUserId} id
+	 * @returns {Promise<StoreUser>}
+	 */
 	async #get(id) {
 		const response = await fetch(`${this.#url}/${id}`, {
 			method: 'GET',
@@ -90,6 +147,10 @@ export class CouchUserStore {
 		return response.json()
 	}
 
+	/**
+	 * @param {StoreUserId} id
+	 * @returns {Promise<StoreUser>}
+	 */
 	async get(id) {
 		if(this.#userCache.has(id)) {
 			return this.#userCache.get(id)
@@ -102,6 +163,9 @@ export class CouchUserStore {
 		return futureUser
 	}
 
+	/**
+	 * @returns {Promise<Array<StoreUserListItem>>}
+	 */
 	async list(user) {
 		const url = new URL(`${this.#url}/_design/basic/_view/user_by_user`)
 
@@ -134,6 +198,10 @@ export class CouchUserStore {
 		}))
 	}
 
+	/**
+	 * @param {string} token
+	 * @returns {Promise<StoreUserId>}
+	 */
 	async fromToken(token) {
 		// console.log('fromToken', this.#accessTokenCache)
 		const now = Date.now()

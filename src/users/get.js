@@ -8,6 +8,7 @@ import { userStore } from '../store/user.js'
 /** @type {HandlerFn} */
 export async function getUser(matches, sessionUser, body, query) {
 	const id = matches.get(MATCHES.USER_ID)
+	if(id === undefined) { throw new Error('unknown user') }
 	const user = await userStore.fromToken(sessionUser.token)
 	if (user === undefined) {
 		throw new Error('invalid user token')

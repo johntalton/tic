@@ -3,6 +3,22 @@ import { ELO, WIN, LOSE, DRAW } from '../elo.js'
 import { gameStore } from '../../store/game.js'
 import { userStore } from '../../store/user.js'
 
+/** @import { StoreGameId, StoreGame } from '../../store/game.js' */
+/** @import { ActionableGame, Game } from '../tic.js' */
+/** @import {StoreUserId} from '../../store/user.js' */
+
+/**
+ * @typedef {Object} ResolvedStoreInfo
+ * @property {StoreUserId} user
+ * @property {Game} game
+ * @property {StoreGame} gameObject
+ */
+
+/**
+ * @param {StoreGameId} id
+ * @param {{ token: string }} sessionUser
+ * @returns {Promise<ResolvedStoreInfo>}
+ */
 export async function resolveFromStore(id, sessionUser) {
   // if(id === '404') { throw new Error('404 test id')}
 
@@ -22,6 +38,9 @@ export async function resolveFromStore(id, sessionUser) {
   return { user, game, gameObject }
 }
 
+/**
+ * @param {ActionableGame} actionableGame
+ */
 export async function computeAndUpdateELO(actionableGame) {
   // resolved, compute and update players ELO
 	const { resolution } = actionableGame

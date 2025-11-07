@@ -24,7 +24,11 @@ export async function handleAddFriend(matches, sessionUser, body, query) {
 
 	if(userId === friendId) {
 		// Friending yourself, thats nice
-		throw new Error('your always your own friend')
+		throw new Error('you are always your own friend')
+	}
+
+	if(friendId === undefined) {
+		throw new Error('can not add unknown friend')
 	}
 
 	return addFriend(userId, friendId)
@@ -40,6 +44,10 @@ export async function handleAddUserAsFriend(matches, sessionUser, body, query) {
   }
 
 	const userId = matches.get(MATCHES.USER_ID)
+
+	if(userId === undefined) {
+		throw new Error('can not add unknown friend')
+	}
 
 	if(userId === user) {
 		// Friending yourself, thats nice

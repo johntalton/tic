@@ -15,9 +15,10 @@ export async function handleList(matches, sessionUser, body, query) {
 	const allGames = await gameStore.list(user)
 
 	const stateFilter = query.get('f') ?? query.get('filter') ?? ''
+	if(stateFilter === '*') { return { games: allGames }}
+
 	const stateFilterList = stateFilter.split('|')
 	const games = allGames.filter(row => stateFilterList.includes(row.state))
-
 
 	return {
 		games

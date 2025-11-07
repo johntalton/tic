@@ -2,10 +2,51 @@ import { CouchContinuous } from './couch-continous.js'
 import { CouchUtil } from './couch.js'
 // import { Temporal, Intl } from '@js-temporal/polyfill'
 
+/**
+ * @import { Game } from '../games/tic.js'
+ */
+
+/**
+ * @typedef {string} StoreGameId
+ */
+
+/**
+ * @typedef {Object} StoreGameMetadata
+ * @property {number} createdAt
+ * @property {number} updatedAt
+ */
+
+/**
+ * @typedef {Object} StoreGame
+ * @property {string} [_id]
+ * @property {string} [_rev]
+ * @property {'game.tic.v1'} type
+ * @property {Game} game
+ * @property {StoreGameMetadata} meta
+ */
+
+/**
+ * @typedef {Object} StoreGameListItem
+ * @property {string} state
+ * @property {string} owner
+ * @property {Array<string>} active
+ * @property {Array<string>} players
+ * @property {number} createdAt
+*/
+
+
 export class MemoryGameStore {
 	#store = new Map()
 
+	/**
+	 * @param {StoreGameId} id
+	 */
 	has(id) { return this.#store.has(id) }
+
+	/**
+	 * @param {StoreGameId} id
+	 * @param {StoreGame} user
+	 */
 	get(id, user) {
 		// console.log('Store: get game', id, this.#store.get(id))
 		return this.#store.get(id)
@@ -40,10 +81,16 @@ export class CouchGameStore {
 	#useCache = true
 
 	// #eventSource
+
+	/** @type {URL} */
 	#feedUrl
+	/**@type {CouchContinuous} */
 	#feed
 	#feedChannel = new BroadcastChannel('SSE')
 
+	/**
+	 * @param {string} url
+	 */
 	constructor(url) {
 		this.#url = url
 
@@ -83,7 +130,9 @@ export class CouchGameStore {
 		})
 	}
 
-
+	/**
+	 * @param {StoreGameId} id
+	 */
 	async has(id) {
 		if(this.#useCache && this.#cache.has(id)) {
 			// todo kinda ok for now
@@ -99,6 +148,10 @@ export class CouchGameStore {
 		return response.ok
 	}
 
+	/**
+	 * @param {StoreGameId} id
+	 * @returns {Promise<StoreGame>}
+	 */
 	async #get(id) {
 		const response = await fetch(`${this.#url}/${id}`, {
 			method: 'GET',
@@ -115,6 +168,10 @@ export class CouchGameStore {
 		return response.json()
 	}
 
+	/**
+	 * @param {StoreGameId} id
+	 * @param {string} etag
+	 */
 	async #isModified(id, etag) {
 		const response = await fetch(`${this.#url}/${id}`, {
 			method: 'HEAD',
@@ -128,6 +185,10 @@ export class CouchGameStore {
 		return (response.status !== COUCH_HEADER_NOT_MODIFIED)
 	}
 
+	/**
+	 * @param {StoreGameId} id
+	 * @returns {Promise<StoreGame>}
+	 */
 	async get(id) {
 		// console.log('get game', { id })
 		const now = Date.now()
@@ -186,6 +247,10 @@ export class CouchGameStore {
 		return futureDoc
 	}
 
+	/**
+	 * @param {StoreGameId} id
+	 * @param {StoreGame} value
+	 */
 	async set(id, value) {
 		// clear from cache
 		// console.log('clear cache', { id })
@@ -203,6 +268,10 @@ export class CouchGameStore {
 		return response.ok
 	}
 
+	/**
+	 * @param {string} user
+	 * @returns {Promise<Array<StoreGameListItem>>}
+	 */
 	async list(user) {
 		const limit = 100
 		const includeDocs = false

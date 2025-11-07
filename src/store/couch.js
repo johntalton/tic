@@ -1,4 +1,8 @@
 export class CouchUtil {
+	/**
+	 * @param {string} username
+	 * @param {string} password
+	 */
 	static basicAuthHeader(username, password) {
 		// const encoder = new TextEncoder()
 		// const u8 = encoder.encode(`${username}:${password}`)

@@ -13,6 +13,7 @@ export async function handleListFriends(matches, sessionUser, body, query) {
 	}
 
 	const userId = matches.get(MATCHES.USER_ID)
+	if(userId === undefined) { throw new Error('unspecified user') }
 
 	const isSelf = user === userId
 

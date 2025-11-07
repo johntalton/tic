@@ -20,6 +20,7 @@ export async function handleSimpleLogin(matches, sessionUser, body, query) {
 	if(fromId) {
 		//
 	} else {
+		const now = Date.now()
 		const newUserId = `user:${ID.generate()}`
 		const accessToken = `token:access:${ID.generate()}`
 		const sseToken = `token:sse:${ID.generate()}`
@@ -47,7 +48,8 @@ export async function handleSimpleLogin(matches, sessionUser, body, query) {
 			// 	'fromAddresses': []
 			},
 			meta: {
-				createdAt: Date.now()
+				createdAt: now,
+				updatedAt: now
 			}
 		})
 

@@ -1,3 +1,64 @@
+/**
+ * @typedef {[
+ * string|EMPTY, string|EMPTY, string|EMPTY,
+ * string|EMPTY, string|EMPTY, string|EMPTY,
+ * string|EMPTY, string|EMPTY, string|EMPTY
+ * ]} GameBoard
+ */
+
+/**
+ * @typedef {Object} Game
+ * @property {STATES} state
+ * @property {string} owner
+ * @property {Array<string>} players
+ * @property {Array<string>} offers
+ * @property {Array<string>} active
+ *
+ * @property {GameBoard} board
+ *
+ * @property {string} [message]
+ * @property {string} [reason]
+ */
+
+/**
+ * @typedef {Object} OfferMulti
+ * @property {Array<string>} targets
+ */
+
+/**
+ * @typedef {Object} OfferSingle
+ * @property {string} target
+ */
+
+/**
+ * @typedef {OfferSingle | OfferMulti} Offer
+ */
+
+/**
+ * @typedef {Object} Move
+ * @property {number} position
+ */
+
+/**
+ * @typedef {Object} Winner
+ * @property {string|EMPTY} user
+ * @property {string} [name]
+ */
+
+/**
+ * @typedef {Object} Resolution
+ * @property {boolean} full
+ * @property {boolean} resolved
+ * @property {boolean} draw
+ * @property {boolean} win
+ * @property {Winner} winner
+ */
+
+/**
+ * @typedef {Game & { resolution: Resolution, actions: Array<ACTIONS> }} ActionableGame
+ */
+
+/** @enum {string} */
 export const STATES = {
 	NEW: 'new',
 	PENDING: 'pending',
@@ -5,6 +66,7 @@ export const STATES = {
 	RESOLVED: 'resolved'
 }
 
+/** @enum {string} */
 export const ACTIONS = {
 	ACCEPT: 'Accept',
 	DECLINE: 'Decline',
@@ -33,10 +95,30 @@ const USER_STATE_ACTIONS = {
 	}
 }
 
+/**
+ * @param {Game} game
+ * @param {string} user
+ */
 export function isOwner(game, user) { return game.owner === user }
+/**
+ * @param {Game} game
+ * @param {string} user
+ */
 export function isPlayer(game, user) { return game.players?.includes(user) }
+/**
+ * @param {Game} game
+ * @param {string} user
+ */
 export function isChallenger(game, user) { return game.offers?.includes(user) }
+/**
+ * @param {Game} game
+ * @param {string} user
+ */
 export function isCurrentActivePlayer(game, user) { return game.active?.includes(user)  }
+/**
+ * @param {Game} game
+ * @param {string} user
+ */
 export function isViewable(game, user) {
 	return isOwner(game, user)
 		|| isChallenger(game, user)
@@ -44,6 +126,10 @@ export function isViewable(game, user) {
 		|| isCurrentActivePlayer(game, user)
 }
 
+/**
+ * @param {Game} game
+ * @param {string} user
+ */
 export function roundRobinPlayer(game, user) {
 	const currentIndex = game.players.indexOf(user)
 	if(currentIndex < 0) { return [] }
@@ -51,12 +137,20 @@ export function roundRobinPlayer(game, user) {
 	return [ game.players[nextIndex] ]
 }
 
+/**
+ * @param {Array<string>} players
+ */
 export function randomPlayer(players) {
 	const index = Math.round(Math.random() * (players.length - 1))
 	return players[index]
 }
 
 export class Action {
+	/**
+	 * @param {Game} game
+	 * @param {string} user
+	 * @returns {Array<ACTIONS>}
+	 */
 	static for(game, user) {
 		const { state } = game
 		if (state === undefined) { return [] }
@@ -87,12 +181,17 @@ export const WIN_CONDITIONS = [
 ]
 
 export class Board {
+	/** @returns {GameBoard} */
 	static emptyBoard() { return [
 		EMPTY, EMPTY, EMPTY,
 		EMPTY, EMPTY, EMPTY,
 		EMPTY, EMPTY, EMPTY
 	]}
 
+	/**
+	 * @param {GameBoard} board
+	 * @returns {Winner}
+	 */
 	static winner(board) {
 		for(const { name, condition } of WIN_CONDITIONS) {
 			const [ a, b, c ] = condition.map(index => board[index])
@@ -102,16 +201,39 @@ export class Board {
 		return { user: EMPTY }
 	}
 
+	/** @param {GameBoard} board  */
 	static isFull(board) { return !board.includes(EMPTY) }
 
+	/**
+	 * @param {Winner} winner
+	 */
 	static #isWin(winner) { return winner.user !== EMPTY }
+
+	/**
+	 * @param {boolean} full
+	 * @param {boolean} win
+	 */
 	static #isDraw(full, win) { return full && !win }
+
+	/**
+	 * @param {boolean} full
+	 * @param {boolean} win
+	 */
 	static #isResolved(full, win) { return full || win }
 
+	/** @param {GameBoard} board  */
 	static isWin(board) { return Board.#isWin(Board.winner(board)) }
+
+	/** @param {GameBoard} board  */
 	static isDraw(board) { return Board.#isDraw(Board.isFull(board), Board.isWin(board)) }
+
+	/** @param {GameBoard} board  */
 	static isResolved(board) { return Board.#isResolved(Board.isFull(board), Board.isWin(board)) }
 
+	/**
+	 * @param {GameBoard} board
+	 * @returns {Resolution}
+	 */
 	static resolution(board) {
 		const winner = Board.winner(board)
 		const full = Board.isFull(board)
@@ -130,6 +252,11 @@ export class Board {
 }
 
 export class Tic {
+	/**
+	 * @param {Game} game
+	 * @param {string} user
+	 * @returns {ActionableGame}
+	 */
 	static actionable(game, user) {
 		return {
 			...game,
@@ -138,7 +265,10 @@ export class Tic {
 		}
 	}
 
-	//
+	/**
+	 * @param {string} user
+	 * @returns {Game}
+	 */
 	static create(user) {
 		// console.log('Tic::create', user)
 
@@ -157,6 +287,13 @@ export class Tic {
 	}
 
 	// owner
+
+	/**
+	 * @param {Game} game
+	 * @param {string} user
+	 * @param {Offer} offer
+	 * @returns {Game}
+	 */
 	static offer(game, user, offer) {
 		// console.log('Tic::offer(owner)', game, user, offer)
 
@@ -179,6 +316,12 @@ export class Tic {
 		}
 	}
 
+	/**
+	 * @param {Game} game
+	 * @param {string} user
+	 * @param {string} reason
+	 * @returns {Game}
+	 */
 	static close(game, user, reason) {
 		// console.log('Tic::close(owner)', game, user)
 
@@ -195,6 +338,13 @@ export class Tic {
 	}
 
 	// player
+
+	/**
+	 * @param {Game} game
+	 * @param {string} user
+	 * @param {Move} move
+	 * @returns {Game}
+	 */
 	static move(game, user, move) {
 		// console.log('Tic::move(player)', game, user, move)
 
@@ -222,6 +372,11 @@ export class Tic {
 		}
 	}
 
+	/**
+	 * @param {Game} game
+	 * @param {string} user
+	 * @returns {Game}
+	 */
 	static forfeit(game, user) {
 		// console.log('Tic::forfeit(player)', game, user)
 
@@ -238,6 +393,12 @@ export class Tic {
 	}
 
 	// challenger
+
+	/**
+	 * @param {Game} game
+	 * @param {string} user
+	 * @returns {Game}
+	 */
 	static accept(game, user) {
 		// console.log('Tic::accept(challenger)', game, user)
 
@@ -260,6 +421,11 @@ export class Tic {
 		}
 	}
 
+	/**
+	 * @param {Game} game
+	 * @param {string} user
+	 * @returns {Game}
+	 */
 	static decline(game, user) {
 		// console.log('Tic::decline(challenger)', game, user)
 

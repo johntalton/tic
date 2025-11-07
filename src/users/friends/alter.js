@@ -1,5 +1,11 @@
 import { userStore } from '../../store/user.js'
 
+/**
+ * @param {string} userId
+ * @param {boolean} add
+ * @param {string} friendId
+ * @returns {Promise<{ friends: Array<string> }>}
+ */
 async function alterFriend(userId, add, friendId) {
 	const userObject = await userStore.get(userId)
 	const { user } = userObject
@@ -17,7 +23,7 @@ async function alterFriend(userId, add, friendId) {
 	else {
 		if(updatedFriends.has(userId)) {
 			// not friends already
-			return { friends}
+			return { friends }
 		}
 
 		updatedFriends.delete(friendId)
@@ -41,5 +47,14 @@ async function alterFriend(userId, add, friendId) {
 	return { friends: [ ...updatedFriends ] }
 }
 
+/**
+ * @param {string} userId
+ * @param {string} friendId
+ */
 export async function addFriend(userId, friendId) { return alterFriend(userId, true, friendId) }
+
+/**
+ * @param {string} userId
+ * @param {string} friendId
+ */
 export async function removeFriend(userId, friendId) { return alterFriend(userId, false, friendId) }

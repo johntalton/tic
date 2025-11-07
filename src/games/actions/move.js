@@ -2,11 +2,17 @@ import { gameStore } from '../../store/game.js'
 import { Tic } from '../tic.js'
 import { computeAndUpdateELO, resolveFromStore } from './util.js'
 
-/**
- * @import { HandlerFn } from '../../util/dig.js'
- */
+/** @import { StoreGameId } from '../../store/game.js' */
+/** @import { ActionableGame } from '../tic.js' */
+/** @import { BodyFuture } from '../../util//body.js' */
 
-/** @type {HandlerFn} */
+/**
+ * @param {StoreGameId} id
+ * @param {{ token: string }} sessionUser
+ * @param {BodyFuture} body
+ * @param {URLSearchParams} query
+ * @returns {Promise<ActionableGame>}
+ */
 export async function handleMove(id, sessionUser, body, query) {
 	const { user, game, gameObject } = await resolveFromStore(id, sessionUser)
 
