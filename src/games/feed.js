@@ -2,6 +2,7 @@ import { ServerSentEvents } from '@johntalton/sse-util'
 
 import { isViewable } from './tic.js'
 import { userStore } from '../store/user.js'
+import { identifiableGameId } from './util.js'
 
 /**
  * @import { HandlerFn } from '../util/dig.js'
@@ -48,17 +49,18 @@ export async function handleGameFeed(matches, sessionUser, body, query, stream) 
 
 	channel.onmessage = msg => {
 		const { data } = msg
-		const { game } = data
+		const { type, _id, game } = data
 
-		// console.log('SSE', data.game.id)
+		if(type !== 'game-change') { return }
 
+		// console.log(msg, data)
 		if(!isViewable(game, user)) { return }
 
 		ServerSentEvents.messageToEventStreamLines({
 			// id: 1,
 			event: 'update',
 			// data: [ JSON.stringify(game) ]
-			data: [ JSON.stringify({ id: game.id }) ]
+			data: [ JSON.stringify({ id: identifiableGameId(_id) }) ]
 		}).forEach(line => stream.write(line))
 	}
 }

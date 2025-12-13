@@ -193,8 +193,8 @@ class UIField {
 		return gameFieldElem !== null
 	}
 
-	static updateGameField(game, user) {
-		const gameFieldElem = document.querySelector(`game-field[game-id="${game.id}"]`)
+	static updateGameField(gameId, game, user) {
+		const gameFieldElem = document.querySelector(`game-field[game-id="${gameId}"]`)
 		if(gameFieldElem === null) { throw new Error('game not in dom') }
 
 		const buttonAccept = gameFieldElem.querySelector('button[data-action="accept"]')
@@ -225,16 +225,16 @@ class UIField {
 		const { draw, full, resolved, win, winner } = resolution
 		const { name: winningPosition, user: winningUser } = winner
 
-		if(state === 'new' && game.owner === user.id) { UI.Field.setGameMessage(game.id, 'offer') }
+		if(state === 'new' && game.owner === user.id) { UI.Field.setGameMessage(gameId, 'offer') }
 		else if(state === 'pending') {
-			UI.Field.setGameMessage(game.id, 'pending')
+			UI.Field.setGameMessage(gameId, 'pending')
 		}
-		else if(state === 'resolved') { UI.Field.setGameMessage(game.id, 'closed') }
-		else if(draw) { UI.Field.setGameMessage(game.id, 'draw') }
-		else if(win && winningUser === user.id) { UI.Field.setGameMessage(game.id, 'win') }
-		else if(win) { UI.Field.setGameMessage(game.id, 'loose') }
-		else if(canMove) { UI.Field.setGameMessage(game.id, 'move') }
-		else { UI.Field.setGameMessage(game.id, 'wait') }
+		else if(state === 'resolved') { UI.Field.setGameMessage(gameId, 'closed') }
+		else if(draw) { UI.Field.setGameMessage(gameId, 'draw') }
+		else if(win && winningUser === user.id) { UI.Field.setGameMessage(gameId, 'win') }
+		else if(win) { UI.Field.setGameMessage(gameId, 'loose') }
+		else if(canMove) { UI.Field.setGameMessage(gameId, 'move') }
+		else { UI.Field.setGameMessage(gameId, 'wait') }
 
 		const gameBoardElem = gameFieldElem.querySelector('game-board')
 

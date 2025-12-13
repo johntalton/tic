@@ -1,5 +1,5 @@
 import { Tic } from '../tic.js'
-import { resolveFromStore } from './util.js'
+import { resolveFromStore } from '../util.js'
 import { gameStore } from '../../store/game.js'
 
 /** @import { StoreGameId } from '../../store/game.js' */
@@ -28,11 +28,7 @@ export async function handleAccept(id, sessionUser, body, query) {
 		game: updatedGame
 	}
 
-	await gameStore.set(game.id, updatedGameObject)
+	await gameStore.set(gameObject._id, updatedGameObject)
 
-	const actionableGame = Tic.actionable(updatedGame, user)
-
-	return {
-		...actionableGame
-	}
+	return Tic.actionable(updatedGame, user)
 }

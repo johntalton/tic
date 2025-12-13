@@ -49,7 +49,7 @@ gamePort.addEventListener('message', message => {
 
 function handleAccept(gameId) {
 	gameApi.accept(gameId)
-		.then(updatedGame => UI.Field.updateGameField(updatedGame, USER))
+		.then(updatedGame => UI.Field.updateGameField(gameId, updatedGame, USER))
 		.catch(e => {
 			UI.Global.showToast(e.message)
 			console.warn(e)
@@ -58,7 +58,7 @@ function handleAccept(gameId) {
 
 function handleDecline(gameId) {
 	gameApi.decline(gameId)
-		.then(updatedGame => UI.Field.updateGameField(updatedGame, USER))
+		.then(updatedGame => UI.Field.updateGameField(gameId, updatedGame, USER))
 		.catch(e => {
 			UI.Global.showToast(e.message)
 			console.warn(e)
@@ -72,7 +72,7 @@ function handleClose(gameId, confirmed = false, reason = undefined) {
 	}
 
 	gameApi.close(gameId, reason)
-		.then(updatedGame => UI.Field.updateGameField(updatedGame, USER))
+		.then(updatedGame => UI.Field.updateGameField(gameId, updatedGame, USER))
 		.catch(e => {
 			UI.Global.showToast(e.message)
 			console.warn(e)
@@ -86,7 +86,7 @@ function handleForfeit(gameId, confirmed = false) {
 	}
 
 	gameApi.forfeit(gameId)
-		.then(updatedGame => UI.Field.updateGameField(updatedGame, USER))
+		.then(updatedGame => UI.Field.updateGameField(gameId, updatedGame, USER))
 		.catch(e => {
 			UI.Global.showToast(e.message)
 			console.warn(e)
@@ -104,13 +104,13 @@ function handleOffer(gameId, targets, includeSelf) {
 	console.log('offing game to', fullTargets)
 
 	gameApi.offer(gameId, fullTargets)
-		.then(updatedGame => UI.Field.updateGameField(updatedGame, USER))
+		.then(updatedGame => UI.Field.updateGameField(gameId, updatedGame, USER))
 		.catch(e => console.warn(e))
 }
 
 function handleGameMove(gameId, position) {
 	gameApi.move(gameId, position)
-		.then(updatedGame => UI.Field.updateGameField(updatedGame, USER))
+		.then(updatedGame => UI.Field.updateGameField(gameId, updatedGame, USER))
 		.catch(e => {
 			UI.Global.showToast(e.message)
 			console.warn(e)
@@ -124,7 +124,7 @@ function handleActivateGameField(gameId) {
 		.then(game => {
 			notificationGameIdSet.delete(gameId)
 			UI.Listing.clearGameListingItemNotification(gameId)
-			UI.Field.updateGameField(game, USER)
+			UI.Field.updateGameField(gameId, game, USER)
 		})
 		.catch(e => {
 			UI.Global.showToast(e.message)
@@ -164,7 +164,7 @@ function handleCreateGame(event) {
 
 			UI.Listing.addGameListingItem(game, USER, notificationGameIdSet, clientPort)
 			UI.Field.activateGameField(game.id, clientPort)
-			UI.Field.updateGameField(game, USER)
+			UI.Field.updateGameField(game.id, game, USER)
 		})
 		.catch(e => {
 			UI.Global.showToast(e.message)
@@ -183,12 +183,12 @@ function handleSSEUpdate(message) {
 
 	gameApi.fetch(gameId)
 		.then(game => {
-			notificationGameIdSet.add(game.id)
+			notificationGameIdSet.add(gameId)
 
 			UI.Listing.addOrUpdateGameListingItem(game , USER, notificationGameIdSet, clientPort)
 
-			if(UI.Field.hasGameField(game.id)) {
-				UI.Field.updateGameField(game, USER)
+			if(UI.Field.hasGameField(gameId)) {
+				UI.Field.updateGameField(gameId, game, USER)
 			}
 		})
 		.catch(e => {

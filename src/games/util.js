@@ -1,11 +1,11 @@
-import { Tic, isViewable } from '../tic.js'
-import { ELO, WIN, LOSE, DRAW } from '../elo.js'
-import { gameStore } from '../../store/game.js'
-import { userStore } from '../../store/user.js'
+import { Tic, isViewable } from './tic.js'
+import { ELO, WIN, LOSE, DRAW } from './elo.js'
+import { gameStore } from '../store/game.js'
+import { userStore } from '../store/user.js'
 
-/** @import { StoreGameId, StoreGame } from '../../store/game.js' */
-/** @import { ActionableGame, Game } from '../tic.js' */
-/** @import {StoreUserId} from '../../store/user.js' */
+/** @import { StoreGameId, StoreGame } from '../store/game.js' */
+/** @import { ActionableGame, Game } from './tic.js' */
+/** @import { StoreUserId } from '../store/user.js' */
 
 /**
  * @typedef {Object} ResolvedStoreInfo
@@ -27,7 +27,9 @@ export async function resolveFromStore(id, sessionUser) {
     throw new Error('invalid user token')
   }
 
-  const gameObject = await gameStore.get(id)
+	const gameId = fromIdentifiableGameId(id)
+
+  const gameObject = await gameStore.get(gameId)
   if(gameObject === undefined) { throw new Error('unknown game') }
 
   const { game } = gameObject
@@ -89,5 +91,32 @@ export async function computeAndUpdateELO(actionableGame) {
 			userStore.set(updatedPlayerAObject._id, updatedPlayerAObject),
 			userStore.set(updatedPlayerBObject._id, updatedPlayerBObject)
 		])
+	}
+}
+
+/**
+ * @param {string} id
+ * @returns {StoreGameId}
+ */
+export function fromIdentifiableGameId(id) {
+	return id.substring(2)
+}
+
+/**
+ * @param {StoreGameId} id
+ */
+export function identifiableGameId(id) {
+	return `G:${id}`
+}
+
+/**
+ * @param {StoreGameId} gameId
+ * @param {ActionableGame} actionableGame
+ * @returns {ActionableGame & { id: StoreGameId }}
+ */
+export function identifiableGame(gameId, actionableGame) {
+	return {
+		id: identifiableGameId(gameId),
+		...actionableGame
 	}
 }

@@ -17,16 +17,25 @@ import { CouchUtil } from './couch.js'
  */
 
 /**
- * @typedef {Object} StoreGame
- * @property {string} [_id]
- * @property {string} [_rev]
+ * @typedef {Object} StoreGameBase
  * @property {'game.tic.v1'} type
  * @property {Game} game
  * @property {StoreGameMetadata} meta
  */
 
 /**
+ * @typedef {Object} StoreGameExtension
+ * @property {StoreGameId} _id
+ * @property {string} _rev
+ */
+
+/**
+ * @typedef {StoreGameBase & StoreGameExtension} StoreGame
+ */
+
+/**
  * @typedef {Object} StoreGameListItem
+ * @property {StoreGameId} _id
  * @property {string} state
  * @property {string} owner
  * @property {Array<string>} active
@@ -123,6 +132,7 @@ export class CouchGameStore {
 					const { game } = gameObject
 					this.#feedChannel.postMessage({
 						type: 'game-change',
+						_id: id,
 						game
 					})
 				})
@@ -249,7 +259,7 @@ export class CouchGameStore {
 
 	/**
 	 * @param {StoreGameId} id
-	 * @param {StoreGame} value
+	 * @param {StoreGame | StoreGameBase} value
 	 */
 	async set(id, value) {
 		// clear from cache
@@ -307,7 +317,7 @@ export class CouchGameStore {
 		// console.log(result)
 
 		const full = result.rows.map(row => ({
-			id: row.id,
+			_id: row.id,
 			...row.value
 		}))
 		.map(row => ({

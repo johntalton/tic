@@ -1,6 +1,6 @@
 import { gameStore } from '../../store/game.js'
 import { Tic } from '../tic.js'
-import { resolveFromStore } from './util.js'
+import { resolveFromStore } from '../util.js'
 
 /** @import { StoreGameId } from '../../store/game.js' */
 /** @import { ActionableGame } from '../tic.js' */
@@ -27,11 +27,7 @@ export async function handleDecline(id, sessionUser, body, query) {
 		game: updatedGame
 	}
 
-	await gameStore.set(game.id, updatedGameObject)
+	await gameStore.set(gameObject._id, updatedGameObject)
 
-	const actionableGame = Tic.actionable(updatedGame, user)
-
-	return {
-		...actionableGame
-	}
+	return Tic.actionable(updatedGame, user)
 }
