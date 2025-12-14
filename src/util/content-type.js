@@ -2,7 +2,19 @@ export const MIME_TYPE_JSON = 'application/json'
 export const MIME_TYPE_TEXT = 'text/plain'
 export const MIME_TYPE_EVENT_STREAM = 'text/event-stream'
 export const MIME_TYPE_XML = 'application/xml'
-export const MIME_TYPE_FORM_DATA = 'application/x-www-form-urlencoded'
+export const MIME_TYPE_URL_FORM_DATA = 'application/x-www-form-urlencoded'
+export const MIME_TYPE_MULTIPART_FORM_DATA = 'multipart/form-data'
+export const MIME_TYPE_OCTET_STREAM = 'application/octet-stream'
+
+/**
+ * @typedef {Object} ContentType
+ * @property {string} mimetype
+ * @property {string} mimetypeRaw
+ * @property {string} type
+ * @property {string} subtype
+ * @property {string} [charset]
+ * @property {Map<string, string>} parameters
+ */
 
 const SEPARATOR = {
 	SUBTYPE: '/',
@@ -16,6 +28,7 @@ const PARAMETER_CHARSET_UTF8 = `${CHARSET}${SEPARATOR.KVP}${CHARSET_UTF8}`
 export const CONTENT_TYPE_JSON = `${MIME_TYPE_JSON}${SEPARATOR.PARAMETER}${PARAMETER_CHARSET_UTF8}`
 export const CONTENT_TYPE_TEXT = `${MIME_TYPE_TEXT}${SEPARATOR.PARAMETER}${PARAMETER_CHARSET_UTF8}`
 
+/** @type {ContentType} */
 export const WELL_KNOWN_JSON = {
 	mimetype: 'application/json',
 	mimetypeRaw: 'application/json',
@@ -33,6 +46,7 @@ export const WELL_KNOWN = new Map([
 
 /**
  * @param {string} contentTypeHeader
+ * @returns {ContentType}
  */
 export function parseContentType(contentTypeHeader) {
 	if(contentTypeHeader === undefined) { return {} }

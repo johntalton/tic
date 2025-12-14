@@ -232,7 +232,7 @@ async function handleStreamAsync(stream, header, flags) {
 	const contentLength = parseInt(fullContentLength, 10)
 	const body = requestBody(stream, {
 		signal: AbortSignal.timeout(2 * 1000),
-		charset: contentType.charset,
+		contentType,
 		contentLength,
 		byteLimit: 1000 * 1000
 	})

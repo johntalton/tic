@@ -1,4 +1,5 @@
-import { CHARSET_UTF8 } from './content-type.js'
+import { CHARSET_UTF8, MIME_TYPE_MULTIPART_FORM_DATA, MIME_TYPE_URL_FORM_DATA } from './content-type.js'
+import { Multipart } from './multipart.js'
 
 export const DEFAULT_BYTE_LIMIT = 1024 * 1024 //
 
@@ -7,22 +8,27 @@ export const DEFAULT_BYTE_LIMIT = 1024 * 1024 //
  */
 
 /**
+ * @import { ContentType } from './content-type.js'
+ */
+
+/**
  * @typedef {Object} BodyOptions
  * @property {AbortSignal} signal
  * @property {number} byteLimit
  * @property {number} contentLength
- * @property {string} charset
+ * @property {ContentType} contentType
  */
 
 /**
  * @typedef {Object} BodyFuture
  * @property {number} duration
- * @property { ReadableStream } body
+ * @property {ReadableStream} body
+ * @property {ContentType} contentType
  * @property { (mimetype: string) => Promise<Blob> } blob
  * @property { () => Promise<ArrayBufferLike> } arrayBuffer
  * @property { () => Promise<Uint8Array> } bytes
  * @property { () => Promise<string> } text
- * @property {undefined} formData
+ * @property { () => Promise<FormData>} formData
  * @property { () => Promise<any> } json
  */
 
@@ -36,8 +42,8 @@ export function requestBody(stream, options) {
 	const signal = options?.signal
 	const byteLimit = options?.byteLimit ?? DEFAULT_BYTE_LIMIT
 	const contentLength = options?.contentLength
-	const charset = options?.charset ?? CHARSET_UTF8
-
+	const charset = options?.contentType?.charset ?? CHARSET_UTF8
+	const contentType = options?.contentType
 
 	const invalidContentLength = (contentLength === undefined || isNaN(contentLength))
 	// if(contentLength > byteLimit) {
@@ -166,12 +172,13 @@ export function requestBody(stream, options) {
 	return {
 		get duration() { return stats.duration },
 		get body() { return makeReader() },
+		get contentType() { return contentType },
 
-		blob: (/** @type {string | undefined} */ mimetype) => wrap(reader => bodyBlob(reader, mimetype)),
+		blob: (/** @type {string | undefined} */ mimetype) => wrap(reader => bodyBlob(reader, mimetype ?? contentType?.mimetype)),
 		arrayBuffer: () => wrap(reader => bodyArrayBuffer(reader)),
 		bytes: () => wrap(reader => bodyUint8Array(reader)),
 		text: () => wrap(reader => bodyText(reader, charset)),
-		formData: undefined,
+		formData: () => wrap(reader => bodyFormData(reader, contentType)),
 		json: () => wrap(reader => bodyJSON(reader, charset))
 	}
 }
@@ -247,4 +254,48 @@ async function bodyJSON(reader, charset) {
 	// console.log('bodyJSON')
 	const text = await bodyText(reader, charset)
 	return (text === '') ? {} : JSON.parse(text)
+}
+
+/**
+ * @param {ReadableStream} reader
+ * @param {ContentType} contentType
+ */
+async function _bodyFormData_Multipart(reader, contentType) {
+	const text = await bodyText(reader, contentType.charset)
+	const boundary = contentType.parameters.get('boundary')
+	if(boundary === undefined) { throw new Error('unspecified boundary') }
+
+	return Multipart.parse(text, boundary, contentType.charset)
+}
+
+/**
+ * @param {ReadableStream} reader
+ * @param {ContentType} contentType
+ */
+async function _bodyFormData_URL(reader, contentType) {
+	const text = await bodyText(reader, contentType.charset)
+	const sp = new URLSearchParams(text)
+	const formData = new FormData()
+
+	for(const [ key, value ] of sp.entries()) {
+		formData.append(key, value)
+	}
+
+	return formData
+}
+
+/**
+ * @param {ReadableStream} reader
+ * @param {ContentType} contentType
+ */
+async function bodyFormData(reader, contentType) {
+	if(contentType.mimetype === MIME_TYPE_MULTIPART_FORM_DATA) {
+		return _bodyFormData_Multipart(reader, contentType)
+	}
+
+	if(contentType.mimetype === MIME_TYPE_URL_FORM_DATA) {
+		return _bodyFormData_URL(reader, contentType)
+	}
+
+	throw new TypeError('unknown mime type for form data')
 }
