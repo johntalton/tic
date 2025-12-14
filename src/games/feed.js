@@ -56,11 +56,14 @@ export async function handleGameFeed(matches, sessionUser, body, query, stream) 
 		// console.log(msg, data)
 		if(!isViewable(game, user)) { return }
 
-		ServerSentEvents.messageToEventStreamLines({
-			// id: 1,
-			event: 'update',
-			// data: [ JSON.stringify(game) ]
-			data: [ JSON.stringify({ id: identifiableGameId(_id) }) ]
-		}).forEach(line => stream.write(line))
+		identifiableGameId(_id)
+			.then(id => {
+				ServerSentEvents.messageToEventStreamLines({
+					// id: 1,
+					event: 'update',
+					// data: [ JSON.stringify(game) ]
+					data: [ JSON.stringify({ id }) ]
+				}).forEach(line => stream.write(line))
+			})
 	}
 }

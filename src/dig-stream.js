@@ -32,28 +32,30 @@ const { HTTP2_METHOD_OPTIONS } = http2.constants
 
 const {
 	HTTP2_HEADER_METHOD,
+	HTTP2_HEADER_AUTHORITY,
+	HTTP2_HEADER_SCHEME,
 	HTTP2_HEADER_PATH,
-	HTTP2_HEADER_STATUS,
+	HTTP2_HEADER_AUTHORIZATION,
 	HTTP2_HEADER_CONTENT_TYPE,
+	HTTP2_HEADER_CONTENT_LENGTH,
 	HTTP2_HEADER_ACCEPT,
 	HTTP2_HEADER_ACCEPT_ENCODING,
 	HTTP2_HEADER_ACCEPT_LANGUAGE,
-	HTTP2_HEADER_AUTHORIZATION,
-	HTTP2_HEADER_ACCESS_CONTROL_ALLOW_ORIGIN,
-	HTTP2_HEADER_ACCESS_CONTROL_ALLOW_METHODS,
-	HTTP2_HEADER_ACCESS_CONTROL_ALLOW_HEADERS,
 	HTTP2_HEADER_REFERER,
-	HTTP2_HEADER_AUTHORITY,
-	HTTP2_HEADER_SCHEME,
 	HTTP2_HEADER_HOST,
-	HTTP2_HEADER_CONTENT_LENGTH,
-	HTTP2_HEADER_VIA
+	HTTP2_HEADER_VIA,
+	HTTP2_HEADER_CACHE_CONTROL,
 } = http2.constants
 
 const HTTP_HEADER_ORIGIN = 'origin'
 const HTTP_HEADER_USER_AGENT = 'user-agent'
-
 const HTTP_HEADER_FORWARDED = 'forwarded'
+const HTTP_HEADER_SEC_CH_UA = 'sec-ch-ua'
+const HTTP_HEADER_SEC_CH_PLATFORM = 'sec-ch-ua-platform'
+const HTTP_HEADER_SEC_CH_MOBILE = 'sec-ch-ua-mobile'
+const HTTP_HEADER_SEC_FETCH_SITE = 'sec-fetch-site'
+const HTTP_HEADER_SEC_FETCH_MODE = 'sec-fetch-mode'
+const HTTP_HEADER_SEC_FETCH_DEST = 'sec-fetch-dest'
 
 const FORWARDED_KEY_SECRET = 'secret'
 const FORWARDED_ACCEPTABLE_KEYS = [ ...KNOWN_FORWARDED_KEYS, FORWARDED_KEY_SECRET ]
@@ -99,6 +101,19 @@ async function handleStreamAsync(stream, header, flags) {
 	const referer = header[HTTP2_HEADER_REFERER]
 	const fullForwarded = header[HTTP_HEADER_FORWARDED]
 
+	// SEC Client Hints
+	const secUA = header[HTTP_HEADER_SEC_CH_UA]
+	const secPlatform = header[HTTP_HEADER_SEC_CH_PLATFORM]
+	const secMobile = header[HTTP_HEADER_SEC_CH_MOBILE]
+	const secFetchSite = header[HTTP_HEADER_SEC_FETCH_SITE]
+	const secFetchMode = header[HTTP_HEADER_SEC_FETCH_MODE]
+	const secFetchDest = header[HTTP_HEADER_SEC_FETCH_DEST]
+
+	// const priority = header['priority']
+
+	// const pragma = header['pragma']
+	// const cacheControl = header[HTTP2_HEADER_CACHE_CONTROL]
+
 	const ip = stream.session?.socket.remoteAddress
 	const port = stream.session?.socket.remotePort
 	const host = stream.session?.socket.servername // TLS SNI
@@ -115,7 +130,17 @@ async function handleStreamAsync(stream, header, flags) {
 	// 	authority,
 	// 	referer,
 	// 	UA,
-	// 	fullContentType
+	// 	fullContentType, fullContentLength,
+	// 	// pragma,
+	// 	// cacheControl
+	// })
+	// console.log({
+	// 	secUA,
+	// 	secPlatform,
+	// 	secMobile,
+	// 	secFetchSite,
+	// 	secFetchMode,
+	// 	secFetchDest
 	// })
 
 	// stream.on('close', () => console.log('stream close'))

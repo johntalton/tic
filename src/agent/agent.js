@@ -1,14 +1,12 @@
 import { GameAPI } from './node-game-api.js'
 import { EventSource } from '../util/event-source.js'
 
-const USER_AGENT_ID = 'user:Agent'
-
 class BasicAI {
 	async #shouldAccept(game) {
 		return true
 	}
 
-	async #proposeMove(board) {
+	async _proposeMove(board) {
 		const validSpots = board.map((player, idx) => ({
 			player, idx
 		}))
@@ -22,20 +20,20 @@ class BasicAI {
 		return validSpots[randomIdx]
 	}
 
-	async proposeAction(game) {
+	async proposeAction(agentUserId, game) {
 		const { board, state, actions } = game
 
 		switch(state) {
 			case 'new':
 				console.log('proposeAction - New')
-				const isOwner = game.owner === USER_AGENT_ID
+				const isOwner = game.owner === agentUserId
 
 				return { type: 'None' }
 
 				break
 			case 'pending':
 				console.log('proposeAction - Pending ')
-				if(game.offers.includes(USER_AGENT_ID) && game.actions.includes('Accept')) {
+				if(game.offers.includes(agentUserId) && game.actions.includes('Accept')) {
 					console.log('Accepting Offered Game from', game.owner)
 					const shouldAccept = await this.#shouldAccept(game)
 					const type = shouldAccept ? 'Accept' : 'Decline'
@@ -49,10 +47,10 @@ class BasicAI {
 				break
 			case 'active':
 				console.log('proposeAction - Active')
-				if(game.active.includes(USER_AGENT_ID)) {
+				if(game.active.includes(agentUserId)) {
 					console.log('proposeAction - Active Agents Turn')
 
-					const position = await this.#proposeMove(board)
+					const position = await this._proposeMove(board)
 
 					return {
 						type: 'Move',
@@ -75,13 +73,20 @@ class BasicAI {
 	}
 }
 
+class BetterAI extends BasicAI {
+	async _proposeMove(board) {
+		return 0
+	}
+}
+
 class GameAgent {
 	#channel = new MessageChannel()
 	#serviceUrl = 'https://tic.next.local:8443'
 	#api
+	#agentUserId
 	#accessToken
 	#sse
-	#ai = new BasicAI()
+	#ai
 
 	async #handleAction(game, action) {
 		const { type } = action
@@ -112,7 +117,7 @@ class GameAgent {
 
 	async #handleGame(game) {
 		// console.log(game)
-		const action = await this.#ai.proposeAction(game)
+		const action = await this.#ai.proposeAction(this.#agentUserId, game)
 		await this.#handleAction(game, action)
 	}
 
@@ -149,9 +154,10 @@ class GameAgent {
 		}
 	}
 
-	constructor(accessToken) {
+	constructor(userId, accessToken, ai) {
+		this.#agentUserId = userId
 		this.#accessToken = accessToken
-
+		this.#ai = ai
 		this.#api = new GameAPI({ accessToken }, this.#serviceUrl)
 
 		// const { port1 } = this.#channel
@@ -164,4 +170,4 @@ class GameAgent {
 	}
 }
 
-const gameAgent = new GameAgent('token:access:agent')
+const gameAgent = new GameAgent('user:Agent', 'token:access:agent', new BasicAI())

@@ -14,12 +14,14 @@ export async function handleList(matches, sessionUser, body, query) {
 	}
 
 	const allDBGames = await gameStore.list(user)
-	const allGames = allDBGames.map(game => {
+	const allGames = await Promise.all(allDBGames.map(async game => {
+		const id = await identifiableGameId(game._id)
 		return {
 			...game,
-			id: identifiableGameId(game._id)
+			_id: undefined,
+			id,
 		}
-	})
+	}))
 
 	const stateFilter = query.get('f') ?? query.get('filter') ?? ''
 	if(stateFilter === '*') { return { games: allGames }}

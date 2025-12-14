@@ -3,6 +3,17 @@ import { ELO, WIN, LOSE, DRAW } from './elo.js'
 import { gameStore } from '../store/game.js'
 import { userStore } from '../store/user.js'
 
+/**
+ * @typedef {string} EncodedGameId
+ */
+
+// const KEY = await crypto.subtle.generateKey({
+// 		name: 'AES-GCM',
+// 		length: 256
+// 	},
+// 	false,
+// 	[ 'encrypt', 'decrypt' ])
+
 /** @import { StoreGameId, StoreGame } from '../store/game.js' */
 /** @import { ActionableGame, Game } from './tic.js' */
 /** @import { StoreUserId } from '../store/user.js' */
@@ -27,7 +38,7 @@ export async function resolveFromStore(id, sessionUser) {
     throw new Error('invalid user token')
   }
 
-	const gameId = fromIdentifiableGameId(id)
+	const gameId = await fromIdentifiableGameId(id)
 
   const gameObject = await gameStore.get(gameId)
   if(gameObject === undefined) { throw new Error('unknown game') }
@@ -95,28 +106,58 @@ export async function computeAndUpdateELO(actionableGame) {
 }
 
 /**
- * @param {string} id
- * @returns {StoreGameId}
+ * @param {EncodedGameId} id
+ * @returns {Promise<StoreGameId>}
  */
-export function fromIdentifiableGameId(id) {
+export async function fromIdentifiableGameId(id) {
 	return id.substring(2)
+
+	const [ g, ciphertext64, nonce64 ] = id.split(':')
+
+	if(g !== 'G') { throw new Error('invalid encoded game id') }
+
+	const ciphertext8 = Uint8Array.fromBase64(ciphertext64, { alphabet: 'base64url' })
+	const nonce = Uint8Array.fromBase64(nonce64, { alphabet: 'base64url' })
+
+	const decrypted = await crypto.subtle.decrypt({
+		name: 'AES-GCM',
+		iv: nonce
+	}, KEY, ciphertext8)
+	const decoder = new TextDecoder()
+	return decoder.decode(decrypted)
 }
 
 /**
  * @param {StoreGameId} id
+ * @returns {Promise<EncodedGameId>}
  */
-export function identifiableGameId(id) {
+export async function identifiableGameId(id) {
 	return `G:${id}`
+
+	const encoder = new TextEncoder()
+	const data = encoder.encode(id)
+
+	const nonce = crypto.getRandomValues(new Uint8Array(12))
+	const ciphertext = await crypto.subtle.encrypt({
+		name: 'AES-GCM',
+		iv: nonce
+	}, KEY, data)
+
+	const ciphertext8 = new Uint8Array(ciphertext)
+	const ciphertext64 = ciphertext8.toBase64({ alphabet: 'base64url' })
+	const nonce64 = nonce.toBase64({ alphabet: 'base64url' })
+	return `G:${ciphertext64}:${nonce64}`
 }
 
 /**
  * @param {StoreGameId} gameId
  * @param {ActionableGame} actionableGame
- * @returns {ActionableGame & { id: StoreGameId }}
+ * @returns {Promise<ActionableGame & { id: EncodedGameId }>}
  */
-export function identifiableGame(gameId, actionableGame) {
+export async function identifiableGame(gameId, actionableGame) {
+	const id = await identifiableGameId(gameId)
 	return {
-		id: identifiableGameId(gameId),
+		id,
 		...actionableGame
 	}
 }

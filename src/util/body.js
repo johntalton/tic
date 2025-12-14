@@ -35,13 +35,19 @@ export const DEFAULT_BYTE_LIMIT = 1024 * 1024 //
 export function requestBody(stream, options) {
 	const signal = options?.signal
 	const byteLimit = options?.byteLimit ?? DEFAULT_BYTE_LIMIT
-	// const contentLength = options?.contentLength
+	const contentLength = options?.contentLength
 	const charset = options?.charset ?? CHARSET_UTF8
 
+
+	const invalidContentLength = (contentLength === undefined || isNaN(contentLength))
 	// if(contentLength > byteLimit) {
-	// 	console.log(contentLength)
+		// console.log(contentLength)
 	// 	throw new Error('contentLength exceeds limit')
 	// }
+
+	// console.log('closed/errored', stream.closed, stream.errored)
+	// console.log('readable length', stream.readableLength)
+	// console.log('readable/ended', stream.readable, stream.readableEnded)
 
 	const stats = {
 		byteLength: 0,
@@ -55,6 +61,23 @@ export function requestBody(stream, options) {
 	const underlyingSource = {
 		start(controller) {
 			// console.log('body reader start')
+
+			if(invalidContentLength) {
+				console.log('invalid content length')
+
+				stats.closed = true
+				controller.close()
+				return
+			}
+
+			if(stream.readableLength === 0) {
+				// console.log('body has zero bytes')
+				stats.closed = true
+				controller.close()
+				return
+			}
+
+
 			const listener = () => {
 				controller.error(new Error('Abort Signal Timed out'))
 			}
