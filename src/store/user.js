@@ -1,4 +1,4 @@
-import { CouchUtil } from './couch.js'
+import { COUCH_HEADER_NOT_MODIFIED, CouchUtil } from './couch.js'
 
 /**
  * @typedef {string} StoreUserId
@@ -57,7 +57,15 @@ async function fromView(url) {
 	})
 	.catch(e => {
 		// console.log('user DB fetch error', e)
-		throw new Error(`User DB fetch failure: ${e.message}`, { cause: e })
+		if(e.cause?.code === 'ETIMEDOUT') {
+			throw new Error(`DB listing timeout: ${e.message}`, { cause: e })
+		}
+		else if(e.cause?.code === 'ECONNREFUSED') {
+			throw new Error(`DB listing offline: ${e.message}`, { cause: e })
+		}
+		else {
+			throw new Error(`User DB fetch failure: ${e.message}`, { cause: e })
+		}
 	})
 
 	if(!response.ok) { throw new Error('User DB Fetch no Ok') }
@@ -149,6 +157,23 @@ export class CouchUserStore {
 
 	/**
 	 * @param {StoreUserId} id
+	 * @param {string} etag
+	 */
+	async #isModified(id, etag) {
+		const response = await fetch(`${this.#url}/${id}`, {
+			method: 'HEAD',
+			headers: {
+				...authorizationHeaders,
+				'Accept': '*/*',
+				'If-None-Match': `"${etag}"`
+			}
+		})
+
+		return (response.status !== COUCH_HEADER_NOT_MODIFIED)
+	}
+
+	/**
+	 * @param {StoreUserId} id
 	 * @returns {Promise<StoreUser>}
 	 */
 	async get(id) {
@@ -164,10 +189,17 @@ export class CouchUserStore {
 	}
 
 	/**
+	 * @param {StoreUserId} user
+	 * @param {Array<StoreUserId>} [usersList]
 	 * @returns {Promise<Array<StoreUserListItem>>}
 	 */
-	async list(user) {
+	async list(user, usersList) {
 		const url = new URL(`${this.#url}/_design/basic/_view/user_by_user`)
+
+		if(usersList !== undefined && usersList.length > 0) {
+			const userListKey = `[${usersList.map(u => `"${u}"`).join(',')}]`
+			url.searchParams.set('keys', userListKey)
+		}
 
 		const response = await fetch(url, {
 			method: 'GET',
@@ -186,8 +218,8 @@ export class CouchUserStore {
 
 		if(!response.ok) {
 			const text = await response.text()
-			console.log('game listing error', response.status, text)
-			throw new Error('game listing error')
+			console.log('user listing error', response.status, text)
+			throw new Error('user listing error')
 		}
 
 		const result = await response.json()

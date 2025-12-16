@@ -43,9 +43,11 @@ const options = {
 
 	allowHTTP1: false,
 	secureOptions: SSL_OP_NO_TLSv1 | SSL_OP_NO_TLSv1_1 | SSL_OP_NO_TLSv1_2,
+	minVersion: 'TLSv1.3',
 	settings: {
 		enablePush: false
 	},
+
 
 	ALPNProtocols: [ 'h2' ],
 	// ALPNCallback: ({ servername, protocols }) => {

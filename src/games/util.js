@@ -34,8 +34,13 @@ export async function resolveFromStore(id, sessionUser) {
   // if(id === '404') { throw new Error('404 test id')}
 
   const user = await userStore.fromToken(sessionUser.token)
+		.catch(error => {
+			console.log('fromToken error resolving from store', error.message)
+			return undefined
+		})
+
   if(user === undefined) {
-    throw new Error('invalid user token')
+    throw new Error('invalid user token while resolving from store')
   }
 
 	const gameId = await fromIdentifiableGameId(id)
@@ -59,6 +64,9 @@ export async function computeAndUpdateELO(actionableGame) {
 	const { resolution } = actionableGame
 	if(resolution.resolved) {
 		const [ playerAObject, playerBObject ] = await Promise.all(actionableGame.players.map(playerId => userStore.get(playerId)))
+
+		// console.log({ A: playerAObject.user })
+		// console.log({ B: playerBObject.user })
 
 		const scoreA = resolution.draw ? DRAW : ((resolution.winner.user === playerAObject._id) ? WIN : LOSE)
 		const scoreB = 1 - scoreA

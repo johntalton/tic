@@ -1,5 +1,6 @@
 // import { login, register } from './webauthn.js'
 import { GameAPI } from './game-api.js'
+import { UserAPI } from './user-api.js'
 import { UI } from './ui.js'
 
 import './localized-output.js'
@@ -17,6 +18,7 @@ const USER = {
 }
 
 const gameApi = new GameAPI(USER, TIC_URL)
+const userApi = new UserAPI(USER, TIC_URL)
 const notificationGameIdSet = new Set()
 var sseStream = undefined
 const { port1: gamePort, port2: clientPort } = new MessageChannel()
@@ -95,6 +97,7 @@ function handleForfeit(gameId, confirmed = false) {
 
 function handleOffer(gameId, targets, includeSelf) {
 	if(targets === undefined) {
+		// const futureFriends = userApi.friends()
 		UI.Dialog.startOffer(gameId, clientPort)
 		return
 	}
@@ -245,7 +248,15 @@ function stopSSE() {
 // 		.catch(e => {})
 // }
 
+function handleOnLoggedIn() {
+	userApi.friends()
+		.then(({ friends }) => {
+			UI.Dialog.updateFriends(friends)
+		})
 
+	clientPort.postMessage({ type: 'listing' })
+	startSSE()
+}
 
 function simpleUserAutoLogin() {
 	const info = localStorage.getItem('simple-login')
@@ -294,8 +305,7 @@ function handleSimpleLoginForm(event) {
 			localStorage.setItem('simple-login', JSON.stringify(json))
 
 			if(simpleUserAutoLogin()) {
-				clientPort.postMessage({ type: 'listing' })
-				startSSE()
+				handleOnLoggedIn()
 			}
 		})
 		.catch(e => {
@@ -349,8 +359,7 @@ async function onContentLoadedAsync(params) {
 	simpleForm?.addEventListener('submit', handleSimpleLoginForm)
 
 	if(simpleUserAutoLogin()) {
-		clientPort.postMessage({ type: 'listing' })
-		startSSE()
+		handleOnLoggedIn()
 	}
 }
 

@@ -297,21 +297,24 @@ export class Tic {
 	static offer(game, user, offer) {
 		// console.log('Tic::offer(owner)', game, user, offer)
 
-		const { targets: targetsMaybe, target, includeSelf } = offer
+		const { targets: targetsMaybe, target } = offer
 		const targets = targetsMaybe ?? [ target ]
 		if(targets.length <= 0) { return { ...game, message: 'no target(s) in offer' }}
 
 		if(!isOwner(game, user)) { return { ...game, message: 'not the owner' } }
 		if(game.state !== STATES.NEW && game.state !== STATES.PENDING) { return { ...game, message: 'game not offerable' } }
 
-		// const players = includeSelf ? [ ...game.players, user ] : game.players
-		const offers = [ ...game.offers, ...targets ]
+		// unique offer without any existing players
+		const offers = new Set([ ...game.offers, ...targets ])
+			.difference(new Set(game.players))
+			.values()
+			.toArray()
+
 		const state = STATES.PENDING
 
 		return {
 			...game,
 			state,
-			// players,
 			offers
 		}
 	}
@@ -388,7 +391,8 @@ export class Tic {
 			...game,
 			state: STATES.RESOLVED,
 			active: [],
-			offers: []
+			offers: [],
+			// forfeit: user
 		}
 	}
 
@@ -408,7 +412,7 @@ export class Tic {
 		if(game.state !== STATES.PENDING) { return { ...game, message: 'not a pending game' } }
 
 		const offers = game.offers.filter(offer => offer !== user)
-		const players = [ ...game.players, user ]
+		const players = new Set([ ...game.players, user ]).values().toArray()
 		const state = players.length === NUM_PLAYERS_TO_ACTIVATE ? STATES.ACTIVE : game.state
 		const active = state === STATES.ACTIVE ? [ randomPlayer(players) ]  : []
 
@@ -432,7 +436,7 @@ export class Tic {
 		if(!isChallenger(game, user)) { return { ...game, message: 'not a challenger' } }
 
 		const offers = game.offers.filter(offer => offer !== user)
-		const state = offers.length === 0 ? STATES.RESOLVED : game.state
+		const state = ((offers.length === 0) && (game.state !== STATES.ACTIVE)) ? STATES.RESOLVED : game.state
 
 		return {
 			...game,

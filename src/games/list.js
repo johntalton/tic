@@ -9,6 +9,11 @@ import { identifiableGameId } from './util.js'
 /** @type {HandlerFn} */
 export async function handleList(matches, sessionUser, body, query) {
 	const user = await userStore.fromToken(sessionUser.token)
+		.catch(error => {
+			console.log('handle listing error fromToken', error.message)
+			return undefined
+		})
+
 	if(user === undefined) {
 		throw new Error('invalid user token')
 	}

@@ -8,6 +8,13 @@ const SEPARATOR = '\r\n'
 
 const HEADER_SEPARATOR = ':'
 
+const EMPTY = ''
+
+const HEADER = {
+	CONTENT_DISPOSITION: 'content-disposition',
+	CONTENT_TYPE: 'content-type'
+}
+
 const STATE = {
 	BEGIN: 'begin',
 	HEADERS: 'headers',
@@ -25,10 +32,20 @@ export class Multipart {
 		// console.log({ boundary, text })
 		const formData = new FormData()
 
-		const boundaryBegin = `${BOUNDARY_MARK}${boundary}`
-		const boundaryEnd = `${BOUNDARY_MARK}${boundary}${BOUNDARY_MARK}`
+		if(text === '') {
+			// empty body
+			return formData
+		}
 
 		const lines = text.split(SEPARATOR)
+
+		if(lines.length === 0) {
+			// missing body?
+			return formData
+		}
+
+		const boundaryBegin = `${BOUNDARY_MARK}${boundary}`
+		const boundaryEnd = `${BOUNDARY_MARK}${boundary}${BOUNDARY_MARK}`
 
 		let partName = undefined
 		let state = STATE.BEGIN
@@ -38,29 +55,39 @@ export class Multipart {
 
 			if(state === STATE.BEGIN) {
 				// expect boundary
+				if(line === boundaryEnd) {
+					// empty set
+					break
+				}
+
 				if(line !== boundaryBegin) {
 					throw new Error('missing beginning boundary')
 				}
 				state = STATE.HEADERS
 			}
 			else if(state === STATE.HEADERS) {
-				if(line === '') { state = STATE.VALUE }
+				if(line === EMPTY) { state = STATE.VALUE }
 				else {
-					const [ name, value ] = line.split(HEADER_SEPARATOR)
+					const [ rawName, value ] = line.split(HEADER_SEPARATOR)
+					const name = rawName.toLowerCase()
 					// console.log('header', name, value)
-					if(name.toLowerCase() === 'content-type') {
+					if(name === HEADER.CONTENT_TYPE) {
 						const contentType = parseContentType(value)
-						console.log({ contentType })
+						// console.log({ contentType })
 					}
-					else if(name.toLowerCase() === 'content-disposition') {
+					else if(name === HEADER.CONTENT_DISPOSITION) {
 						const disposition = parseContentDisposition(value)
 						if(disposition.disposition !== DISPOSITION_FORM_DATA) {
 							throw new Error('disposition not form-data')
 						}
 
+						// todo: are names always quoted?
 						partName = disposition.name?.slice(1, -1)
 					}
-					else { throw new Error('unsupported part header') }
+					else {
+						// unsupported part header - ignore
+						console.log('unsupported part header', name)
+					}
 				}
 			}
 			else if(state === STATE.VALUE) {
@@ -114,4 +141,9 @@ export class Multipart {
 //  '-----------------------------paZqsnEHRufoShdX6fh0lUhXBP4k--'
 // ].join('\r\n')
 // const result = Multipart.parse(test, '---------------------------paZqsnEHRufoShdX6fh0lUhXBP4k')
+// console.log(result)
+
+
+// const test = '--X-INSOMNIA-BOUNDARY--\r\n'
+// const result = Multipart.parse(test, 'X-INSOMNIA-BOUNDARY')
 // console.log(result)

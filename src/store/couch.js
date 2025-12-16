@@ -1,3 +1,6 @@
+
+export const COUCH_HEADER_NOT_MODIFIED = 304
+
 export class CouchUtil {
 	/**
 	 * @param {string} username

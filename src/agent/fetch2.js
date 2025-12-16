@@ -40,65 +40,52 @@ const {
 
 export class Fetch2 {
 	static async fetch(urlOrString, options) {
+		// console.log('f2', urlOrString)
+
 		const method = options?.method ?? 'GET'
 		const headers = options?.headers ?? []
 		const signal = options?.signal
-
 		const url = new URL(urlOrString)
-		// console.log(url)
 
 		const client = http2.connect(url.origin, {
 			rejectUnauthorized: false
 		})
-		const req = client.request({
-			[HTTP2_HEADER_PATH]: `${url.pathname}${url.search}`,
-			[HTTP2_HEADER_METHOD]: method,
-			...headers
-		})
-		req.end()
-
-		// const timer = setTimeout(() => client.close(), 2 * 1000)
 
 		const { resolve, reject, promise } = Promise.withResolvers()
 
-		promise.finally(() => {
-			// console.log('f2 promise finally')
-			client.close()
-		// 	req.end()
-		})
-		// req.on('close', () => {
-		// 	console.log('f2 req close')
-		// 	// clearTimeout(timer)
-		// 	// req.end()
-		// 	client.close()
-		// 	reject(new Error('f2 req closed'))
-		// })
+		client.on('error', error => reject(error))
+		client.on('connect', () => {
+			const req = client.request({
+				[HTTP2_HEADER_PATH]: `${url.pathname}${url.search}`,
+				[HTTP2_HEADER_METHOD]: method,
+				...headers
+			})
+			req.end()
+			req.on('error', error => reject(error))
+			promise.finally(() => client.close())
 
-		req.on('response', (headers) => {
-			const status = headers[HTTP2_HEADER_STATUS]
-			if(!Number.isFinite(status)) {
-				reject(new Error('unknown status'))
-				return
-			}
+			req.on('response', (headers) => {
+				const status = headers[HTTP2_HEADER_STATUS]
+				if(!Number.isFinite(status)) {
+					reject(new Error('unknown status'))
+					return
+				}
 
-			// client.close()
+				// console.log('f2 requestBody')
+				const body = requestBody(req, { signal })
 
-			// console.log('response ... body')
-			const body = requestBody(req, { signal })
+				resolve({
+					ok: (status >= 200 && status < 300),
+					status,
+					headers: new Map(Object.entries(headers)),
 
-			// console.log('resolve with body', body)
-			resolve({
-				ok: (status >= 200 && status < 300),
-				status,
-				headers: new Map(Object.entries(headers)),
-
-				get body() { return body.body },
-				arrayBuffer: () => body.arrayBuffer(),
-				bytes: () => body.bytes(),
-				text: () => body.text(),
-				formData: undefined,
-				json: () => body.json()
-
+					get body() { return body.body },
+					arrayBuffer: () => body.arrayBuffer(),
+					bytes: () => body.bytes(),
+					text: () => body.text(),
+					formData: undefined,
+					json: () => body.json()
+				})
 			})
 		})
 

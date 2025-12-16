@@ -346,6 +346,8 @@ class UIDialog {
 
 		if(!(offerToDialog instanceof HTMLDialogElement)) { throw new Error('OfferTo is not a Dialog element') }
 
+		// offerToDialog.addEventListener('close', event => {})
+
 		offerForm?.addEventListener('submit', event => {
 			const fd = new FormData(offerForm)
 			const targets = fd.getAll('offerTo')
@@ -369,6 +371,20 @@ class UIDialog {
 		}, { once: true })
 
 		offerToDialog?.showModal()
+	}
+
+	static updateFriends(friends) {
+		// offer listing
+		const offerToSelection = document.getElementById('offerToUser')
+		if(!(offerToSelection instanceof HTMLSelectElement)) { throw new Error('OfferToUser is not a select element') }
+		// remove existing
+		offerToSelection.querySelectorAll('option').forEach(o => o.remove())
+		offerToSelection.append(...friends.map(friend => {
+			const option = document.createElement('option')
+			option.value = friend.id
+			option.textContent = `${friend.glyph ? friend.glyph + ' ' : ''}${friend.displayName}`
+			return option
+		}))
 	}
 }
 

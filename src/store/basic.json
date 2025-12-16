@@ -1,0 +1,18 @@
+{
+  "_id": "_design/basic",
+  "_rev": "74-d11dc5dd3eb21b9de8a025b90626fa2a",
+  "views": {
+    "games_by_viewer": {
+      "map": "function(doc) {\n    if(doc.type !== \"game.tic.v1\") { return }\n    // emit(doc.game.owner, doc.game.state)\n    //doc.game.players.forEach(player => emit(player, doc.game.state))\n    //doc.game.offers.forEach(player => emit(player, doc.game.state))\n    \n    const m = new Map();\n    m.set(doc.game.owner, 1)\n    doc.game.players.forEach(player => m.set(player, 1))\n    doc.game.offers.forEach(player => m.set(player, 1))\n    \n    const result = {\n      state: doc.game.state,\n      active: doc.game.active,\n      owner: doc.game.owner,\n      createdAt: doc.meta ? doc.meta.createdAt : undefined,\n      players: doc.game.players\n    }\n    \n    for(const e of m.entries()) {\n      emit(e[0], result)\n    }\n}"
+    },
+    "user_by_token": {
+      "map": "function (doc) {\n  if(doc.type !== 'user.tic.v1') { return }\n  emit(doc.session.token, doc._id);\n}"
+    },
+    "user_by_user": {
+      "map": "function (doc) {\n  if(doc.type !== 'user.tic.v1') { return }\n  \n  emit(doc._id, {\n    displayName: doc.user.displayName,\n    elo: doc.user.elo,\n    glyph: doc.user.glyph\n  });\n}"
+    },
+    "friends_by_user": {
+      "map": "function (doc) {\n  if(doc.type !== 'user.tic.v1') { return }\n  \n  doc.user.friends.forEach(friend => emit(doc._id, friend))\n}"
+    }
+  }
+}

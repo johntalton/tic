@@ -40,3 +40,10 @@ export function parseContentDisposition(contentDispositionHeader) {
 // console.log(parseContentDisposition('form-data'))
 // console.log(parseContentDisposition('    form-data ; name'))
 // console.log(parseContentDisposition('form-data; name="key"'))
+
+// console.log(parseContentDisposition('inline'))
+// console.log(parseContentDisposition('attachment'))
+// console.log(parseContentDisposition('attachment; filename="file name.jpg"'))
+// console.log(parseContentDisposition('attachment; filename*=UTF-8\'\'file%20name.jpg'))
+// console.log(parseContentDisposition('attachment; filename*=UTF-8\'\'file%20name.jpg'))
+// console.log(parseContentDisposition('form-data;title*=us-ascii\'en-us\'This%20is%20%2A%2A%2Afun%2A%2A%2A'))

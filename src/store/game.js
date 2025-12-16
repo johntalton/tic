@@ -1,5 +1,5 @@
-import { CouchContinuous } from './couch-continous.js'
-import { CouchUtil } from './couch.js'
+import { CouchContinuous, DEFAULT_RECONNECT_INTERVAL_MS } from './couch-continuous.js'
+import { COUCH_HEADER_NOT_MODIFIED, CouchUtil } from './couch.js'
 // import { Temporal, Intl } from '@js-temporal/polyfill'
 
 /**
@@ -82,7 +82,9 @@ const username = process.env.COUCH_USER
 const password = process.env.COUCH_PASSWORD
 const authorizationHeaders = CouchUtil.basicAuthHeader(username, password)
 
-const COUCH_HEADER_NOT_MODIFIED = 304
+const RECONNECT_INTERVAL_INITIAL_MS = DEFAULT_RECONNECT_INTERVAL_MS
+const RECONNECT_INTERVAL_STEP_MS = (10 * 1000)
+const RECONNECT_INTERVAL_MAX_MS = (60 * 1000)
 
 export class CouchGameStore {
 	#url
@@ -114,6 +116,7 @@ export class CouchGameStore {
 
 	#feedConnect() {
 		this.#feed = new CouchContinuous(this.#feedUrl, {
+			reconnectIntervalMS: RECONNECT_INTERVAL_INITIAL_MS,
 			headers: {
 				...authorizationHeaders
 			}
@@ -122,10 +125,22 @@ export class CouchGameStore {
 
 		this.#feed.addEventListener('open', () => console.log('CouchDB Feed Open'))
 		this.#feed.addEventListener('close', () => console.log('CouchDB Feed Close'))
-		this.#feed.addEventListener('error', error => console.log('CouchDB Error', error))
+		this.#feed.addEventListener('error', error => {
+			// add time to the interval up to max
+			if(this.#feed.reconnectIntervalMS < RECONNECT_INTERVAL_MAX_MS) {
+				this.#feed.reconnectIntervalMS += RECONNECT_INTERVAL_STEP_MS
+			}
+
+			console.log('CouchDB Feed Error', this.#feed.reconnectIntervalMS)
+		})
 		this.#feed.addEventListener('data', event => {
 			const { data } = event
 			const { id } = data
+
+			// console.log('change', data)
+
+			// reset reconnect to default on success
+			this.#feed.reconnectIntervalMS = RECONNECT_INTERVAL_INITIAL_MS
 
 			this.get(id)
 				.then(gameObject => {
@@ -299,11 +314,12 @@ export class CouchGameStore {
 				}
 			})
 			.catch(e => {
-				if(e.code === 'ETIMEDOUT') {
+				if(e.cause?.code === 'ETIMEDOUT') {
 					throw new Error(`DB listing timeout: ${e.message}`, { cause: e })
 				}
-
-				throw new Error(`DB listing failure: ${e.message}`, { cause: e })
+				else {
+					throw new Error(`DB listing failure: ${e.message}`, { cause: e })
+				}
 			})
 
 

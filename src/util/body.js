@@ -47,7 +47,7 @@ export function requestBody(stream, options) {
 
 	const invalidContentLength = (contentLength === undefined || isNaN(contentLength))
 	// if(contentLength > byteLimit) {
-		// console.log(contentLength)
+		// console.log(contentLength, invalidContentLength)
 	// 	throw new Error('contentLength exceeds limit')
 	// }
 
@@ -69,7 +69,15 @@ export function requestBody(stream, options) {
 			// console.log('body reader start')
 
 			if(invalidContentLength) {
-				console.log('invalid content length')
+				// console.log('invalid content length')
+
+				// stats.closed = true
+				// controller.close()
+				// return
+			}
+
+			if(contentLength === 0) {
+				// console.log('zero content length')
 
 				stats.closed = true
 				controller.close()
@@ -78,9 +86,10 @@ export function requestBody(stream, options) {
 
 			if(stream.readableLength === 0) {
 				// console.log('body has zero bytes')
-				stats.closed = true
-				controller.close()
-				return
+
+				// stats.closed = true
+				// controller.close()
+				// return
 			}
 
 
@@ -129,14 +138,20 @@ export function requestBody(stream, options) {
 				signal?.removeEventListener('abort', listener)
 
 				if(!stats.closed) {
-					// console.log('body reader close on end')
+					// console.log('body reader close controller on end')
 					stats.closed = true
 					controller.close()
 				}
 			})
 
-			// stream.on('close', () => console.log('body reader stream close'))
-			// stream.on('aborted', () => console.log('body reader stream aborted'))
+			stream.on('close', () => {
+				// console.log('body reader stream close')
+				if(!stats.closed) {
+					stats.closed = true
+					controller.close()
+				}
+			})
+			stream.on('aborted', () => console.log('body reader stream aborted'))
 		},
 
 		cancel(reason) {
@@ -261,8 +276,10 @@ async function bodyJSON(reader, charset) {
  * @param {ContentType} contentType
  */
 async function _bodyFormData_Multipart(reader, contentType) {
+	const MULTIPART_FORM_DATA_BOUNDARY_PARAMETER = 'boundary'
+
 	const text = await bodyText(reader, contentType.charset)
-	const boundary = contentType.parameters.get('boundary')
+	const boundary = contentType.parameters.get(MULTIPART_FORM_DATA_BOUNDARY_PARAMETER)
 	if(boundary === undefined) { throw new Error('unspecified boundary') }
 
 	return Multipart.parse(text, boundary, contentType.charset)

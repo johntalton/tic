@@ -270,7 +270,7 @@ async function handleStreamAsync(stream, header, flags) {
 			sendJSON_Encoded(stream, data, acceptedEncoding, meta)
 		})
 		.catch(e => {
-			// console.warn(e)
+			// console.warn('DIG Handler Error', e)
 			sendError(stream, 'Error: ' + e.message)
 		})
 }

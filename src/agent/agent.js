@@ -1,22 +1,23 @@
 import { GameAPI } from './node-game-api.js'
 import { EventSource } from '../util/event-source.js'
+import { Board, WIN_CONDITIONS } from '../games/tic.js'
 
 class BasicAI {
 	async #shouldAccept(game) {
 		return true
 	}
 
-	async _proposeMove(board) {
+	async _proposeMove(agentUserId, board) {
 		const validSpots = board.map((player, idx) => ({
 			player, idx
 		}))
 		.filter(({ player }) => player === 0)
 		.map(({ idx }) => idx )
 
-		console.log(validSpots)
+		// console.log(validSpots)
 		const count = validSpots.length - 1
 		const randomIdx = Math.round(Math.random() * count)
-		console.log('proposing move', count, randomIdx, validSpots[randomIdx])
+		// console.log('proposing move', count, randomIdx, validSpots[randomIdx])
 		return validSpots[randomIdx]
 	}
 
@@ -25,16 +26,16 @@ class BasicAI {
 
 		switch(state) {
 			case 'new':
-				console.log('proposeAction - New')
+				// console.log('proposeAction - New')
 				const isOwner = game.owner === agentUserId
 
 				return { type: 'None' }
 
 				break
 			case 'pending':
-				console.log('proposeAction - Pending ')
+				// console.log('proposeAction - Pending ')
 				if(game.offers.includes(agentUserId) && game.actions.includes('Accept')) {
-					console.log('Accepting Offered Game from', game.owner)
+					// console.log('Accepting Offered Game from', game.owner)
 					const shouldAccept = await this.#shouldAccept(game)
 					const type = shouldAccept ? 'Accept' : 'Decline'
 					return {
@@ -46,11 +47,11 @@ class BasicAI {
 
 				break
 			case 'active':
-				console.log('proposeAction - Active')
+				// console.log('proposeAction - Active')
 				if(game.active.includes(agentUserId)) {
-					console.log('proposeAction - Active Agents Turn')
+					// console.log('proposeAction - Active Agents Turn')
 
-					const position = await this._proposeMove(board)
+					const position = await this._proposeMove(agentUserId, board)
 
 					return {
 						type: 'Move',
@@ -62,7 +63,7 @@ class BasicAI {
 
 				break
 			case 'resolved':
-				console.log('proposeAction - Resolved')
+				// console.log('proposeAction - Resolved')
 				return { type: 'None' }
 				break
 			default:
@@ -74,13 +75,34 @@ class BasicAI {
 }
 
 class BetterAI extends BasicAI {
-	async _proposeMove(board) {
+	async _proposeMove(agentUserId, board) {
+		const validSpots = board.map((player, idx) => ({
+			player, idx
+		}))
+		.filter(({ player }) => player === 0)
+		.map(({ idx }) => idx )
+
+		const potentials = WIN_CONDITIONS.map(({ name, condition }) => {
+			const playable = (new Set(condition)).intersection(new Set(validSpots))
+			if(playable.size === 0) {
+				return undefined
+			}
+
+			const spot0 = board[condition[0]]
+			const spot1 = board[condition[1]]
+			const spot2 = board[condition[2]]
+
+
+
+		})
+
+
 		return 0
 	}
 }
 
 class GameAgent {
-	#channel = new MessageChannel()
+	// #channel = new MessageChannel()
 	#serviceUrl = 'https://tic.next.local:8443'
 	#api
 	#agentUserId
@@ -92,7 +114,7 @@ class GameAgent {
 		const { type } = action
 		switch(type) {
 			case 'Accept':
-				console.log('handleAction - Accept')
+				console.log('handleAction - Accept', game.id)
 				const acceptedGame = await this.#api.accept(game.id)
 				// console.log({ acceptedGame })
 				break
@@ -104,13 +126,13 @@ class GameAgent {
 				break
 			case 'Move':
 				const { position } = action
-				console.log('handleAction - Move', position)
+				console.log('handleAction - Move', game.id, position)
 				const updatedGame = await this.#api.move(game.id, position)
 				break
 			case 'Offer':
 				break
 			default:
-				console.log('Default Action ', type)
+				// console.log('Default Action ', type)
 				break
 		}
 	}
@@ -123,6 +145,14 @@ class GameAgent {
 
 	async #fetchAndProcessGames() {
 		this.#sse = new EventSource(`${this.#serviceUrl}/tic/v1/events?token=${this.#accessToken}`)
+		this.#sse?.addEventListener('open', () => {
+			console.log('SSE open')
+			// reprocess known games?
+		})
+		this.#sse?.addEventListener('error', error => {
+			// this could be a failure to open, or a scheduled reconnect
+			// console.log('sse error', error)
+		})
 		this.#sse?.addEventListener('update', update => {
 			const { lastEventId, data } = update
 			const json = JSON.parse(data)
@@ -134,23 +164,21 @@ class GameAgent {
 					await this.#handleGame(game)
 				})
 				.catch(error => console.warn('error in sse update handler', error))
-
-		})
-		// this.#sse.onmessage = message => {
-		// 	console.log('sse message', message)
-		// }
-		this.#sse?.addEventListener('error', error => {
-			console.log('sse error', error)
 		})
 
+		console.log('processed existing games')
+		try {
+			const knownGames = await this.#api.listing([ 'new', 'pending', 'active' ])
+			// console.log({ knownGames })
 
-		const knownGames = await this.#api.listing([ 'new', 'pending', 'active' ])
-		// console.log({ knownGames })
-
-		for (const knownGame of knownGames.games) {
-			const game = await this.#api.fetch(knownGame.id)
-			await this.#handleGame(game)
-				.catch(e => console.warn('error in list handler', e))
+			for (const knownGame of knownGames.games) {
+				const game = await this.#api.fetch(knownGame.id)
+				await this.#handleGame(game)
+					.catch(e => console.warn('error in list handler', e))
+			}
+		}
+		catch(e) {
+			console.warn('error processing existing games', e.message)
 		}
 	}
 
@@ -159,11 +187,6 @@ class GameAgent {
 		this.#accessToken = accessToken
 		this.#ai = ai
 		this.#api = new GameAPI({ accessToken }, this.#serviceUrl)
-
-		// const { port1 } = this.#channel
-		// port1.addEventListener('message', message => {
-		// 	console.log('agent message', message)
-		// })
 
 		this.#fetchAndProcessGames()
 			.catch(e => console.warn('error initializing', e))

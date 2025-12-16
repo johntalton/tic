@@ -137,6 +137,10 @@ function eventSourceTransform() {
 				else { ignoreNextLF = false }
 
 			} while((cr >= 0 || lf >= 0) && accumulator.length > 0)
+		},
+
+		flush(controller) {
+			// console.log('EventSourceTransform: flush')
 		}
 	})
 }
@@ -251,20 +255,25 @@ export class EventSource extends EventTarget {
 
 				this.dispatchEvent(new Event('open'))
 
-				if(response.body === null) {
+				// cache copy of body readable as it creates unique reader each time
+				const bodyReader = response.body
+				if(bodyReader === null) {
 					this.#failure(status, 'Invalid Body')
 					this.close()
 					return
 				}
 
 				// console.log(response)
-				const stream = response.body
+				const stream = bodyReader
 					.pipeThrough(new TextDecoderStream())
 					.pipeThrough(eventSourceTransform())
 					// .pipeTo(eventSourceWritable())
 
 				for await (const { event, retry, comment } of stream) {
+					// if(comment !== undefined) { console.log('event source comment', comment) }
+
 					if(retry !== undefined) {
+						console.log('setting retry time', retry)
 						this.#reconnectInterval = retry
 					}
 
@@ -277,16 +286,24 @@ export class EventSource extends EventTarget {
 						})
 						this.dispatchEvent(messageEvent)
 					}
-
 				}
-			})
-			.catch(error => {
+
+				// console.log('after stream events')
 				this.#controller = undefined
 
 				// if closed no reconnect
 				if(this.#readyState === CLOSED) { return }
 
-				console.warn('fetch failure - schedule reconnect', error)
+				this.#scheduleReconnect()
+			})
+			.catch(error => {
+				// console.log('fetch processing error', error.message, this.#readyState)
+				this.#controller = undefined
+
+				// if closed no reconnect
+				if(this.#readyState === CLOSED) { return }
+
+				// console.warn('fetch failure - schedule reconnect', error.message)
 				this.#scheduleReconnect()
 			})
 	}
@@ -295,7 +312,7 @@ export class EventSource extends EventTarget {
 		if(this.#readyState === CLOSED) { return }
 		this.#readyState = CONNECTING
 
-		console.warn('schedule reconnect')
+		// console.warn('schedule reconnect')
 		this.dispatchEvent(new Event('error'))
 		this.#reconnectTimer = setTimeout(() => this.#reconnect(), this.#reconnectInterval)
 	}

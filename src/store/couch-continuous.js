@@ -21,7 +21,7 @@ export class CouchContinuous extends EventTarget {
 
 	#controller
 	#reconnectTimer
-	#reconnectInterval = DEFAULT_RECONNECT_INTERVAL_MS
+	#reconnectInterval
 
 	constructor(url, options) {
 		super()
@@ -29,11 +29,16 @@ export class CouchContinuous extends EventTarget {
 		this.#url = new URL(url)
 		this.#options = options ?? {}
 
+		this.#reconnectInterval = options?.reconnectIntervalMS ?? DEFAULT_RECONNECT_INTERVAL_MS
+
 		this.#connect()
 	}
 
 	get readyState() { return this.#readyState }
 	get url() { return this.#url }
+
+	get reconnectIntervalMS() { return this.#reconnectInterval }
+	set reconnectIntervalMS(ms) { this.#reconnectInterval = ms }
 
 	close() {
 		if(this.#reconnectTimer) { clearTimeout(this.#reconnectTimer) }
@@ -120,7 +125,7 @@ export class CouchContinuous extends EventTarget {
 		this.#readyState = CONNECTING
 
 		this.dispatchEvent(new Event('error'))
-		this.#reconnectTimer = setTimeout(() => this.#reconnect(), this.#reconnectInterval)
+		this.#reconnectTimer = setTimeout(() => this.#reconnect(), this.reconnectIntervalMS)
 	}
 
 	#reconnect() {
