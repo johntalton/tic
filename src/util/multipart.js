@@ -77,7 +77,7 @@ export class Multipart {
 					}
 					else if(name === HEADER.CONTENT_DISPOSITION) {
 						const disposition = parseContentDisposition(value)
-						if(disposition.disposition !== DISPOSITION_FORM_DATA) {
+						if(disposition?.disposition !== DISPOSITION_FORM_DATA) {
 							throw new Error('disposition not form-data')
 						}
 

@@ -109,6 +109,12 @@ class UIListing {
 		lis?.forEach(li => li.remove())
 	}
 
+	// static clearGameListingItem(gameId) {
+	// 	const gameListElement = document.getElementById('GamesListing')
+	// 	const li = gameListElement?.querySelector(`li[data-game-id="${gameId}"]`)
+	// 	li?.remove()
+	// }
+
 	static listFilters() {
 		const filterForm = document.getElementById('ListFilterForm')
 		if(filterForm === null) { return [] }
@@ -176,7 +182,9 @@ class UIField {
 			gameFieldElem.toggleAttribute('can-move', false)
 
 			button.disabled = true
-			output.innerText = '❌' // '⭕'
+
+			// todo glyph from glyph cache for self
+			// output.innerText = '❌' // '⭕'
 
 			port.postMessage({
 				type: 'move',
@@ -193,7 +201,7 @@ class UIField {
 		return gameFieldElem !== null
 	}
 
-	static updateGameField(gameId, game, user) {
+	static updateGameField(gameId, game, user, glyphCache = new Map()) {
 		const gameFieldElem = document.querySelector(`game-field[game-id="${gameId}"]`)
 		if(gameFieldElem === null) { throw new Error('game not in dom') }
 
@@ -241,6 +249,10 @@ class UIField {
 		if(win) { gameBoardElem?.setAttribute('win-line', winningPosition) }
 		else { gameBoardElem?.removeAttribute('win-line') }
 
+		const [ playerA, playerB ] = game.players
+		const playerAGlyph = glyphCache.get(playerA) ?? '❌'
+		const playerBGlyph = glyphCache.get(playerB) ?? '⭕'
+
 		game.board.forEach((playerId, index) => {
 			const moveButtonElem = gameBoardElem?.querySelector(`button[data-position="${index}"]`)
 			const output = moveButtonElem?.querySelector('output')
@@ -251,12 +263,14 @@ class UIField {
 			if(playerId === 0) {
 				output.value = ''
 				moveButtonElem.disabled = false
-			} else if(playerId === user.id) {
-				output.value = '❌'
+			} else if(playerId === playerA) {
+				output.value = playerAGlyph
+				moveButtonElem.disabled = true
+			} else if(playerId === playerB){
+				output.value = playerBGlyph
 				moveButtonElem.disabled = true
 			} else {
-				output.value = '⭕'
-				moveButtonElem.disabled = true
+				console.warn('player not listed in players', playerId)
 			}
 
 		})

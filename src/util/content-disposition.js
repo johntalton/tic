@@ -16,13 +16,16 @@ const FILENAME = 'filename'
 
 /**
  * @param {string} contentDispositionHeader
- * @returns {Disposition}
+ * @returns {Disposition|undefined}
  */
 export function parseContentDisposition(contentDispositionHeader) {
-	if(contentDispositionHeader === undefined) { return {} }
+	if(contentDispositionHeader === undefined) { return undefined }
 
 	const [ disposition, ...parameterSet ] = contentDispositionHeader.trim().split(SEPARATOR.PARAMETER).map(entry => entry.trim())
-	const parameters = new Map(parameterSet.map(parameter => parameter.split(SEPARATOR.KVP).map(p => p.trim())))
+	const parameters = new Map(parameterSet.map(parameter => {
+		const [ key, value ] = parameter.split(SEPARATOR.KVP).map(p => p.trim())
+		return [ key, value ]
+	}))
 
 	const name = parameters.get(NAME)
 	const filename = parameters.get(FILENAME)

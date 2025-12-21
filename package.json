@@ -2,7 +2,7 @@
   "name": "@johntalton/tic",
   "type": "module",
   "scripts": {
-    "start": "./node_modules/.bin/http-server --cors -S -C ./certificates/localhost-cert.pem -K ./certificates/localhost-privkey.pem ./public",
+    "start": "./node_modules/.bin/http-server --robots --cors -b -g -S -C ./certificates/localhost-cert.pem -K ./certificates/localhost-privkey.pem ./public",
     "serve": "node --env-file=.env src/index.js"
   },
   "devDependencies": {

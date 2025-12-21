@@ -5,6 +5,10 @@ import crypto from 'node:crypto'
 // import { handleStream } from './handle-stream.js'
 import { handleStream } from './dig-stream.js'
 
+/**
+ * @import { SecureServerOptions } from 'node:http2'
+ */
+
 const {
 	SSL_OP_NO_TLSv1,
 	SSL_OP_NO_TLSv1_1,
@@ -23,12 +27,18 @@ const CREDENTIALS = (process.env.CREDENTIALS ?? '').split(',').map(c => c.trim()
 class CredentialsCache {
 	static cache = new Map()
 
+	/**
+	 * @param {string} host
+	 */
 	static #load(host) {
 		const key = fs.readFileSync(`./certificates/${host}-privkey.pem`, 'utf-8')
 		const cert = fs.readFileSync(`./certificates/${host}-cert.pem`, 'utf-8')
 		return { key, cert }
 	}
 
+	/**
+	 * @param {string} host
+	 */
 	static get(host) {
 		if(!CredentialsCache.cache.has(host)) {
 			const credentials = CredentialsCache.#load(host)
@@ -38,6 +48,7 @@ class CredentialsCache {
 	}
 }
 
+/** @type {SecureServerOptions} */
 const options = {
 	// origins: [],
 
@@ -47,7 +58,6 @@ const options = {
 	settings: {
 		enablePush: false
 	},
-
 
 	ALPNProtocols: [ 'h2' ],
 	// ALPNCallback: ({ servername, protocols }) => {
@@ -68,7 +78,7 @@ const options = {
 }
 
 const server = http2.createSecureServer(options)
-server.setTimeout(2 * 1000)
+server.setTimeout(1 * 1000)
 
 CREDENTIALS.forEach(credential => {
 	server.addContext(credential, CredentialsCache.get(credential))
@@ -76,7 +86,12 @@ CREDENTIALS.forEach(credential => {
 
 server.on('timeout', () => console.warn('Server Timeout'))
 server.on('tlsClientError', (error, socket) => console.warn('Server TLS Error', socket.servername, socket.remoteAddress, error.code))
-server.on('sessionError', error => { if(error.code !== 'ECONNRESET') { console.warn('Server Session Error', error) } })
+server.on('sessionError', error => {
+	// if(error.code !== 'ECONNRESET') { }
+
+	console.warn('Server Session Error', error)
+})
+
 server.on('error', error => console.warn('Server Error', (error.code === 'EADDRINUSE') ? 'Address in use' : error))
 // server.on('session', session => console.log('New Session', session.alpnProtocol, session.originSet))
 server.on('stream', handleStream)

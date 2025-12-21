@@ -38,6 +38,7 @@ const {
 	HTTP2_HEADER_AUTHORIZATION,
 	HTTP2_HEADER_CONTENT_TYPE,
 	HTTP2_HEADER_CONTENT_LENGTH,
+	HTTP2_HEADER_CONTENT_DISPOSITION,
 	HTTP2_HEADER_ACCEPT,
 	HTTP2_HEADER_ACCEPT_ENCODING,
 	HTTP2_HEADER_ACCEPT_LANGUAGE,
@@ -64,6 +65,7 @@ const FORWARDED_DROP_RIGHTMOST = (process.env.FORWARDED_SKIP_LIST ?? '').split('
 const FORWARDED_SECRET = process.env.FORWARDED_SECRET
 
 const CONTENT_TYPE_ASSUMED = CONTENT_TYPE_JSON
+// const ACCEPT_TYPE_ASSUMED = MIME_TYPE_JSON
 const DEFAULT_SUPPORTED_LANGUAGES = [ 'en-US', 'en' ]
 const DEFAULT_SUPPORTED_MIME_TYPES = [ MIME_TYPE_JSON, MIME_TYPE_XML, MIME_TYPE_TEXT ]
 const DEFAULT_SUPPORTED_ENCODINGS = [ ...ENCODER_MAP.keys() ]
@@ -93,7 +95,7 @@ async function handleStreamAsync(stream, header, flags) {
 	const fullAcceptEncoding = header[HTTP2_HEADER_ACCEPT_ENCODING]
 	const fullAcceptLanguage = header[HTTP2_HEADER_ACCEPT_LANGUAGE]
 	const origin = header[HTTP_HEADER_ORIGIN]
-	// const host = header[HTTP2_HEADER_HOST]
+	const host = header[HTTP2_HEADER_HOST]
 	const authority = header[HTTP2_HEADER_AUTHORITY]
 	const scheme = header[HTTP2_HEADER_SCHEME]
 	// const lastEventID = header[SSE_LAST_EVENT_ID.toLowerCase()]
@@ -116,7 +118,7 @@ async function handleStreamAsync(stream, header, flags) {
 
 	const ip = stream.session?.socket.remoteAddress
 	const port = stream.session?.socket.remotePort
-	const host = stream.session?.socket.servername // TLS SNI
+	const hostSNI = stream.session?.socket.servername // TLS SNI
 
 	const requestUrl = new URL(fullPathAndQuery, `${scheme}://${authority}`)
 
@@ -125,7 +127,8 @@ async function handleStreamAsync(stream, header, flags) {
 	// 	method, url:
 	// 	requestUrl.pathname,
 	// 	query: requestUrl.search,
-	// 	session: { host, ip, port },
+	// 	session: { hostSNI, ip, port },
+	// 	host,
 	// 	origin,
 	// 	authority,
 	// 	referer,
@@ -267,7 +270,13 @@ async function handleStreamAsync(stream, header, flags) {
 			// SSE header/response send above via sendSSE
 			if(isSSE) { return }
 
-			sendJSON_Encoded(stream, data, acceptedEncoding, meta)
+			if(accept === MIME_TYPE_JSON) {
+				sendJSON_Encoded(stream, data, acceptedEncoding, meta)
+			}
+			else {
+				throw new Error('unknown accept type')
+			}
+
 		})
 		.catch(e => {
 			// console.warn('DIG Handler Error', e)

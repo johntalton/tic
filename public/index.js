@@ -19,6 +19,9 @@ const USER = {
 
 const gameApi = new GameAPI(USER, TIC_URL)
 const userApi = new UserAPI(USER, TIC_URL)
+
+const glyphCache = new Map()
+
 const notificationGameIdSet = new Set()
 var sseStream = undefined
 const { port1: gamePort, port2: clientPort } = new MessageChannel()
@@ -51,7 +54,10 @@ gamePort.addEventListener('message', message => {
 
 function handleAccept(gameId) {
 	gameApi.accept(gameId)
-		.then(updatedGame => UI.Field.updateGameField(gameId, updatedGame, USER))
+		.then(updatedGame => {
+			refreshGlyphCache(updatedGame.players)
+			UI.Field.updateGameField(gameId, updatedGame, USER, glyphCache)
+		})
 		.catch(e => {
 			UI.Global.showToast(e.message)
 			console.warn(e)
@@ -60,7 +66,10 @@ function handleAccept(gameId) {
 
 function handleDecline(gameId) {
 	gameApi.decline(gameId)
-		.then(updatedGame => UI.Field.updateGameField(gameId, updatedGame, USER))
+		.then(updatedGame => {
+			// refreshGlyphCache(updatedGame.players)
+			UI.Field.updateGameField(gameId, updatedGame, USER, glyphCache)
+		})
 		.catch(e => {
 			UI.Global.showToast(e.message)
 			console.warn(e)
@@ -74,7 +83,10 @@ function handleClose(gameId, confirmed = false, reason = undefined) {
 	}
 
 	gameApi.close(gameId, reason)
-		.then(updatedGame => UI.Field.updateGameField(gameId, updatedGame, USER))
+		.then(updatedGame => {
+			// refreshGlyphCache(updatedGame.players)
+			UI.Field.updateGameField(gameId, updatedGame, USER, glyphCache)
+		})
 		.catch(e => {
 			UI.Global.showToast(e.message)
 			console.warn(e)
@@ -88,7 +100,10 @@ function handleForfeit(gameId, confirmed = false) {
 	}
 
 	gameApi.forfeit(gameId)
-		.then(updatedGame => UI.Field.updateGameField(gameId, updatedGame, USER))
+		.then(updatedGame => {
+			// refreshGlyphCache(updatedGame.players)
+			UI.Field.updateGameField(gameId, updatedGame, USER, glyphCache)
+		})
 		.catch(e => {
 			UI.Global.showToast(e.message)
 			console.warn(e)
@@ -107,13 +122,19 @@ function handleOffer(gameId, targets, includeSelf) {
 	console.log('offing game to', fullTargets)
 
 	gameApi.offer(gameId, fullTargets)
-		.then(updatedGame => UI.Field.updateGameField(gameId, updatedGame, USER))
+		.then(updatedGame => {
+			refreshGlyphCache(updatedGame.players)
+			UI.Field.updateGameField(gameId, updatedGame, USER, glyphCache)
+		})
 		.catch(e => console.warn(e))
 }
 
 function handleGameMove(gameId, position) {
 	gameApi.move(gameId, position)
-		.then(updatedGame => UI.Field.updateGameField(gameId, updatedGame, USER))
+		.then(updatedGame => {
+			refreshGlyphCache(updatedGame.players)
+			UI.Field.updateGameField(gameId, updatedGame, USER, glyphCache)
+		})
 		.catch(e => {
 			UI.Global.showToast(e.message)
 			console.warn(e)
@@ -125,9 +146,10 @@ function handleActivateGameField(gameId) {
 	UI.Field.activateGameField(gameId, clientPort)
 	gameApi.fetch(gameId)
 		.then(game => {
+			refreshGlyphCache(game.players)
 			notificationGameIdSet.delete(gameId)
 			UI.Listing.clearGameListingItemNotification(gameId)
-			UI.Field.updateGameField(gameId, game, USER)
+			UI.Field.updateGameField(gameId, game, USER, glyphCache)
 		})
 		.catch(e => {
 			UI.Global.showToast(e.message)
@@ -163,11 +185,13 @@ function handleCreateGame(event) {
 
 	gameApi.create()
 		.then(game => {
+			refreshGlyphCache(game.players)
+
 			notificationGameIdSet.add(game.id)
 
 			UI.Listing.addGameListingItem(game, USER, notificationGameIdSet, clientPort)
 			UI.Field.activateGameField(game.id, clientPort)
-			UI.Field.updateGameField(game.id, game, USER)
+			UI.Field.updateGameField(game.id, game, USER, glyphCache)
 		})
 		.catch(e => {
 			UI.Global.showToast(e.message)
@@ -186,12 +210,14 @@ function handleSSEUpdate(message) {
 
 	gameApi.fetch(gameId)
 		.then(game => {
+			// refreshGlyphCache(game.players)
+
 			notificationGameIdSet.add(gameId)
 
 			UI.Listing.addOrUpdateGameListingItem(game , USER, notificationGameIdSet, clientPort)
 
 			if(UI.Field.hasGameField(gameId)) {
-				UI.Field.updateGameField(gameId, game, USER)
+				UI.Field.updateGameField(gameId, game, USER, glyphCache)
 			}
 		})
 		.catch(e => {
@@ -217,6 +243,18 @@ function stopSSE() {
 	sseStream = undefined
 }
 
+
+
+
+
+function refreshGlyphCache(userIds) {
+	userApi.list(userIds)
+		.then(({ users }) => {
+			for(const user of users) {
+				glyphCache.set(user.id, user.glyph)
+			}
+		})
+}
 
 
 // function usernameFromDOM() {
@@ -249,8 +287,11 @@ function stopSSE() {
 // }
 
 function handleOnLoggedIn() {
+	refreshGlyphCache([ USER.id ])
+
 	userApi.friends()
 		.then(({ friends }) => {
+			refreshGlyphCache(friends.map(friend => friend.id))
 			UI.Dialog.updateFriends(friends)
 		})
 
@@ -276,7 +317,6 @@ function simpleUserAutoLogin() {
 }
 
 function handleSimpleLoginForm(event) {
-
 	const fd = new FormData(event.target)
 	const name = fd.get('username')
 	if(name === null || typeof name != 'string') {
@@ -342,6 +382,30 @@ async function onContentLoadedAsync(params) {
 
 	//
 	loadTheme()
+
+	//
+	document.getElementById('Toast')?.addEventListener('command', event => {
+		const { command } = event
+
+		if(command === '--hide-toast') {
+			UI.Global.hideToast()
+		}
+		else {
+			console.warn('unknown toast command', command)
+		}
+	})
+
+	//
+	document.getElementById('Aside')?.addEventListener('command', event => {
+		const { command } = event
+
+		if(command === '--toggle-aside') {
+			document.body.toggleAttribute('data-aside')
+		}
+		else {
+			console.warn('unknown aside command', command)
+		}
+	})
 
 	//
 	document.getElementById('CreateNewGame')?.addEventListener('click', handleCreateGame)

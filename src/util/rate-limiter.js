@@ -64,6 +64,9 @@ export class RateLimiter {
 		}
 
 		const bucket = store.get(key)
+		if(bucket === undefined) {
+			throw new Error('undefined bucket has check')
+		}
 		const { exhausted, resetSeconds } = Bucket.getToken(bucket, policy, 1)
 
 		return {

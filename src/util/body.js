@@ -13,17 +13,17 @@ export const DEFAULT_BYTE_LIMIT = 1024 * 1024 //
 
 /**
  * @typedef {Object} BodyOptions
- * @property {AbortSignal} signal
- * @property {number} byteLimit
- * @property {number} contentLength
- * @property {ContentType} contentType
+ * @property {AbortSignal} [signal]
+ * @property {number} [byteLimit]
+ * @property {number} [contentLength]
+ * @property {ContentType|undefined} contentType
  */
 
 /**
  * @typedef {Object} BodyFuture
  * @property {number} duration
  * @property {ReadableStream} body
- * @property {ContentType} contentType
+ * @property {ContentType|undefined} contentType
  * @property { (mimetype: string) => Promise<Blob> } blob
  * @property { () => Promise<ArrayBufferLike> } arrayBuffer
  * @property { () => Promise<Uint8Array> } bytes
@@ -303,9 +303,11 @@ async function _bodyFormData_URL(reader, contentType) {
 
 /**
  * @param {ReadableStream} reader
- * @param {ContentType} contentType
+ * @param {ContentType|undefined} contentType
  */
 async function bodyFormData(reader, contentType) {
+	if(contentType === undefined) { throw new Error('undefined content type for form data') }
+
 	if(contentType.mimetype === MIME_TYPE_MULTIPART_FORM_DATA) {
 		return _bodyFormData_Multipart(reader, contentType)
 	}

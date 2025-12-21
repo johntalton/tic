@@ -137,10 +137,12 @@
 
 	@font-face {
 		font-family: 'Noto Emoji';
+		font-display: swap;
 		src: url('./Noto_Emoji/NotoEmoji-VariableFont_wght.ttf') format('truetype');
 	}
 
 	i {
+		font-display: swap;
 		font-family: 'Noto Emoji', emoji;
 		font-variant-emoji: text;
 		font-weight: bold;
@@ -441,6 +443,27 @@
 				font-size: 1.5em;
 				text-transform: uppercase;
 				align-self: center;
+			}
+
+			& > select {
+				text-transform: uppercase;
+
+				border: none;
+				border-radius: 0.25em;
+				color: inherit;
+				border: 1px solid var(--background-light);
+				background-color: var(--background-light);
+				color: var(--text-light);
+				padding-inline: 1em 1.5em;
+				cursor: pointer;
+
+				appearance: base-select;
+				align-items: center;
+
+				&::picker-icon {
+					appearance: base-select;
+					padding-inline-start: 1ch;
+				}
 			}
 
 			& > button {

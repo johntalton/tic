@@ -21,9 +21,11 @@ export async function handleListFriends(matches, sessionUser, body, query) {
 	const { user: requestedUser } = requestedUserObject
 	const { friends } = requestedUser
 
-	// resolve friends
+	if(friends === undefined || friends.length === 0) {
+		return { friends }
+	}
+
 	const resolvedFriends = await userStore.list(userId, friends)
-	// console.log(resolvedFriends)
 
 	return { friends: resolvedFriends }
 }

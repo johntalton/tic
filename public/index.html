@@ -1,17 +1,24 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 	<head>
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no, viewport-fit=cover" />
 		<meta name="view-transition" content="same-origin" />
 		<meta content="light dark" name="color-scheme" />
+		<meta name="referrer" content="same-origin" />
+		<!-- <meta name="referrer" content="no-referrer" /> -->
+		 <meta http-equiv="content-security-policy" content="
+		 	default-src 'self';
+			script-src 'self';
+			connect-src tic.next.local:8443
+			" />
 
 		<title>Tic</title>
 		<meta name="description" content="X and O" />
 
 		<link rel="icon" type="image/svg+xml" href="./favicon.svg" />
-		<link rel="stylesheet" type="text/css" href="./index.css" />
-		<script async type="module" src="./index.js"></script>
+		<link rel="stylesheet" type="text/css" href="./index.css"/>
+		<script async defer type="module" src="./index.js"></script>
 	</head>
 	<body data-aside data-logged-in data-theme="plum">
 		<dialog id="WebAuthN">
@@ -33,7 +40,7 @@
 				<input id="SimpleUserName" name="username" type="text" required minlength="3" placeholder="user name"></input>
 
 				<button-set>
-					<button type="button" formnovalidate onclick="event.target.closest('dialog').close()" command="close">Cancel</button>
+					<button type="button" formnovalidate commandFor="SimpleUser" command="close">Cancel</button>
 					<button type="submit" data-action="simpleLogin">Login</button>
 				</button-set>
 			</form>
@@ -45,7 +52,7 @@
 
 			<form method="dialog">
 				<button-set>
-					<button type="button" onclick="event.target.closest('dialog').close()">Cancel</button>
+					 <button type="button" commandFor="SimpleLogoutConfirm" command="close">Cancel</button>
 					<button type="submit" data-confirm id="SimpleLogout">Logout</button>
 				</button-set>
 			</form>
@@ -68,7 +75,7 @@
 
 
 				<button-set>
-					<button type="button" onclick="event.target.closest('dialog').close()">Cancel</button>
+					<button type="button" commandFor="OfferTo" command="close">Cancel</button>
 					<button type="submit" data-offer>Offer</button>
 				</button-set>
 			</form>
@@ -79,7 +86,7 @@
 
 			<form method="dialog">
 				<button-set>
-					<button type="button" onclick="event.target.closest('dialog').close()">Cancel</button>
+					<button type="button" commandFor="ForfeitConfirm" command="close">Cancel</button>
 					<button type="submit" data-confirm>Forfeit</button>
 				</button-set>
 			</form>
@@ -93,7 +100,7 @@
 				<input id="CloseConfirmReason" type="text" name="reason" />
 
 				<button-set>
-					<button type="button" onclick="event.target.closest('dialog').close()">Cancel</button>
+					<button type="button" commandFor="CloseConfirm" command="close">Cancel</button>
 					<button type="submit" data-confirm>Confirm</button>
 				</button-set>
 			</form>
@@ -103,26 +110,33 @@
 		<header aria-label="main navigation">
 			<h1>Tic</h1>
 			<button-set>
-				<button data-not-logged-in onclick="document.getElementById('SimpleUser').showModal()"><i>👤</i></button>
-				<button data-logged-in onclick="document.getElementById('SimpleLogoutConfirm').showModal()"><i>👤</i></button>
-				<button data-aside-toggle onclick="document.body.toggleAttribute('data-aside')">
+				<button data-not-logged-in commandFor="SimpleUser" command="show-modal"><i>👤</i></button>
+				<button data-logged-in commandFor='SimpleLogoutConfirm' command="show-modal"><i>👤</i></button>
+				<button data-aside-toggle commandFor="Aside" command="--toggle-aside">
 					<!-- <img data-icon src="./icons/burger.svg" alt="Menu"> -->
-					 <i>🟰</i>
+					<i>🟰</i>
 				</button>
 			</button-set>
 		</header>
 		<progress id="GlobalProgress" min="0" max="100" value="25"></progress>
 		<div id="Toast" data-toast>
 			<output></output>
-			<button onclick="UI.Global.hideToast()">
+			<button commandFor="Toast" command="--hide-toast">
 				<!-- <img data-icon src="./icons/close.svg" alt="Close"/> -->
 				 <i>❌</i>
 			</button>
 		</div>
+
 		<main>
-			<aside aria-label="User Game Listing">
+			<aside id="Aside" aria-label="User Game Listing">
 				<header>
-					<span>Games:</span>
+					<!-- <span>Games:</span> -->
+					<!-- <label for="ViewSelection">Select View</label> -->
+					<select id="ViewSelection">
+						<option value="games">Games</option>
+						<option value="friends">Friends</option>
+					</select>
+
 					<!-- <button><i>⛭</i></button> -->
 					<button id="CreateNewGame" data-logged-in>
 						<!-- <img data-icon src="./icons/plus.svg" alt="New Game"/> -->
@@ -133,7 +147,7 @@
 
 				<details data-logged-in data-filter-state open>
 					<summary>Filter By</summary>
-					<form id="ListFilterForm" data-chip-group onchange="console.log(new FormData(event.target.closest('form')).getAll('ListFilter'))">
+					<form id="ListFilterForm" data-chip-group>
 						<label for="ListFilter-New">New</label>
 						<input id="ListFilter-New" name="ListFilter" value="new" type="checkbox" checked />
 

@@ -22,13 +22,13 @@ export async function listUsers(matches, sessionUser, body, query) {
 	// const userFilter = query.getAll('u') ?? query.getAll('user') ?? '*'
 	// if(userFilter === '*') { return { users: allUsers } }
 
-	if((body.contentType.mimetype !== MIME_TYPE_MULTIPART_FORM_DATA) && (body.contentType.mimetype !== MIME_TYPE_URL_FORM_DATA)) {
-		throw new Error('unknown body mime type')
-	}
+	// if((body.contentType.mimetype !== MIME_TYPE_MULTIPART_FORM_DATA) && (body.contentType.mimetype !== MIME_TYPE_URL_FORM_DATA)) {
+	// 	throw new Error('unknown body mime type')
+	// }
 
-	// console.log('text', await body.text())
-	const formData = await body.formData()
-	console.log('users', [ ...formData.getAll('user'), ...formData.getAll('u') ])
+	// // console.log('text', await body.text())
+	// const formData = await body.formData()
+	// console.log('users', [ ...formData.getAll('user'), ...formData.getAll('u') ])
 
 	return {
 		users: allUsers

@@ -1,6 +1,10 @@
-.DS_Store
 node_modules/
+.clinic/
+certificates/
+.vscode/
+
+.DS_Store
 .env
 *.pem
 package-lock.json
-.clinic/
+_*

@@ -46,10 +46,10 @@ export const WELL_KNOWN = new Map([
 
 /**
  * @param {string} contentTypeHeader
- * @returns {ContentType}
+ * @returns {ContentType|undefined}
  */
 export function parseContentType(contentTypeHeader) {
-	if(contentTypeHeader === undefined) { return {} }
+	if(contentTypeHeader === undefined) { return undefined }
 
 	const wellKnown = WELL_KNOWN.get(contentTypeHeader)
 	if(wellKnown !== undefined) { return wellKnown }
@@ -60,7 +60,10 @@ export function parseContentType(contentTypeHeader) {
 		.split(SEPARATOR.SUBTYPE)
 		.map(t => t.trim())
 
-	const parameters = new Map(parameterSet.map(parameter => parameter.split(SEPARATOR.KVP).map(p => p.trim())))
+	const parameters = new Map(parameterSet.map(parameter => {
+		const [ key, value ] = parameter.split(SEPARATOR.KVP).map(p => p.trim())
+		return [ key, value ]
+	}))
 
 	const charset = parameters.get(CHARSET)
 

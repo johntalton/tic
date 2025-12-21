@@ -33,10 +33,13 @@ export function parseAcceptStyleHeader(header, wellKnown) {
 					.trim()
 					.split(SEPARATOR.PARAMETER)
 
-				const parameters = new Map(parametersSet.map(parameter => parameter.split(SEPARATOR.KVP).map(p => p.trim())))
+				const parameters = new Map(parametersSet.map(parameter => {
+					const [ key, value ] = parameter.split(SEPARATOR.KVP).map(p => p.trim())
+					return [ key, value ]
+				}))
 
 				if(!parameters.has(QUALITY)) { parameters.set(QUALITY, DEFAULT_QUALITY_STRING) }
-				const quality = parseFloat(parameters.get(QUALITY))
+				const quality = parseFloat(parameters.get(QUALITY) ?? DEFAULT_QUALITY_STRING)
 
 				return {
 					name,

@@ -171,18 +171,30 @@ function eventSourceTransform() {
 // 	if(event) { console.log({ type: 'message', ...event }) }
 // }
 
+/**
+ * @typedef {Object} EventSourceOptions
+ * @property {boolean} [withCredentials = false]
+ */
+
 export class EventSource extends EventTarget {
 	#readyState = CONNECTING
 	#url
 	#withCredentials
 
+	/** @type {AbortController|undefined} */
 	#controller
 
+	/** @type {NodeJS.Timeout|undefined} */
 	#reconnectTimer
 	#reconnectInterval = DEFAULT_RECONNECT_INTERVAL_MS
 
+	/** @type {string|undefined} */
 	#lastEventId
 
+	/**
+	 * @param {string|URL} url
+	 * @param {EventSourceOptions} [options]
+	 */
 	constructor(url, options) {
 		super()
 
@@ -323,6 +335,10 @@ export class EventSource extends EventTarget {
 		this.#connect()
 	}
 
+	/**
+	 * @param {number} status
+	 * @param {string} message
+	 */
 	#failure(status, message) {
 		console.log('failure', status, message)
 		if(this.#readyState !== CLOSED) { this.#readyState = CLOSED }
