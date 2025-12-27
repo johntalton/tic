@@ -6,7 +6,7 @@ import {
 	ENCODER_MAP,
 	sendError,
 	sendJSON_Encoded,
-	sendNotFound,
+	// sendNotFound,
 	sendPreflight,
 	sendSSE,
 	sendTooManyRequests,
