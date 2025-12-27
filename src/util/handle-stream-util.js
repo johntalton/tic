@@ -1,5 +1,5 @@
 import http2 from 'node:http2'
-import { brotliCompressSync, deflateSync, gzipSync } from 'node:zlib'
+import { brotliCompressSync, deflateSync, gzipSync, zstdCompressSync } from 'node:zlib'
 
 import {
 	SSE_MIME,
@@ -22,7 +22,8 @@ const {
 	HTTP2_HEADER_ACCESS_CONTROL_ALLOW_HEADERS,
 	HTTP2_HEADER_ACCESS_CONTROL_ALLOW_CREDENTIALS,
 	HTTP2_HEADER_SERVER,
-	HTTP2_HEADER_RETRY_AFTER
+	HTTP2_HEADER_RETRY_AFTER,
+	HTTP2_HEADER_CACHE_CONTROL
 } = http2.constants
 
 const {
@@ -38,6 +39,9 @@ export const SERVER_NAME = process.env.SERVER_NAME
 export const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN // '*'
 
 export const DEFAULT_METHODS = [ 'HEAD', 'GET', 'POST', 'PATCH', 'DELETE' ]
+
+export const HTTP2_HEADER_ACCESS_CONTROL_MAX_AGE = 'access-control-max-age'
+export const PREFLIGHT_AGE_SECONDS = '500'
 
 /**
  * @import { ServerHttp2Stream } from 'node:http2'
@@ -94,6 +98,7 @@ export function sendPreflight(stream, origin, methods = DEFAULT_METHODS) {
 		[HTTP2_HEADER_ACCESS_CONTROL_ALLOW_ORIGIN]: ALLOWED_ORIGIN,
 		[HTTP2_HEADER_ACCESS_CONTROL_ALLOW_METHODS]: methods.join(','),
 		[HTTP2_HEADER_ACCESS_CONTROL_ALLOW_HEADERS]: ['Authorization', HTTP2_HEADER_CONTENT_TYPE].join(','),
+		[HTTP2_HEADER_ACCESS_CONTROL_MAX_AGE]: PREFLIGHT_AGE_SECONDS,
 		[HTTP2_HEADER_SERVER]: SERVER_NAME
 	})
 	stream.end()
@@ -117,17 +122,17 @@ export function sendUnauthorized(stream) {
  * @param {ServerHttp2Stream} stream
  * @param {string} message
  */
-export function sendNotFound(stream, message) {
-	console.log('404', message)
-	stream.respond({
-		[HTTP2_HEADER_ACCESS_CONTROL_ALLOW_ORIGIN]: ALLOWED_ORIGIN,
-		[HTTP2_HEADER_STATUS]: HTTP_STATUS_NOT_FOUND,
-		[HTTP2_HEADER_CONTENT_TYPE]: CONTENT_TYPE_TEXT,
-		[HTTP2_HEADER_SERVER]: SERVER_NAME
-	})
-	if(message !== undefined) { stream.write(message) }
-	stream.end()
-}
+// export function sendNotFound(stream, message) {
+// 	console.log('404', message)
+// 	stream.respond({
+// 		[HTTP2_HEADER_ACCESS_CONTROL_ALLOW_ORIGIN]: ALLOWED_ORIGIN,
+// 		[HTTP2_HEADER_STATUS]: HTTP_STATUS_NOT_FOUND,
+// 		[HTTP2_HEADER_CONTENT_TYPE]: CONTENT_TYPE_TEXT,
+// 		[HTTP2_HEADER_SERVER]: SERVER_NAME
+// 	})
+// 	if(message !== undefined) { stream.write(message) }
+// 	stream.end()
+// }
 
 /**
  * @param {ServerHttp2Stream} stream
@@ -154,10 +159,9 @@ export function sendTooManyRequests(stream, limitInfo, ...policies) {
  * @param {Object} obj
  * @param {Metadata} meta
  */
-export function sendJSON(stream, obj, meta) {
-	return sendJSON_Encoded(stream, obj, 'identity', meta)
-}
-
+// export function sendJSON(stream, obj, meta) {
+// 	return sendJSON_Encoded(stream, obj, 'identity', meta)
+// }
 
 /**
  * @typedef {  (data: any, charset: BufferEncoding) => Buffer } EncoderFun
@@ -167,7 +171,8 @@ export function sendJSON(stream, obj, meta) {
 export const ENCODER_MAP = new Map([
 	[ 'br', (data, charset) => brotliCompressSync(Buffer.from(data, charset)) ],
 	[ 'gzip', (data, charset) => gzipSync(Buffer.from(data, charset)) ],
-	[ 'deflate', (data, charset) => deflateSync(Buffer.from(data, charset)) ]
+	[ 'deflate', (data, charset) => deflateSync(Buffer.from(data, charset)) ],
+	[ 'zstd', (data, charset) => zstdCompressSync(Buffer.from(data, charset)) ]
 ])
 
 /**
@@ -199,6 +204,7 @@ export function sendJSON_Encoded(stream, obj, encoding, meta) {
 		[HTTP2_HEADER_CONTENT_TYPE]: CONTENT_TYPE_JSON,
 		[HTTP2_HEADER_CONTENT_ENCODING]: actualEncoding,
 		[HTTP2_HEADER_VARY]: 'Accept, Accept-Encoding',
+		[HTTP2_HEADER_CACHE_CONTROL]: 'private',
 		[HTTP2_HEADER_STATUS]: HTTP_STATUS_OK,
 		[HTTP2_HEADER_SERVER]: SERVER_NAME,
 		[HTTP_HEADER_SERVER_TIMING]: ServerTiming.encode(meta?.performance)
@@ -240,8 +246,3 @@ export function sendSSE(stream, origin, options) {
 		stream.write(SSE_BOM + ENDING.CRLF)
 	}
 }
-
-
-
-
-// 'Cache-Control': 'no-cache, no-transform'

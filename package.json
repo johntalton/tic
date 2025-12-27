@@ -3,7 +3,7 @@
   "type": "module",
   "scripts": {
     "start": "./node_modules/.bin/http-server --robots --cors -b -g -S -C ./certificates/localhost-cert.pem -K ./certificates/localhost-privkey.pem ./public",
-    "serve": "node --env-file=.env src/index.js"
+    "serve": "node --permission --allow-fs-read=. --allow-net --env-file=.env src/index.js"
   },
   "devDependencies": {
     "http-server": "^14.1.1"

@@ -136,6 +136,7 @@ async function handleStreamAsync(stream, header, flags) {
 	// 	fullContentType, fullContentLength,
 	// 	// pragma,
 	// 	// cacheControl
+	    // fullAccept
 	// })
 	// console.log({
 	// 	secUA,

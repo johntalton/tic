@@ -51,19 +51,6 @@ const GAME_ROUTE = {
 		[MATCH]: {
 			[NAME]: 'action',
 			[PATCH]: handleAction
-			// [PATCH]: (matches, user, body, query) => {
-			// 	const action = matches.get('action')
-			// 	const gameId = matches.get(MATCHES.GAME_ID)
-			// 	switch(action) {
-			// 		case 'accept': return handleAccept(gameId, user, body, query)
-			// 		case 'close': return handleClose(gameId, user, body, query)
-			// 		case 'decline': return handleDecline(gameId, user, body, query)
-			// 		case 'forfeit': return handleForfeit(gameId, user, body, query)
-			// 		case 'move': return handleMove(gameId, user, body, query)
-			// 		case 'offer': return handleOffer(gameId, user, body, query)
-			// 		default: throw new Error('unknown action')
-			// 	}
-			// }
 		}
 	}
 }

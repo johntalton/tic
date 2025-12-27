@@ -83,7 +83,7 @@ export class Fetch2 {
 					arrayBuffer: () => body.arrayBuffer(),
 					bytes: () => body.bytes(),
 					text: () => body.text(),
-					formData: undefined,
+					formData: () => body.formData(),
 					json: () => body.json()
 				})
 			})
