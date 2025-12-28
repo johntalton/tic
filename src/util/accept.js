@@ -15,7 +15,6 @@ import { parseAcceptStyleHeader } from './accept-util.js'
  * @typedef {AcceptStyleItem & AcceptExtensionItem} AcceptItem
  */
 
-
 export const SEPARATOR = { SUBTYPE: '/' }
 export const ANY = '*'
 

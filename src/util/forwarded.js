@@ -18,7 +18,6 @@ export const SEPARATOR = {
 	KVP: '='
 }
 
-
 export class Forwarded {
 	/**
 	 * @param {string|undefined} header

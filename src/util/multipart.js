@@ -1,21 +1,21 @@
 import { parseContentDisposition } from './content-disposition.js'
 import { parseContentType } from './content-type.js'
 
-const DISPOSITION_FORM_DATA = 'form-data'
+export const DISPOSITION_FORM_DATA = 'form-data'
 
-const BOUNDARY_MARK = '--'
-const SEPARATOR = '\r\n'
+export const BOUNDARY_MARK = '--'
+export const SEPARATOR = '\r\n'
 
-const HEADER_SEPARATOR = ':'
+export const HEADER_SEPARATOR = ':'
 
-const EMPTY = ''
+export const EMPTY = ''
 
-const HEADER = {
+export const HEADER = {
 	CONTENT_DISPOSITION: 'content-disposition',
 	CONTENT_TYPE: 'content-type'
 }
 
-const STATE = {
+export const STATE = {
 	BEGIN: 'begin',
 	HEADERS: 'headers',
 	VALUE: 'value',

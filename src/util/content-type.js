@@ -16,15 +16,15 @@ export const MIME_TYPE_OCTET_STREAM = 'application/octet-stream'
  * @property {Map<string, string>} parameters
  */
 
-const SEPARATOR = {
+export const SEPARATOR = {
 	SUBTYPE: '/',
 	PARAMETER: ';',
 	KVP: '='
 }
 
 export const CHARSET_UTF8 = 'utf8'
-const CHARSET = 'charset'
-const PARAMETER_CHARSET_UTF8 = `${CHARSET}${SEPARATOR.KVP}${CHARSET_UTF8}`
+export const CHARSET = 'charset'
+export const PARAMETER_CHARSET_UTF8 = `${CHARSET}${SEPARATOR.KVP}${CHARSET_UTF8}`
 export const CONTENT_TYPE_JSON = `${MIME_TYPE_JSON}${SEPARATOR.PARAMETER}${PARAMETER_CHARSET_UTF8}`
 export const CONTENT_TYPE_TEXT = `${MIME_TYPE_TEXT}${SEPARATOR.PARAMETER}${PARAMETER_CHARSET_UTF8}`
 

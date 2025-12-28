@@ -31,6 +31,10 @@ import {
 import { handleSimpleLogin } from './users/simple-login.js'
 import { MIME_TYPE_EVENT_STREAM } from './util/content-type.js'
 
+/**
+ * @import { RouteDefinition } from './util/dig.js'
+ */
+
 export const MATCHES = {
 	USER_ID: 'userId',
 	GAME_ID: 'gameId',
@@ -86,6 +90,7 @@ const USER_ROUTE = {
 	}
 }
 
+/** @type {RouteDefinition} */
 export const ROUTES = {
 	authentication: {
 		'simple-login': {

@@ -4,7 +4,7 @@ import { parseAcceptStyleHeader } from './accept-util.js'
  * @import { AcceptStyleItem } from './accept-util.js'
  */
 
-const WELL_KNOWN = new Map([
+export const WELL_KNOWN = new Map([
 	[ 'gzip, deflate, br, zstd', [ { name: 'gzip' }, { name: 'deflate' }, { name: 'br' }, { name: 'zstd' } ] ],
 	[ 'gzip, deflate, br', [ { name: 'gzip' }, { name: 'deflate' }, { name: 'br' } ] ]
 ])

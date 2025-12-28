@@ -6,13 +6,13 @@
  * @property {string} [filename]
  */
 
-const SEPARATOR = {
+export const SEPARATOR = {
 	PARAMETER: ';',
 	KVP: '='
 }
 
-const NAME = 'name'
-const FILENAME = 'filename'
+export const NAME = 'name'
+export const FILENAME = 'filename'
 
 /**
  * @param {string} contentDispositionHeader

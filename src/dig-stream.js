@@ -1,4 +1,5 @@
 import http2 from 'node:http2'
+import { TLSSocket } from 'node:tls'
 
 import { SSE_LAST_EVENT_ID } from '@johntalton/sse-util'
 
@@ -70,6 +71,9 @@ const DEFAULT_SUPPORTED_LANGUAGES = [ 'en-US', 'en' ]
 const DEFAULT_SUPPORTED_MIME_TYPES = [ MIME_TYPE_JSON, MIME_TYPE_XML, MIME_TYPE_TEXT ]
 const DEFAULT_SUPPORTED_ENCODINGS = [ ...ENCODER_MAP.keys() ]
 
+const BODY_TIMEOUT_SEC = 2 * 1000
+const BODY_BYTE_LENGTH = 1000 * 1000
+
 const ipRateStore = new Map()
 const ipRequestPerSecondPolicy = {
 	name: 'ip',
@@ -116,28 +120,43 @@ async function handleStreamAsync(stream, header, flags) {
 	// const pragma = header['pragma']
 	// const cacheControl = header[HTTP2_HEADER_CACHE_CONTROL]
 
-	const ip = stream.session?.socket.remoteAddress
-	const port = stream.session?.socket.remotePort
-	const hostSNI = stream.session?.socket.servername // TLS SNI
+	if(stream.session === undefined) {
+		sendError(stream, 'session undefined')
+		return
+	}
+
+	if(fullPathAndQuery === undefined || Array.isArray(fullPathAndQuery)) {
+		sendError(stream, 'undefined or unknown request path')
+		return
+	}
+
+	if(method === undefined || Array.isArray(method)) {
+		sendError(stream, 'undefined or unknown request method')
+		return
+	}
+
+	const ip = stream.session.socket.remoteAddress
+	const port = stream.session.socket.remotePort
+	const hostSNI = stream.session.socket.servername // TLS SNI
 
 	const requestUrl = new URL(fullPathAndQuery, `${scheme}://${authority}`)
 
-	// console.log(Object.keys(header))
-	// console.log({
-	// 	method, url:
-	// 	requestUrl.pathname,
-	// 	query: requestUrl.search,
-	// 	session: { hostSNI, ip, port },
-	// 	host,
-	// 	origin,
-	// 	authority,
-	// 	referer,
-	// 	UA,
-	// 	fullContentType, fullContentLength,
-	// 	// pragma,
-	// 	// cacheControl
-	    // fullAccept
-	// })
+	console.log(Object.keys(header))
+	console.log({
+		method, url:
+		requestUrl.pathname,
+		query: requestUrl.search,
+		session: { hostSNI, ip, port },
+		host,
+		origin,
+		authority,
+		referer,
+		UA,
+		fullContentType, fullContentLength,
+		// pragma,
+		// cacheControl
+	    fullAccept
+	})
 	// console.log({
 	// 	secUA,
 	// 	secPlatform,
@@ -233,12 +252,12 @@ async function handleStreamAsync(stream, header, flags) {
 	//
 	// setup future body
 	//
-	const contentLength = parseInt(fullContentLength, 10)
+	const contentLength = parseInt(fullContentLength)
 	const body = requestBody(stream, {
-		signal: AbortSignal.timeout(2 * 1000),
+		signal: AbortSignal.timeout(BODY_TIMEOUT_SEC),
 		contentType,
 		contentLength,
-		byteLimit: 1000 * 1000
+		byteLimit: BODY_BYTE_LENGTH
 	})
 
 	//

@@ -1,5 +1,5 @@
-const SPACE_CHAR = ' '
-const BEARER = 'Bearer'
+export const SPACE_CHAR = ' '
+export const BEARER = 'Bearer'
 
 /**
  * @param {string|undefined} authorizationHeader
@@ -13,7 +13,7 @@ export function accessToken(authorizationHeader, query) {
 	}
 
 	if(query.has('token')) {
-		return query.get('token')
+		return query.get('token') ?? undefined
 	}
 
 	return undefined
