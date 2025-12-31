@@ -107,6 +107,7 @@ class GameAgent {
 	#api
 	#agentUserId
 	#accessToken
+	#sseToken
 	#sse
 	#ai
 
@@ -144,7 +145,7 @@ class GameAgent {
 	}
 
 	async #fetchAndProcessGames() {
-		this.#sse = new EventSource(`${this.#serviceUrl}/tic/v1/events?token=${this.#accessToken}`)
+		this.#sse = new EventSource(`${this.#serviceUrl}/tic/v1/events?token=${this.#sseToken}`)
 		this.#sse?.addEventListener('open', () => {
 			console.log('SSE open')
 			// reprocess known games?
@@ -182,15 +183,16 @@ class GameAgent {
 		}
 	}
 
-	constructor(userId, accessToken, ai) {
+	constructor(userId, accessToken, sseToken, ai) {
 		this.#agentUserId = userId
 		this.#accessToken = accessToken
+		this.#sseToken = sseToken
 		this.#ai = ai
-		this.#api = new GameAPI({ accessToken }, this.#serviceUrl)
+		this.#api = new GameAPI({ id: userId, accessToken }, this.#serviceUrl)
 
 		this.#fetchAndProcessGames()
 			.catch(e => console.warn('error initializing', e))
 	}
 }
 
-const gameAgent = new GameAgent('user:Agent', 'token:access:agent', new BasicAI())
+const gameAgent = new GameAgent('user:Agent', 'token:access:agent', 'token:sse:agent', new BasicAI())

@@ -1,12 +1,22 @@
+
+/**
+ * @typedef {Object} CouchContinuousOptions
+ * @property {number} [reconnectIntervalMS]
+ * @property {Record<string, string> | [string,string][]} headers
+ */
+
 export const CONNECTING = 0
 export const OPEN = 1
 export const CLOSED = 2
 
 export const DEFAULT_RECONNECT_INTERVAL_MS = 1000 * 10
 
-class DataEvent extends Event {
+export class DataEvent extends Event {
 	data
 
+	/**
+	 * @param {any} data
+	 */
 	constructor(data) {
 		super('data')
 		this.data = data
@@ -15,14 +25,23 @@ class DataEvent extends Event {
 
 export class CouchContinuous extends EventTarget {
 	#url
-	#readyState
+
+	/** @type {number} */
+	#readyState = CONNECTING
 
 	#options
 
-	#controller
+	/** @type {AbortController|undefined} */
+	#controller = undefined
+
+	/** @type {NodeJS.Timeout|undefined} */
 	#reconnectTimer
 	#reconnectInterval
 
+	/**
+	 * @param {URL|string} url
+	 * @param {CouchContinuousOptions} options
+	 */
 	constructor(url, options) {
 		super()
 
@@ -87,7 +106,7 @@ export class CouchContinuous extends EventTarget {
 				}
 
 				const stream = response.body
-					.pipeThrough(new TextDecoderStream())
+					.pipeThrough(new TextDecoderStream(), { signal: this.#controller?.signal })
 
 				// Promise.resolve()
 				// 	.then(async () => {
@@ -134,6 +153,11 @@ export class CouchContinuous extends EventTarget {
 		this.#connect()
 	}
 
+
+	/**
+	 * @param {number} status
+	 * @param {string} message
+	 */
 	#failure(status, message) {
 		// console.log('couch continuous', status, message)
 		if(this.#readyState !== CLOSED) { this.#readyState = CLOSED }

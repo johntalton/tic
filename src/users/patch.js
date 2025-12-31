@@ -1,40 +1,54 @@
 import { MATCHES } from '../route.js'
-import { userStore } from '../store/user.js'
+import { isStoreUserId, userStore } from '../store/user.js'
 
-const VALID_PATCH_KEYS = [ 'displayName', 'glyph' ]
+/** @import { HandlerFn } from '../util/dig.js' */
+/** @import { UserPatchOptions, IdentifiableUser } from '../types/public.js' */
+
+export const VALID_PATCH_KEYS = [ 'displayName', 'glyph' ]
 
 /**
- * @import { HandlerFn } from '../util/dig.js'
+ * @param {any} body
+ * @returns {body is UserPatchOptions}
  */
-
-/** @type {HandlerFn} */
-export async function patchUser(matches, sessionUser, requestBody, query) {
-	const id = matches.get(MATCHES.USER_ID)
-
-	const user = await userStore.fromToken(sessionUser.token)
-	if (user === undefined) {
-		throw new Error('invalid user token')
-	}
-
-	if(user !== id) { throw new Error('can only patch self') }
-
-	const body = await requestBody.json()
-
-	const keys = Object.keys(body)
-	if(keys.length <= 0) { throw new Error('no data in body') }
-	for(const key of keys) {
+function isPatchSafe(body) {
+	for(const key of Object.keys(body)) {
 		if(!VALID_PATCH_KEYS.includes(key)) {
-			throw new Error('invalid key for user patch')
+			return false
 		}
 	}
 
-	const userObject = await userStore.get(id)
+	return true
+}
+
+/** @type {HandlerFn<IdentifiableUser>} */
+export async function patchUser(matches, sessionUser, requestBody, query) {
+	const patchUserId = matches.get(MATCHES.USER_ID)
+	if(patchUserId === undefined) { throw new Error('unspecified user') }
+	if(!isStoreUserId(patchUserId)) { throw new Error('invalid user id brand') }
+
+	if(sessionUser.tokens.access === undefined) { throw new Error('access token required') }
+	const userId = await userStore.fromToken(sessionUser.tokens.access)
+
+	if(userId !== patchUserId) { throw new Error('can only patch self') }
+
+	const body = await requestBody.json()
+
+	if(Object.keys(body).length === 0) {
+		throw new Error('empty patch set')
+	}
+
+	if(!isPatchSafe(body)) {
+		throw new Error('invalid patch keys')
+	}
+
+	const userObject = await userStore.get(patchUserId)
 	if (userObject === undefined) { throw new Error('unknown user') }
 	const { user: requestedUser } = userObject
 
 	const updatedUser = {
 		...requestedUser,
-		...body
+		displayName: body.displayName ?? requestedUser.displayName,
+		glyph: body.glyph ?? requestedUser.glyph
 	}
 
 	const updatedUserObject = {
@@ -46,11 +60,11 @@ export async function patchUser(matches, sessionUser, requestBody, query) {
 		user: updatedUser
 	}
 
-	const ok = await userStore.set(id, updatedUserObject)
+	const ok = await userStore.set(patchUserId, updatedUserObject)
 	if(!ok) { throw new Error('failure to store patched user') }
 
 	return {
-		id,
+		id: patchUserId,
 		...updatedUser
 	}
 }

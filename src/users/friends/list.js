@@ -1,31 +1,30 @@
 import { MATCHES } from '../../route.js'
-import { userStore } from '../../store/user.js'
+import { isStoreUserId, userStore } from '../../store/user.js'
 
-/**
- * @import { HandlerFn } from '../../util/dig.js'
- */
+/** @import { HandlerFn } from '../../util/dig.js' */
+/** @import { FriendsInfoList } from '../../types/public.js' */
 
-/** @type {HandlerFn} */
+/** @type {HandlerFn<FriendsInfoList>} */
 export async function handleListFriends(matches, sessionUser, body, query) {
-	const user = await userStore.fromToken(sessionUser.token)
-	if (user === undefined) {
-		throw new Error('invalid user token')
-	}
+	if(sessionUser.tokens.access === undefined) { throw new Error('access token required') }
+	const userId = await userStore.fromToken(sessionUser.tokens.access)
 
-	const userId = matches.get(MATCHES.USER_ID)
-	if(userId === undefined) { throw new Error('unspecified user') }
+	const forUserId = matches.get(MATCHES.USER_ID)
+	if(forUserId === undefined) { throw new Error('unspecified user') }
 
-	const isSelf = user === userId
+	if(!isStoreUserId(forUserId)) { throw new Error('invalid user id brand') }
 
-	const requestedUserObject = await userStore.get(userId)
+	const isSelf = userId === forUserId
+
+	const requestedUserObject = await userStore.get(forUserId)
 	const { user: requestedUser } = requestedUserObject
 	const { friends } = requestedUser
 
 	if(friends === undefined || friends.length === 0) {
-		return { friends }
+		return { friends: [] }
 	}
 
-	const resolvedFriends = await userStore.list(userId, friends)
+	const resolvedFriends = await userStore.list(forUserId, friends)
 
 	return { friends: resolvedFriends }
 }

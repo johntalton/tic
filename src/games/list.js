@@ -2,23 +2,21 @@ import { gameStore } from '../store/game.js'
 import { userStore } from '../store/user.js'
 import { identifiableGameId } from './util.js'
 
-/**
- * @import { HandlerFn } from '../util/dig.js'
- */
+/** @import { HandlerFn } from '../util/dig.js' */
+/** @import { GameListing } from '../types/public.js' */
 
-/** @type {HandlerFn} */
+export const QUERY_FILTER = 'filter'
+export const QUERY_FILTER_SHORT = 'f'
+export const FILTER_ALL = '*'
+export const FILTER_SEPARATOR = '|'
+export const FILTER_BLANK = ''
+
+/** @type {HandlerFn<GameListing>} */
 export async function handleList(matches, sessionUser, body, query) {
-	const user = await userStore.fromToken(sessionUser.token)
-		.catch(error => {
-			console.log('handle listing error fromToken', error.message)
-			return undefined
-		})
+	if(sessionUser.tokens.access === undefined) { throw new Error('access token required') }
+	const userId = await userStore.fromToken(sessionUser.tokens.access)
 
-	if(user === undefined) {
-		throw new Error('invalid user token')
-	}
-
-	const allDBGames = await gameStore.list(user)
+	const allDBGames = await gameStore.list(userId)
 	const allGames = await Promise.all(allDBGames.map(async game => {
 		const id = await identifiableGameId(game._id)
 		return {
@@ -28,10 +26,10 @@ export async function handleList(matches, sessionUser, body, query) {
 		}
 	}))
 
-	const stateFilter = query.get('f') ?? query.get('filter') ?? ''
-	if(stateFilter === '*') { return { games: allGames }}
+	const stateFilter = query.get(QUERY_FILTER_SHORT) ?? query.get(QUERY_FILTER) ?? FILTER_BLANK
+	if(stateFilter === FILTER_ALL) { return { games: allGames }}
 
-	const stateFilterList = stateFilter.split('|')
+	const stateFilterList = stateFilter.split(FILTER_SEPARATOR)
 	const games = allGames.filter(row => stateFilterList.includes(row.state))
 
 	return {

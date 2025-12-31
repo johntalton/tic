@@ -1,21 +1,25 @@
 import { Tic, isViewable } from './tic.js'
-import { identifiableGame, resolveFromStore } from './util.js'
+import { identifiableGame, isStoreEncodedGameId, resolveFromStore } from './util.js'
 import { MATCHES } from '../route.js'
+import { userStore } from '../store/user.js'
 
-/**
- * @import { HandlerFn } from '../util/dig.js'
- */
+/** @import { HandlerFn } from '../util/dig.js' */
+/** @import { IdentifiableActionableGame } from '../types/public.js' */
 
-/** @type {HandlerFn} */
+/** @type {HandlerFn<IdentifiableActionableGame>} */
 export async function handleGame(matches, sessionUser, requestBody, query) {
-	const id = matches.get(MATCHES.GAME_ID)
-	if(id === undefined) { throw new Error('id invalid') }
-	const { user, game, gameObject } = await resolveFromStore(id, sessionUser)
+	const gameId = matches.get(MATCHES.GAME_ID)
+	if(gameId === undefined) { throw new Error('id invalid') }
+	if(!isStoreEncodedGameId(gameId)) { throw new Error('invalid encoded game id brand') }
 
-	if(!isViewable(game, user)) {
+	if(sessionUser.tokens.access === undefined) { throw new Error('access token required') }
+	const userId = await userStore.fromToken(sessionUser.tokens.access)
+	const { game, gameObject } = await resolveFromStore(gameId, userId)
+
+	if(!isViewable(game, userId)) {
 		throw new Error('not viewable')
 	}
 
-	const actionableGame = Tic.actionable(game, user)
+	const actionableGame = Tic.actionable(game, userId)
 	return identifiableGame(gameObject._id, actionableGame)
 }

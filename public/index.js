@@ -14,7 +14,8 @@ const TIC_URL = COMMON_API_URL
 const USER = {
 	// id: 'bob123',
 	// displayName: 'Bob',
-	// token: 'abcd1234'
+	// token: '...',
+	// sseToken: '...'
 }
 
 const gameApi = new GameAPI(USER, TIC_URL)
@@ -204,7 +205,7 @@ function handleSSEUpdate(message) {
 	const json = JSON.parse(data)
 	const { id: gameId } = json
 
-	console.log('sse event update', json)
+	// console.log('sse event update', json)
 
 	// todo if game not listed skip
 
@@ -229,7 +230,7 @@ function handleSSEUpdate(message) {
 
 function startSSE() {
 	const url = new URL('/tic/v1/events', TIC_URL)
-	url.searchParams.set('token', USER.accessToken)
+	url.searchParams.set('token', USER.sseToken)
 	sseStream = new EventSource(url, {
 		// withCredentials: true
 	})
@@ -253,6 +254,9 @@ function refreshGlyphCache(userIds) {
 			for(const user of users) {
 				glyphCache.set(user.id, user.glyph)
 			}
+		})
+		.catch(e => {
+			UI.Global.showToast(e.message)
 		})
 }
 
@@ -306,11 +310,12 @@ function simpleUserAutoLogin() {
 		return false
 	}
 
-	const { id, displayName, accessToken } = JSON.parse(info)
+	const { id, displayName, accessToken, sseToken } = JSON.parse(info)
 
 	USER.id = id
 	USER.displayName = displayName
 	USER.accessToken = accessToken
+	USER.sseToken = sseToken
 
 	UI.Global.setLoggedIn(USER)
 	return true

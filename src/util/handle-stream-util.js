@@ -71,12 +71,14 @@ export function sendError(stream, message) {
 
 	if(stream.closed) { return }
 
-	stream.respond({
-		[HTTP2_HEADER_ACCESS_CONTROL_ALLOW_ORIGIN]: ALLOWED_ORIGIN,
-		[HTTP2_HEADER_STATUS]: HTTP_STATUS_INTERNAL_SERVER_ERROR,
-		[HTTP2_HEADER_CONTENT_TYPE]: CONTENT_TYPE_TEXT,
-		[HTTP2_HEADER_SERVER]: SERVER_NAME
-	})
+	if(!stream.headersSent) {
+		stream.respond({
+			[HTTP2_HEADER_ACCESS_CONTROL_ALLOW_ORIGIN]: ALLOWED_ORIGIN,
+			[HTTP2_HEADER_STATUS]: HTTP_STATUS_INTERNAL_SERVER_ERROR,
+			[HTTP2_HEADER_CONTENT_TYPE]: CONTENT_TYPE_TEXT,
+			[HTTP2_HEADER_SERVER]: SERVER_NAME
+		})
+	}
 
 	// protect against HEAD calls
 	if(stream.writable) {
@@ -164,7 +166,7 @@ export function sendTooManyRequests(stream, limitInfo, ...policies) {
 // }
 
 /**
- * @typedef {  (data: any, charset: BufferEncoding) => Buffer } EncoderFun
+ * @typedef { (data: string, charset: BufferEncoding) => Buffer } EncoderFun
  */
 
 /** @type {Map<string, EncoderFun>} */
@@ -234,7 +236,7 @@ export function sendSSE(stream, origin, options) {
 		[HTTP2_HEADER_ACCESS_CONTROL_ALLOW_ORIGIN]: ALLOWED_ORIGIN,
 		[HTTP2_HEADER_CONTENT_TYPE]: SSE_MIME,
 		[HTTP2_HEADER_STATUS]: activeStream ? HTTP_STATUS_OK : HTTP_STATUS_NO_CONTENT, // SSE_INACTIVE_STATUS_CODE
-		[HTTP2_HEADER_ACCESS_CONTROL_ALLOW_CREDENTIALS]: 'true'
+		// [HTTP2_HEADER_ACCESS_CONTROL_ALLOW_CREDENTIALS]: 'true'
 	 })
 
 	 if(!activeStream) {

@@ -45,7 +45,7 @@ export class UserAPI {
 
 		if(!response.ok) {
 			const text = await response.text()
-			throw new Error('unable to fetch friends')
+			throw new Error('unable to fetch user listing')
 		}
 
 		return response.json()

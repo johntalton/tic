@@ -1,23 +1,25 @@
 import { Tic } from '../tic.js'
 import { resolveFromStore } from '../util.js'
 import { gameStore } from '../../store/game.js'
+import { userStore } from '../../store/user.js'
 
-/** @import { StoreGameId } from '../../store/game.js' */
+/** @import { StoreUserId } from '../../types/store.js' */
+/** @import { EncodedGameId } from '../../types/public.js' */
 /** @import { ActionableGame } from '../tic.js' */
 /** @import { BodyFuture } from '../../util//body.js' */
 
 /**
- * @param {StoreGameId} id
- * @param {{ token: string }} sessionUser
+ * @param {EncodedGameId} encodedGameId
+ * @param {StoreUserId} userId
  * @param {BodyFuture} body
  * @param {URLSearchParams} query
  * @returns {Promise<ActionableGame>}
  */
-export async function handleClose(id, sessionUser, body, query) {
-	const { user, game, gameObject } = await resolveFromStore(id, sessionUser)
+export async function handleClose(encodedGameId, userId, body, query) {
+	const { game, gameObject } = await resolveFromStore(encodedGameId, userId)
 
 	const reason = query.get('reason') ?? 'unspecified'
-	const updatedGame = Tic.close(game, user, reason)
+	const updatedGame = Tic.close(game, userId, reason)
 
 	const updatedGameObject = {
 		...gameObject,
@@ -30,5 +32,5 @@ export async function handleClose(id, sessionUser, body, query) {
 
 	await gameStore.set(gameObject._id, updatedGameObject)
 
-	return Tic.actionable(updatedGame, user)
+	return Tic.actionable(updatedGame, userId)
 }

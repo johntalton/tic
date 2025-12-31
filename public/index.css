@@ -138,7 +138,8 @@
 	@font-face {
 		font-family: 'Noto Emoji';
 		font-display: swap;
-		src: url('./Noto_Emoji/NotoEmoji-VariableFont_wght.ttf') format('truetype');
+		/* src: url('./Noto_Emoji/NotoEmoji-VariableFont_wght.ttf') format('truetype'); */
+		src: url('./Noto_Emoji/static/NotoEmoji-Bold.ttf') format('truetype');
 	}
 
 	i {

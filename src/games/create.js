@@ -1,30 +1,20 @@
 import { Tic } from './tic.js'
-import { gameStore } from '../store/game.js'
+import { gameStore, storeGameIdFromString } from '../store/game.js'
 import { userStore } from '../store/user.js'
 import { identifiableGame } from './util.js'
 
-/**
- * @import { HandlerFn } from '../util/dig.js'
- */
+/** @import { HandlerFn } from '../util/dig.js' */
+/** @import { IdentifiableActionableGame } from '../types/public.js' */
 
-/** @type {HandlerFn} */
+/** @type {HandlerFn<IdentifiableActionableGame>} */
 export async function handleNew(matches, sessionUser, body, query) {
-	const user = await userStore.fromToken(sessionUser.token)
-	if(user === undefined) {
-		throw new Error('invalid user token')
-	}
+	if(sessionUser.tokens.access === undefined) { throw new Error('access token required') }
+	const userId = await userStore.fromToken(sessionUser.tokens.access)
 
 	const now = Date.now()
 
-	const game = Tic.create(user)
-	const gameId = crypto.randomUUID() // `game:${user}-${now}`
-
-	// const targets = query.getAll('t')
-	// const offer = { targets }
-	// const updatedGame = Tic.offer(game, user, offer)
-
-	// const autoAccept = query.get('a') ?? query.get('accept')
-	// const updatedGame = Tic.accept(game, user)
+	const game = Tic.create(userId)
+	const gameId = storeGameIdFromString(crypto.randomUUID())
 
 	const ok = await gameStore.set(gameId, {
 		type: 'game.tic.v1',
@@ -35,12 +25,8 @@ export async function handleNew(matches, sessionUser, body, query) {
 		game
 	})
 
-	if(!ok) {
-		throw new Error('store failure')
-	}
+	if(!ok) { throw new Error('store failure') }
 
-	// return Tic.actionable(game, user)
-	const actionableGame = Tic.actionable(game, user)
-
+	const actionableGame = Tic.actionable(game, userId)
 	return identifiableGame(gameId, actionableGame)
 }

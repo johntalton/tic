@@ -38,7 +38,8 @@ import { MIME_TYPE_EVENT_STREAM } from './util/content-type.js'
 export const MATCHES = {
 	USER_ID: 'userId',
 	GAME_ID: 'gameId',
-	FRIEND_ID: 'friendId'
+	FRIEND_ID: 'friendId',
+	ACTION: 'action'
 }
 
 const GAMES_ROUTE =  {
@@ -53,7 +54,7 @@ const GAME_ROUTE = {
 		[NAME]: MATCHES.GAME_ID,
 		[GET]: handleGame,
 		[MATCH]: {
-			[NAME]: 'action',
+			[NAME]: MATCHES.ACTION,
 			[PATCH]: handleAction
 		}
 	}
@@ -90,7 +91,7 @@ const USER_ROUTE = {
 	}
 }
 
-/** @type {RouteDefinition} */
+/** @type {RouteDefinition<any>} */
 export const ROUTES = {
 	authentication: {
 		'simple-login': {

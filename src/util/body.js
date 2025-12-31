@@ -16,7 +16,7 @@ export const DEFAULT_BYTE_LIMIT = 1024 * 1024 //
  * @property {AbortSignal} [signal]
  * @property {number} [byteLimit]
  * @property {number} [contentLength]
- * @property {ContentType|undefined} contentType
+ * @property {ContentType|undefined} [contentType]
  */
 
 /**

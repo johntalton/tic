@@ -38,7 +38,7 @@ export class ELO {
 
 		return {
 			ratingA: Math.round(A.rating + deltaA),
-			ratingB: B.rating + deltaB
+			ratingB: Math.round(B.rating + deltaB)
 		}
 	}
 }

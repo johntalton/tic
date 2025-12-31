@@ -4,36 +4,29 @@ import { isViewable } from './tic.js'
 import { userStore } from '../store/user.js'
 import { identifiableGameId } from './util.js'
 
-/**
- * @import { HandlerFn } from '../util/dig.js'
- */
+/** @import { HandlerFn } from '../util/dig.js' */
 
-/** @type {HandlerFn} */
+/** @type {HandlerFn<void>} */
 export async function handleGameFeed(matches, sessionUser, body, query, stream) {
 	const channel = new BroadcastChannel('SSE')
 
-	const user = await userStore.fromToken(sessionUser.token)
-		.catch(error => {
-			console.log('fromToken error', error.message)
-			// stream.close()
-			// channel.close()
+	if(sessionUser.tokens.sse === undefined) { throw new Error('access token required') }
+	const userId = await userStore.fromSSEToken(sessionUser.tokens.sse)
+		.catch(e => {
+			// console.warn('invalid user for feed')
+
+			ServerSentEvents.messageToEventStreamLines({
+				comment: `Offline`,
+				retryMs: 1000 * 60,
+			}).forEach(line => stream.write(line))
+
+			stream.end()
+
+			stream.close()
+			channel.close()
+
+			throw e
 		})
-
-	if(user === undefined) {
-		// throw new Error('invalid user token')
-		console.warn('invalid user for feed')
-
-		ServerSentEvents.messageToEventStreamLines({
-			comment: `Offline`,
-			retryMs: 1000 * 60,
-		}).forEach(line => stream.write(line))
-
-		stream.end()
-
-		stream.close()
-		channel.close()
-		return
-	}
 
 	// stream.on('aborted', () => console.log('game feed stream aborted'))
 
@@ -44,14 +37,14 @@ export async function handleGameFeed(matches, sessionUser, body, query, stream) 
 	})
 
 	stream.on('error', error => {
-		console.warn('Game Feed Error')
+		console.warn('Game Feed Error', error.message)
 		stream.close()
 		channel.close()
 	})
 
 	// console.log('new Game SSE for', user)
 	ServerSentEvents.messageToEventStreamLines({
-		comment: `SSE for ${user}`,
+		comment: `SSE for ${userId}`,
 		retryMs: 1000 * 10
 	}).forEach(line => stream.write(line))
 
@@ -59,12 +52,9 @@ export async function handleGameFeed(matches, sessionUser, body, query, stream) 
 		const { data } = msg
 		const { type, _id, game } = data
 
-		// console.log('sse event', data)
-
 		if(type !== 'game-change') { return }
 
-		// console.log(msg, data)
-		if(!isViewable(game, user)) { return }
+		if(!isViewable(game, userId)) { return }
 
 		identifiableGameId(_id)
 			.then(id => {

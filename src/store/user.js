@@ -1,87 +1,52 @@
-import { COUCH_HEADER_NOT_MODIFIED, CouchUtil } from './couch.js'
+import {
+	COUCH_STATUS_NOT_FOUND,
+	COUCH_STATUS_NOT_MODIFIED,
+	CouchUtil
+} from './couch.js'
+
+/** @import { Token, SSEToken } from '../types/global.js' */
+/** @import { CouchGenericRows } from '../types/couch.js' */
+/** @import { StoreUserId, StoreUser, StoreUserListItem, StoreUserListItemRaw } from '../types/store.js' */
 
 /**
- * @typedef {string} StoreUserId
- */
-
-/**
- * @typedef {Object} StoreUserInfo
- * @property {string} displayName
- * @property {Array<string>} friends
- * @property {number} elo
- */
-
-/**
- * @typedef {Object} StoreUserSessionInfo
- * @property {string} token
- * @property {string} refreshToken
- * @property {string} sseToken
- */
-
-/**
- * @typedef {Object} StoreUserMetadata
- * @property {number} createdAt
- * @property {number} updatedAt
- */
-
-/**
- * @typedef {Object} StoreUser
- * @property {'user.tic.v1'} type
- * @property {StoreUserInfo} user
- * @property {StoreUserSessionInfo} session
- * @property {StoreUserMetadata} meta
- */
-
-/**
- * @typedef {Object} StoreUserListItem
- * @property {string} displayName
- * @property {number} elo
+ * @typedef {Object} AccessTokenCacheItem
+ * @property {number} expireAt
+ * @property {StoreUserId} userId
  */
 
 const couchURL = process.env.COUCH_URL
 const username = process.env.COUCH_USER
 const password = process.env.COUCH_PASSWORD
+
+if(couchURL === undefined) { throw new Error('unspecified couch url') }
+if(username === undefined) { throw new Error('unspecified couch user') }
+if(password === undefined) { throw new Error('unspecified couch password') }
+
 const authorizationHeaders = CouchUtil.basicAuthHeader(username, password)
 
-
 /**
- * @param {string} url
+ * @param {string} id
+ * @returns {StoreUserId}
  */
-async function fromView(url) {
-	// console.log('fromView', url)
-	const response = await fetch(url, {
-		method: 'GET',
-		headers: {
-			...authorizationHeaders
-		}
-	})
-	.catch(e => {
-		// console.log('user DB fetch error', e)
-		if(e.cause?.code === 'ETIMEDOUT') {
-			throw new Error(`DB listing timeout: ${e.message}`, { cause: e })
-		}
-		else if(e.cause?.code === 'ECONNREFUSED') {
-			throw new Error(`DB listing offline: ${e.message}`, { cause: e })
-		}
-		else {
-			throw new Error(`User DB fetch failure: ${e.message}`, { cause: e })
-		}
-	})
-
-	if(!response.ok) { throw new Error('User DB Fetch no Ok') }
-
-	const result = await response.json()
-
-	// console.log(result)
-
-	if(result.rows.length !== 1) { throw new Error('User DB invalid rows length') }
-	return result.rows[0].value
+export function storeUserIdFromString(id) {
+	return /** @type {StoreUserId} */ (id)
 }
 
+/**
+ * @param {string} id
+ * @returns {id is StoreUserId}
+ */
+export function isStoreUserId(id) {
+	return true
+}
 
 export class CouchUserStore {
 	#url
+
+	/** @type {Map<string, AccessTokenCacheItem>} */
 	#accessTokenCache = new Map()
+
+	/** @type {Map<StoreUserId, Promise<StoreUser>>} */
 	#userCache = new Map()
 
 	/**
@@ -91,29 +56,22 @@ export class CouchUserStore {
 
 	/**
 	 * @param {StoreUserId} id
-	 * @param {StoreUser} userObject
+	 * @param {Omit<StoreUser, '_id'|'_rev'>} userObject
 	 * @returns {Promise<StoreUser|undefined>}
 	 */
 	async create(id, userObject) {
-		const response = await fetch(`${this.#url}`, {
+		return CouchUtil.fetchJSON(`${this.#url}`, {
 			method: 'POST',
 			headers: {
 				'Content-Type': 'application/json',
-				...authorizationHeaders
+				...authorizationHeaders,
+				'Accept': 'application/json'
 			},
 			body: JSON.stringify({
-				_id: id,
-				...userObject
+				...userObject,
+				_id: id
 			})
 		})
-
-		if(!response.ok) {
-			const text = await response.text()
-			console.log('create fail', response.status, text)
-			return undefined
-		}
-
-		return response.json()
 	}
 
 	/**
@@ -123,13 +81,14 @@ export class CouchUserStore {
 	async set(id, userObject) {
 		this.#userCache.delete(id)
 
-		const response = await fetch(`${this.#url}`, {
+		const response = await CouchUtil.fetch(`${this.#url}`, {
 			method: 'POST',
 			headers: {
 				...authorizationHeaders,
-				'Content-Type': 'application/json'
+				'Content-Type': 'application/json',
+				'Accept': 'application/json'
 			},
-			body: JSON.stringify({ _id: id, ...userObject })
+			body: JSON.stringify({ ...userObject, _id: id })
 		})
 
 		return response.ok
@@ -140,19 +99,13 @@ export class CouchUserStore {
 	 * @returns {Promise<StoreUser>}
 	 */
 	async #get(id) {
-		const response = await fetch(`${this.#url}/${id}`, {
+		return CouchUtil.fetchJSON(`${this.#url}/${id}`, {
 			method: 'GET',
 			headers: {
 				...authorizationHeaders,
 				'Accept': 'application/json'
 			}
 		})
-
-		if(!response.ok) {
-			throw new Error('get user by id not ok')
-		}
-
-		return response.json()
 	}
 
 	/**
@@ -160,16 +113,16 @@ export class CouchUserStore {
 	 * @param {string} etag
 	 */
 	async #isModified(id, etag) {
-		const response = await fetch(`${this.#url}/${id}`, {
+		const response = await CouchUtil.fetch(`${this.#url}/${id}`, {
 			method: 'HEAD',
 			headers: {
 				...authorizationHeaders,
-				'Accept': '*/*',
+				'Accept': 'application/json',
 				'If-None-Match': `"${etag}"`
 			}
 		})
 
-		return (response.status !== COUCH_HEADER_NOT_MODIFIED)
+		return (response.status !== COUCH_STATUS_NOT_MODIFIED)
 	}
 
 	/**
@@ -177,8 +130,9 @@ export class CouchUserStore {
 	 * @returns {Promise<StoreUser>}
 	 */
 	async get(id) {
-		if(this.#userCache.has(id)) {
-			return this.#userCache.get(id)
+		const potential = this.#userCache.get(id)
+		if(potential !== undefined) {
+			return potential
 		}
 
 		const futureUser = this.#get(id)
@@ -201,68 +155,72 @@ export class CouchUserStore {
 			url.searchParams.set('keys', userListKey)
 		}
 
-		const response = await fetch(url, {
+		/** @type {CouchGenericRows<StoreUserListItemRaw>} */
+		const result = await CouchUtil.fetchJSON(url, {
 			method: 'GET',
 			headers: {
-				...authorizationHeaders
-			}
+				...authorizationHeaders,
+				'Accept': 'application/json'
+			},
+			signal: AbortSignal.timeout(200)
 		})
-		.catch(e => {
-			if(e.code === 'ETIMEDOUT') {
-				throw new Error(`DB listing timeout: ${e.message}`, { cause: e })
-			}
-
-			throw new Error(`DB listing failure: ${e.message}`, { cause: e })
-		})
-
-
-		if(!response.ok) {
-			const text = await response.text()
-			console.log('user listing error', response.status, text)
-			throw new Error('user listing error')
-		}
-
-		const result = await response.json()
 
 		return result.rows.map(row => ({
-			id: row.key,
+			id: storeUserIdFromString(row.key),
 			...row.value
 		}))
 	}
 
 	/**
-	 * @param {string} token
+	 * @param {Token} token
 	 * @returns {Promise<StoreUserId>}
 	 */
 	async fromToken(token) {
-		// console.log('fromToken', this.#accessTokenCache)
 		const now = Date.now()
 
-		if(this.#accessTokenCache.has(token)) {
-			const potential = this.#accessTokenCache.get(token)
-			if(potential.expireAt > now) {
-				return potential.futureUserInfo
-			}
+		const potential = this.#accessTokenCache.get(token)
+		if((potential !== undefined) && (potential.expireAt > now)){
+			return potential.userId
 		}
 
-		const futureUserInfo = fromView(`${this.#url}/_design/basic/_view/user_by_token?key="${token}"&limit=1`)
+		/** @type {CouchGenericRows<StoreUserId>} */
+		const result = await CouchUtil.fetchJSON(`${this.#url}/_design/basic/_view/user_by_token?key="${token}"&limit=1`, {
+			method: 'GET',
+			headers: {
+				...authorizationHeaders,
+				'Accept': 'application/json'
+			}
+		})
+
+		if(result.rows.length !== 1) { throw new Error('User DB invalid rows length') }
+		const userId = result.rows[0].value
 
 		this.#accessTokenCache.set(token, {
 			expireAt: now + (1000 * 60),
-			futureUserInfo
+			userId
 		})
 
-		return futureUserInfo
+		return userId
 	}
 
-	// async fromName(name) {
-	// 	return fromView(`${this.#url}/_design/basic/_view/user_by_name?key="${name}"&limit=1`)
-	// }
+	/**
+	 * @param {SSEToken} token
+	 * @returns {Promise<StoreUserId>}
+	 */
+	async fromSSEToken(token) {
+		/** @type {CouchGenericRows<StoreUserId>} */
+		const result = await CouchUtil.fetchJSON(`${this.#url}/_design/basic/_view/user_by_sse_token?key="${token}"&limit=1`, {
+			method: 'GET',
+			headers: {
+				...authorizationHeaders,
+				'Accept': 'application/json'
+			}
+		})
 
-	// async fromWebAuthNUserId(id) {
-	// 	return fromView(`${this.#url}/_design/basic/_view/user_by_webauthn_id?key="${id}"&limit=1`)
-	// }
+		if(result.rows.length !== 1) { throw new Error('User DB invalid rows length') }
+		const userId = result.rows[0].value
+		return userId
+	}
 }
-
 
 export const userStore = new CouchUserStore(couchURL)

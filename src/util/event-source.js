@@ -340,7 +340,7 @@ export class EventSource extends EventTarget {
 	 * @param {string} message
 	 */
 	#failure(status, message) {
-		console.log('failure', status, message)
+		console.log('event source failure', status, message)
 		if(this.#readyState !== CLOSED) { this.#readyState = CLOSED }
 		this.dispatchEvent(new Event('error'))
 	}

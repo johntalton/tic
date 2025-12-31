@@ -1,15 +1,19 @@
 import { userStore } from '../../store/user.js'
 
+/** @import { StoreUserId } from '../../types/store.js' */
+/** @import { FriendsListing } from '../../types/public.js' */
+
 /**
- * @param {string} userId
+ * @param {StoreUserId} userId
  * @param {boolean} add
- * @param {string} friendId
- * @returns {Promise<{ friends: Array<string> }>}
+ * @param {StoreUserId} friendId
+ * @returns {Promise<FriendsListing>}
  */
 async function alterFriend(userId, add, friendId) {
 	const userObject = await userStore.get(userId)
 	const { user } = userObject
 	const { friends } = user
+
 	const updatedFriends = new Set(friends)
 
 	if(add) {
@@ -48,13 +52,13 @@ async function alterFriend(userId, add, friendId) {
 }
 
 /**
- * @param {string} userId
- * @param {string} friendId
+ * @param {StoreUserId} userId
+ * @param {StoreUserId} friendId
  */
 export async function addFriend(userId, friendId) { return alterFriend(userId, true, friendId) }
 
 /**
- * @param {string} userId
- * @param {string} friendId
+ * @param {StoreUserId} userId
+ * @param {StoreUserId} friendId
  */
 export async function removeFriend(userId, friendId) { return alterFriend(userId, false, friendId) }

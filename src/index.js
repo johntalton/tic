@@ -72,23 +72,34 @@ const options = {
 	// maxSessionMemory: 1,
 	// maxSessionInvalidFrames: 1,
 
-
 	// enableTrace: false,
 	// noDelay: false,
 }
 
 const server = http2.createSecureServer(options)
-server.setTimeout(1 * 1000)
+// server.setTimeout(1 * 1000)
 
 CREDENTIALS.forEach(credential => {
 	server.addContext(credential, CredentialsCache.get(credential))
 })
 
 server.on('timeout', () => console.warn('Server Timeout'))
-server.on('tlsClientError', (error, socket) => console.warn('Server TLS Error', socket.servername, socket.remoteAddress, error.code))
-server.on('sessionError', error => {
-	// if(error.code !== 'ECONNRESET') { }
+server.on('tlsClientError', (error, socket) => {
+	// console.log(error)
+	if(error.code === 'ERR_SSL_SSL/TLS_ALERT_CERTIFICATE_UNKNOWN') {
+		// mute
+		return
+	}
 
+	// if(error.code === 'ECONNRESET') {}
+
+	console.warn('Server TLS Error', socket.servername, socket.remoteAddress, error.code)
+})
+server.on('sessionError', error => {
+	if(error.code === 'ECONNRESET') {
+		console.log('Server Session: Connection Reset')
+		return
+	}
 	console.warn('Server Session Error', error)
 })
 

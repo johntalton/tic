@@ -1,90 +1,38 @@
 import { CouchContinuous, DEFAULT_RECONNECT_INTERVAL_MS } from './couch-continuous.js'
-import { COUCH_HEADER_NOT_MODIFIED, CouchUtil } from './couch.js'
-// import { Temporal, Intl } from '@js-temporal/polyfill'
+import { COUCH_STATUS_NOT_MODIFIED, CouchUtil } from './couch.js'
 
-/**
- * @import { Game } from '../games/tic.js'
- */
-
-/**
- * @typedef {string} StoreGameId
- */
-
-/**
- * @typedef {Object} StoreGameMetadata
- * @property {number} createdAt
- * @property {number} updatedAt
- */
-
-/**
- * @typedef {Object} StoreGameBase
- * @property {'game.tic.v1'} type
- * @property {Game} game
- * @property {StoreGameMetadata} meta
- */
-
-/**
- * @typedef {Object} StoreGameExtension
- * @property {StoreGameId} _id
- * @property {string} _rev
- */
-
-/**
- * @typedef {StoreGameBase & StoreGameExtension} StoreGame
- */
-
-/**
- * @typedef {Object} StoreGameListItem
- * @property {StoreGameId} _id
- * @property {string} state
- * @property {string} owner
- * @property {Array<string>} active
- * @property {Array<string>} players
- * @property {number} createdAt
-*/
-
-
-export class MemoryGameStore {
-	#store = new Map()
-
-	/**
-	 * @param {StoreGameId} id
-	 */
-	has(id) { return this.#store.has(id) }
-
-	/**
-	 * @param {StoreGameId} id
-	 * @param {StoreGame} user
-	 */
-	get(id, user) {
-		// console.log('Store: get game', id, this.#store.get(id))
-		return this.#store.get(id)
-	}
-	set(id, value) {
-		// console.log('Store: game', id)
-		return this.#store.set(id, value)
-	}
-
-	list() {
-		return [ ...this.#store.entries() ]
-			.map(([ id, value]) => {
-				return {
-					id,
-					state: value.game.state,
-					// _game: value
-				}
-			})
-	}
-}
+/** @import { CouchGenericRows } from '../types/couch.js' */
+/** @import { StoreGameId, StoreGame, StoreGameBase, StoreGameListItem, StoreGameListItemRaw} from '../types/store.js' */
 
 const couchURL = process.env.COUCH_URL
 const username = process.env.COUCH_USER
 const password = process.env.COUCH_PASSWORD
+
+if(couchURL === undefined) { throw new Error('unspecified couch url') }
+if(username === undefined) { throw new Error('unspecified couch user') }
+if(password === undefined) { throw new Error('unspecified couch password') }
+
 const authorizationHeaders = CouchUtil.basicAuthHeader(username, password)
 
 const RECONNECT_INTERVAL_INITIAL_MS = DEFAULT_RECONNECT_INTERVAL_MS
 const RECONNECT_INTERVAL_STEP_MS = (10 * 1000)
 const RECONNECT_INTERVAL_MAX_MS = (60 * 1000)
+
+/**
+ * @param {string} id
+ * @returns {StoreGameId}
+ */
+export function storeGameIdFromString(id) {
+	return /** @type {StoreGameId} */ (id)
+}
+
+/**
+ * @param {string} id
+ * @returns {id is StoreGameId}
+ */
+export function isStoreGameId(id) {
+	return true
+}
 
 export class CouchGameStore {
 	#url
@@ -111,36 +59,35 @@ export class CouchGameStore {
 		// })
 
 		this.#feedUrl = new URL(`${url}/_changes?feed=continuous&heartbeat=true&filter=_view&view=basic/games_by_viewer`)
-		this.#feedConnect()
+		this.#feed = this.#feedConnect()
 	}
 
 	#feedConnect() {
-		this.#feed = new CouchContinuous(this.#feedUrl, {
+		const feed = new CouchContinuous(this.#feedUrl, {
 			reconnectIntervalMS: RECONNECT_INTERVAL_INITIAL_MS,
 			headers: {
 				...authorizationHeaders
 			}
 		})
 
-
-		this.#feed.addEventListener('open', () => console.log('CouchDB Feed Open'))
-		this.#feed.addEventListener('close', () => console.log('CouchDB Feed Close'))
-		this.#feed.addEventListener('error', error => {
+		feed.addEventListener('open', () => console.log('CouchDB Feed Open'))
+		feed.addEventListener('close', () => console.log('CouchDB Feed Close'))
+		feed.addEventListener('error', error => {
 			// add time to the interval up to max
-			if(this.#feed.reconnectIntervalMS < RECONNECT_INTERVAL_MAX_MS) {
-				this.#feed.reconnectIntervalMS += RECONNECT_INTERVAL_STEP_MS
+			if(feed.reconnectIntervalMS < RECONNECT_INTERVAL_MAX_MS) {
+				feed.reconnectIntervalMS += RECONNECT_INTERVAL_STEP_MS
 			}
 
-			console.log('CouchDB Feed Error', this.#feed.reconnectIntervalMS)
+			console.log('CouchDB Feed Error', feed.reconnectIntervalMS)
 		})
-		this.#feed.addEventListener('data', event => {
+		feed.addEventListener('data', event => {
 			const { data } = event
 			const { id } = data
 
 			// console.log('change', data)
 
 			// reset reconnect to default on success
-			this.#feed.reconnectIntervalMS = RECONNECT_INTERVAL_INITIAL_MS
+			feed.reconnectIntervalMS = RECONNECT_INTERVAL_INITIAL_MS
 
 			this.get(id)
 				.then(gameObject => {
@@ -151,8 +98,10 @@ export class CouchGameStore {
 						game
 					})
 				})
-				.catch(e => console.warn('game watcher error:', e))
+				.catch(e => console.warn('game feed error:', e))
 		})
+
+		return feed
 	}
 
 	/**
@@ -164,9 +113,12 @@ export class CouchGameStore {
 			return true
 		}
 
-		const response = await fetch(`${this.#url}/${id}`, {
+		const response = await CouchUtil.fetch(`${this.#url}/${id}`, {
 			method: 'HEAD',
-			headers: authorizationHeaders
+			headers: {
+				...authorizationHeaders,
+				'Accept': 'application/json'
+			}
 		})
 
 		// console.log(response)
@@ -178,19 +130,13 @@ export class CouchGameStore {
 	 * @returns {Promise<StoreGame>}
 	 */
 	async #get(id) {
-		const response = await fetch(`${this.#url}/${id}`, {
+		return CouchUtil.fetchJSON(`${this.#url}/${id}`, {
 			method: 'GET',
 			headers: {
 				...authorizationHeaders,
-				'Accept': '*/*'
+				'Accept': 'application/json'
 			}
 		})
-
-		if(!response.ok) {
-			throw new Error('get game by id not ok')
-		}
-
-		return response.json()
 	}
 
 	/**
@@ -198,16 +144,16 @@ export class CouchGameStore {
 	 * @param {string} etag
 	 */
 	async #isModified(id, etag) {
-		const response = await fetch(`${this.#url}/${id}`, {
+		const response = await CouchUtil.fetch(`${this.#url}/${id}`, {
 			method: 'HEAD',
 			headers: {
 				...authorizationHeaders,
-				'Accept': '*/*',
+				'Accept': 'application/json',
 				'If-None-Match': `"${etag}"`
 			}
 		})
 
-		return (response.status !== COUCH_HEADER_NOT_MODIFIED)
+		return (response.status !== COUCH_STATUS_NOT_MODIFIED)
 	}
 
 	/**
@@ -277,17 +223,16 @@ export class CouchGameStore {
 	 * @param {StoreGame | StoreGameBase} value
 	 */
 	async set(id, value) {
-		// clear from cache
-		// console.log('clear cache', { id })
 		this.#cache.delete(id)
 
-		const response = await fetch(`${this.#url}`, {
+		const response = await CouchUtil.fetch(`${this.#url}`, {
 			method: 'POST',
 			headers: {
 				...authorizationHeaders,
-				'Content-Type': 'application/json'
+				'Content-Type': 'application/json',
+				'Accept': 'application/json'
 			},
-			body: JSON.stringify({ _id: id, ...value })
+			body: JSON.stringify({ ...value, _id: id })
 		})
 
 		return response.ok
@@ -307,41 +252,20 @@ export class CouchGameStore {
 		url.searchParams.set('reduce', 'false')
 		url.searchParams.set('include_docs', `${includeDocs}`)
 
-		const response = await fetch(url, {
+		/** @type {CouchGenericRows<StoreGameListItemRaw>} */
+		const result = await CouchUtil.fetchJSON(url, {
 				method: 'GET',
 				headers: {
-					...authorizationHeaders
-				}
-			})
-			.catch(e => {
-				if(e.cause?.code === 'ETIMEDOUT') {
-					throw new Error(`DB listing timeout: ${e.message}`, { cause: e })
-				}
-				else {
-					throw new Error(`DB listing failure: ${e.message}`, { cause: e })
+					...authorizationHeaders,
+					'Accept': 'application/json'
 				}
 			})
 
-
-		if(!response.ok) {
-			const text = await response.text()
-			console.log('game listing error', response.status, text)
-			throw new Error('game listing error')
-		}
-
-		const result = await response.json()
-		// console.log(result)
-
-		const full = result.rows.map(row => ({
-			_id: row.id,
-			...row.value
+		return result.rows.map(row => ({
+			_id: storeGameIdFromString(row.id),
+			...row.value,
+			active: row.value.active?.includes(user)
 		}))
-		.map(row => ({
-			...row,
-			active: row.active?.includes(user)
-		}))
-
-		return full
 	}
 }
 

@@ -9,32 +9,30 @@ export const MATCH = Symbol.for('MATCH')
 export const NAME = Symbol.for('NAME')
 export const METADATA = Symbol.for('METADATA')
 
+/** @import { ServerHttp2Stream } from 'node:http2' */
+
+/** @import { BodyFuture } from './body.js' */
+/** @import { SessionUser } from '../types/global.js' */
+
 /**
- * @import { ServerHttp2Stream } from 'node:http2'
+ * @template T
+ * @typedef { (matches: Map<string, string>, user: SessionUser, body: BodyFuture, query: URLSearchParams, stream: ServerHttp2Stream) => Promise<T> } HandlerFn
  */
 
 /**
- * @import { BodyFuture } from './body.js'
- */
-
-
-/**
- * @typedef { (matches: Map<string, string>, user: { token: string }, body: BodyFuture, query: URLSearchParams, stream: ServerHttp2Stream) => Promise<any> } HandlerFn
- */
-
-/**
- * @typedef {{ [key:string|symbol]: RouteDefinition|HandlerFn|string }} RouteDefinition
+ * @template T
+ * @typedef {{ [key:string|symbol]: RouteDefinition<T>|HandlerFn<T>|string|Record<string, any> }} RouteDefinition
  */
 
 /**
  * @typedef {Object} DigResult
- * @property {HandlerFn} handler
+ * @property {HandlerFn<any>} handler
  * @property {Map<string, string>} matches
  * @property {Object} metadata
  */
 
 /**
- * @param {RouteDefinition} route
+ * @param {RouteDefinition<any>} route
  * @param {string} key
  * @param {Array<string>} keys
  * @param {Map<string, string>} matches
@@ -52,7 +50,7 @@ export function _dig(route, key, keys, matches) {
 }
 
 /**
- * @param {RouteDefinition} routes
+ * @param {RouteDefinition<any>} routes
  * @param {string} method
  * @param {string} path
  * @returns {DigResult}
@@ -75,7 +73,7 @@ export function dig(routes, method, path) {
 }
 
 /**
- * @param {RouteDefinition} routes
+ * @param {RouteDefinition<any>} routes
  * @param {string} path
  */
 export function digOptions(routes, path) {

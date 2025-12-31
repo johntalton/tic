@@ -20,6 +20,19 @@
 import http2 from 'node:http2'
 import { requestBody } from '../util/body.js'
 
+/** @import { OutgoingHttpHeaders } from 'node:http' */
+/** @import { BodyFuture } from '../util/body.js' */
+
+/**
+ * @typedef {Object} Fetch2ResponseHead
+ * @property {number} status
+ * @property {boolean} ok
+ * @property {Map<string, string>} headers
+ */
+
+/**
+ * @typedef {Fetch2ResponseHead & BodyFuture} Fetch2Response
+ */
 
 const {
   HTTP2_HEADER_PATH,
@@ -38,7 +51,19 @@ const {
 	HTTP2_METHOD_PATCH
 } = http2.constants
 
+/**
+ * @typedef {Object} Fetch2Options
+ * @property {string} [method = 'GET']
+ * @property {OutgoingHttpHeaders} [headers]
+ * @property {AbortSignal} [signal]
+ */
+
 export class Fetch2 {
+	/**
+	 * @param {URL|string} urlOrString
+	 * @param {Fetch2Options} options
+	 * @returns {Promise<Fetch2Response>}
+	 */
 	static async fetch(urlOrString, options) {
 		// console.log('f2', urlOrString)
 
@@ -56,20 +81,22 @@ export class Fetch2 {
 		client.on('error', error => reject(error))
 		client.on('connect', () => {
 			const req = client.request({
+				...headers,
 				[HTTP2_HEADER_PATH]: `${url.pathname}${url.search}`,
-				[HTTP2_HEADER_METHOD]: method,
-				...headers
+				[HTTP2_HEADER_METHOD]: method
 			})
 			req.end()
 			req.on('error', error => reject(error))
 			promise.finally(() => client.close())
 
 			req.on('response', (headers) => {
-				const status = headers[HTTP2_HEADER_STATUS]
-				if(!Number.isFinite(status)) {
+				const statusString = headers[HTTP2_HEADER_STATUS]
+				if(statusString === undefined || !Number.isFinite(statusString) || Array.isArray(statusString)) {
 					reject(new Error('unknown status'))
 					return
 				}
+
+				const status = parseInt(statusString, 10)
 
 				// console.log('f2 requestBody')
 				const body = requestBody(req, { signal })

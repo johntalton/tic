@@ -1,14 +1,13 @@
-import { userStore } from '../store/user.js'
+import { storeUserIdFromString, userStore } from '../store/user.js'
 import { ID } from '../util/id.js'
+import { isSingleGrapheme } from './grapheme.js'
 
+export const DEFAULT_ELO = 100
 
-const DEFAULT_ELO = 100
+/** @import { HandlerFn } from '../util/dig.js' */
+/** @import { SigninInfo } from '../types/public.js' */
 
-/**
- * @import { HandlerFn } from '../util/dig.js'
- */
-
-/** @type {HandlerFn} */
+/** @type {HandlerFn<SigninInfo>} */
 export async function handleSimpleLogin(matches, sessionUser, body, query) {
 	const name = query.get('name')
 	if(name === null) { throw new Error('missing name') }
@@ -21,21 +20,22 @@ export async function handleSimpleLogin(matches, sessionUser, body, query) {
 		//
 	} else {
 		const now = Date.now()
-		const newUserId = `user:${ID.generate()}`
+		const newUserId = storeUserIdFromString(`user:${ID.generate()}`)
 		const accessToken = `token:access:${ID.generate()}`
 		const sseToken = `token:sse:${ID.generate()}`
 		const displayName = name
-		const { id } = await userStore.create(newUserId, {
+
+		// const suggestedGlyph = '👩🏻‍❤️‍💋‍👩🏼'
+		// const glyph = isSingleGrapheme(suggestedGlyph) ? suggestedGlyph : undefined
+
+		const userObject = await userStore.create(newUserId, {
 			'type': 'user.tic.v1',
 			'user': {
 				'displayName': displayName,
-				// 'glyph': '👩🏻‍❤️‍💋‍👩🏼',
+				// 'glyph': glyph,
 				'friends': [
-					// 'alice.one'
+					// 'user:Agent'
 				],
-				// 'webauthn': {
-				// 	'userId': webAuthNuserId
-				// },
 				'elo': DEFAULT_ELO
 			},
 			'session': {
@@ -57,9 +57,10 @@ export async function handleSimpleLogin(matches, sessionUser, body, query) {
 		// console.log('created user', user)
 
 		return {
-			id,
+			id: newUserId,
 			displayName,
-			accessToken
+			accessToken,
+			sseToken
 		}
 	}
 

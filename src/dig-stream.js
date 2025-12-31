@@ -22,7 +22,7 @@ import { AcceptLanguage } from './util/accept-language.js'
 import { ROUTES } from './route.js'
 import { dig, digOptions } from './util/dig.js'
 import { RateLimiter } from './util/rate-limiter.js'
-import { accessToken } from './util/access-token.js'
+import { getTokens } from './util/access-token.js'
 import { Forwarded, FORWARDED_KEY_FOR, KNOWN_FORWARDED_KEYS, SKIP_ANY } from './util/forwarded.js'
 
 /**
@@ -141,22 +141,22 @@ async function handleStreamAsync(stream, header, flags) {
 
 	const requestUrl = new URL(fullPathAndQuery, `${scheme}://${authority}`)
 
-	console.log(Object.keys(header))
-	console.log({
-		method, url:
-		requestUrl.pathname,
-		query: requestUrl.search,
-		session: { hostSNI, ip, port },
-		host,
-		origin,
-		authority,
-		referer,
-		UA,
-		fullContentType, fullContentLength,
-		// pragma,
-		// cacheControl
-	    fullAccept
-	})
+	// console.log(Object.keys(header))
+	// console.log({
+	// 	method, url:
+	// 	requestUrl.pathname,
+	// 	query: requestUrl.search,
+	// 	session: { hostSNI, ip, port },
+	// 	host,
+	// 	origin,
+	// 	authority,
+	// 	referer,
+	// 	UA,
+	// 	fullContentType, fullContentLength,
+	// 	// pragma,
+	// 	// cacheControl
+	//     fullAccept
+	// })
 	// console.log({
 	// 	secUA,
 	// 	secPlatform,
@@ -210,7 +210,8 @@ async function handleStreamAsync(stream, header, flags) {
 	//
 	// Rate Limit (IP)
 	//
-	const limitInfo = RateLimiter.test(ipRateStore, ip, ipRequestPerSecondPolicy)
+	const rateLimitKey = `${ip}` // `${ip}:${header['x-k6-vuid']}`
+	const limitInfo = RateLimiter.test(ipRateStore, rateLimitKey, ipRequestPerSecondPolicy)
 	if(limitInfo.exhausted) {
 		sendTooManyRequests(stream, limitInfo, ipRequestPerSecondPolicy)
 		return
@@ -223,16 +224,22 @@ async function handleStreamAsync(stream, header, flags) {
 	const { handler, matches, metadata } = dig(ROUTES, method, requestUrl.pathname)
 	const digEnd = performance.now()
 
+	const isSSE = metadata?.sse ?? false
+
 	//
 	// Access Token (exists, not validated)
 	//
-	const token = accessToken(authorization, requestUrl.searchParams)
-	if(token === undefined) {
-		sendUnauthorized(stream)
-		return
-	}
+	const tokens = getTokens(authorization, requestUrl.searchParams)
+	// if(tokens.access === undefined && !isSSE) {
+	// 	sendUnauthorized(stream)
+	// 	return
+	// }
+	// else if(tokens.sse === undefined && isSSE) {
+	// 	sendUnauthorized(stream)
+	// 	return
+	// }
 
-	const user = { token }
+	const user = { tokens }
 
 	//
 	// content negotiation
@@ -252,7 +259,7 @@ async function handleStreamAsync(stream, header, flags) {
 	//
 	// setup future body
 	//
-	const contentLength = parseInt(fullContentLength)
+	const contentLength = parseInt(fullContentLength, 10)
 	const body = requestBody(stream, {
 		signal: AbortSignal.timeout(BODY_TIMEOUT_SEC),
 		contentType,
@@ -263,7 +270,6 @@ async function handleStreamAsync(stream, header, flags) {
 	//
 	// SSE
 	//
-	const isSSE = metadata?.sse ?? false
 	if(isSSE) {
 		if(accept !== MIME_TYPE_EVENT_STREAM) {
 			sendError(stream, 'mime type event stream expect for SSE route')
@@ -299,7 +305,6 @@ async function handleStreamAsync(stream, header, flags) {
 
 		})
 		.catch(e => {
-			// console.warn('DIG Handler Error', e)
 			sendError(stream, 'Error: ' + e.message)
 		})
 }

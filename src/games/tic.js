@@ -20,18 +20,11 @@
  * @property {string} [reason]
  */
 
-/**
- * @typedef {Object} OfferMulti
- * @property {Array<string>} targets
- */
 
 /**
- * @typedef {Object} OfferSingle
- * @property {string} target
- */
-
-/**
- * @typedef {OfferSingle | OfferMulti} Offer
+ * @typedef {Object} Offer
+ * @property {string} [target]
+ * @property {Array<string>} [targets]
  */
 
 /**
@@ -309,6 +302,7 @@ export class Tic {
 			.difference(new Set(game.players))
 			.values()
 			.toArray()
+			.filter(offer => offer !== undefined)
 
 		const state = STATES.PENDING
 

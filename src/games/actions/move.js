@@ -1,30 +1,30 @@
 import { gameStore } from '../../store/game.js'
+import { userStore } from '../../store/user.js'
 import { Tic } from '../tic.js'
 import { computeAndUpdateELO, resolveFromStore } from '../util.js'
 
-/** @import { StoreGameId } from '../../store/game.js' */
+/** @import { StoreUserId } from '../../types/store.js' */
+/** @import { EncodedGameId } from '../../types/public.js' */
 /** @import { ActionableGame } from '../tic.js' */
 /** @import { BodyFuture } from '../../util//body.js' */
 
 /**
- * @param {StoreGameId} id
- * @param {{ token: string }} sessionUser
+ * @param {EncodedGameId} encodedGameId
+ * @param {StoreUserId} userId
  * @param {BodyFuture} body
  * @param {URLSearchParams} query
  * @returns {Promise<ActionableGame>}
  */
-export async function handleMove(id, sessionUser, body, query) {
-	const { user, game, gameObject } = await resolveFromStore(id, sessionUser)
+export async function handleMove(encodedGameId, userId, body, query) {
+	const { game, gameObject } = await resolveFromStore(encodedGameId, userId)
 
-	// console.log('handleMove - ', body, query)
 	const positionStr = query.get('position')
 	if(positionStr === null) { throw new Error('missing move position') }
 	const position = parseInt(positionStr, 10)
 	const positionPlayerId = game.board[position]
 	if(positionPlayerId !== 0) { throw new Error('invalid move position') }
 
-	// const game = await gameStore.get(id)
- 	const updatedGame = Tic.move(game, user, { position })
+ 	const updatedGame = Tic.move(game, userId, { position })
 
 	const updatedGameObject = {
 		...gameObject,
@@ -37,7 +37,7 @@ export async function handleMove(id, sessionUser, body, query) {
 
 	await gameStore.set(gameObject._id, updatedGameObject)
 
-	const actionableGame = Tic.actionable(updatedGame, user)
+	const actionableGame = Tic.actionable(updatedGame, userId)
 
 	await computeAndUpdateELO(actionableGame)
 

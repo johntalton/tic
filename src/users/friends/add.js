@@ -1,60 +1,56 @@
 import { MATCHES } from '../../route.js'
-import { userStore } from '../../store/user.js'
+import { isStoreUserId, userStore } from '../../store/user.js'
 import { addFriend } from './alter.js'
 
-/**
- * @import { HandlerFn } from '../../util/dig.js'
- */
+/** @import { HandlerFn } from '../../util/dig.js' */
+/** @import { FriendsListing } from '../../types/public.js' */
 
 // /u/USER/friend/FRIEND
 // adding FRIEND to USER
-/** @type {HandlerFn} */
+/** @type {HandlerFn<FriendsListing>} */
 export async function handleAddFriend(matches, sessionUser, body, query) {
-	const user = await userStore.fromToken(sessionUser.token)
-  if (user === undefined) {
-    throw new Error('invalid user token')
-  }
+	if(sessionUser.tokens.access === undefined) { throw new Error('access token required') }
+	const userId = await userStore.fromToken(sessionUser.tokens.access)
 
 	const friendId = matches.get(MATCHES.FRIEND_ID)
-	const userId = matches.get(MATCHES.USER_ID)
+	const forUserId = matches.get(MATCHES.USER_ID)
 
-	if(userId !== user) {
+	if(friendId === undefined) { throw new Error('unknown friend id') }
+	if(!isStoreUserId(friendId)) { throw new Error('invalid friend id brand') }
+
+	if(forUserId === undefined) { throw new Error('unknown id') }
+	if(!isStoreUserId(forUserId)) { throw new Error('invalid id brand') }
+
+	if(forUserId !== userId) {
 		throw new Error('unable to modify other peoples friends')
 	}
 
-	if(userId === friendId) {
+	if(forUserId === friendId) {
 		// Friending yourself, thats nice
 		throw new Error('you are always your own friend')
 	}
 
-	if(friendId === undefined) {
-		throw new Error('can not add unknown friend')
-	}
-
-	return addFriend(userId, friendId)
+	return addFriend(forUserId, friendId)
 }
 
 // /u/USER
 // adding USER as friend to Self
-/** @type {HandlerFn} */
+/** @type {HandlerFn<FriendsListing>} */
 export async function handleAddUserAsFriend(matches, sessionUser, body, query) {
-	const user = await userStore.fromToken(sessionUser.token)
-  if (user === undefined) {
-    throw new Error('invalid user token')
-  }
+	if(sessionUser.tokens.access === undefined) { throw new Error('access token required') }
+	const userId = await userStore.fromToken(sessionUser.tokens.access)
 
-	const userId = matches.get(MATCHES.USER_ID)
+	const friendUserId = matches.get(MATCHES.USER_ID)
 
-	if(userId === undefined) {
-		throw new Error('can not add unknown friend')
-	}
+	if(friendUserId === undefined) { throw new Error('can not add unknown friend') }
+	if(!isStoreUserId(friendUserId)) { throw new Error('invalid id brand') }
 
-	if(userId === user) {
+	if(friendUserId === userId) {
 		// Friending yourself, thats nice
 		throw new Error('your always your own friend')
 	}
 
-	return addFriend(user, userId)
+	return addFriend(userId, friendUserId)
 }
 
 
