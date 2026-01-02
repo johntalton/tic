@@ -7,7 +7,7 @@ import { userStore } from '../store/user.js'
 /** @import { IdentifiableActionableGame } from '../types/public.js' */
 
 /** @type {HandlerFn<IdentifiableActionableGame>} */
-export async function handleGame(matches, sessionUser, requestBody, query) {
+export async function handleGame(matches, sessionUser, _body, _query) {
 	const gameId = matches.get(MATCHES.GAME_ID)
 	if(gameId === undefined) { throw new Error('id invalid') }
 	if(!isStoreEncodedGameId(gameId)) { throw new Error('invalid encoded game id brand') }

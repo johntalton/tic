@@ -1,5 +1,4 @@
 import { gameStore } from '../../store/game.js'
-import { userStore } from '../../store/user.js'
 import { Tic } from '../tic.js'
 import { resolveFromStore } from '../util.js'
 
@@ -11,11 +10,11 @@ import { resolveFromStore } from '../util.js'
 /**
  * @param {EncodedGameId} encodedGameId
  * @param {StoreUserId} userId
- * @param {BodyFuture} body
+ * @param {BodyFuture} _body
  * @param {URLSearchParams} query
  * @returns {Promise<ActionableGame>}
  */
-export async function handleOffer(encodedGameId, userId, body, query) {
+export async function handleOffer(encodedGameId, userId, _body, query) {
 	const { game, gameObject } = await resolveFromStore(encodedGameId, userId)
 
 	const targets = query.getAll('t') ?? query.getAll('targets')

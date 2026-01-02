@@ -35,8 +35,8 @@ const {
 	HTTP_STATUS_TOO_MANY_REQUESTS
 } = http2.constants
 
-export const SERVER_NAME = process.env.SERVER_NAME
-export const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN // '*'
+export const SERVER_NAME = process.env['SERVER_NAME']
+export const ALLOWED_ORIGIN = process.env['ALLOWED_ORIGIN'] // '*'
 
 export const DEFAULT_METHODS = [ 'HEAD', 'GET', 'POST', 'PATCH', 'DELETE' ]
 

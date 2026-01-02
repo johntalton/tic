@@ -1,4 +1,4 @@
-import { Tic, isViewable } from './tic.js'
+import { isViewable } from './tic.js'
 import { ELO, WIN, LOSE, DRAW } from './elo.js'
 import { gameStore, storeGameIdFromString } from '../store/game.js'
 import { storeUserIdFromString, userStore } from '../store/user.js'
@@ -10,9 +10,8 @@ import { storeUserIdFromString, userStore } from '../store/user.js'
 // 	false,
 // 	[ 'encrypt', 'decrypt' ])
 
-/** @import { SessionUser } from '../types/global.js' */
 /** @import { StoreGameId, ResolvedStoreInfo, StoreUserId } from '../types/store.js' */
-/** @import { ActionableGame, Game } from './tic.js' */
+/** @import { ActionableGame } from './tic.js' */
 /** @import { EncodedGameId, IdentifiableActionableGame } from '../types/public.js' */
 
 /**
@@ -28,6 +27,8 @@ export function storeEncodedGameIdFromString(id) {
  * @returns {id is EncodedGameId}
  */
 export function isStoreEncodedGameId(id) {
+	if(id === undefined) { return false }
+	if(id === '') { return false }
 	return true
 }
 
@@ -65,6 +66,11 @@ export async function computeAndUpdateELO(actionableGame) {
 	const [ playerAObject, playerBObject ] = await Promise.all(
 		actionableGame.players
 			.map(playerId => userStore.get(storeUserIdFromString(playerId))))
+
+		if(playerAObject === undefined || playerBObject === undefined) {
+			console.warn('undefined player object')
+			return
+		}
 
 	const scoreA = resolution.draw ? DRAW : ((resolution.winner.user === playerAObject._id) ? WIN : LOSE)
 	const scoreB = 1 - scoreA

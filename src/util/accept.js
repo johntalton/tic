@@ -90,6 +90,7 @@ export class Accept {
 
 		if(bests.length === 0) { return undefined }
 		const [ first ] = bests
+		if(first === undefined) { return undefined }
 		const [ firstSt ] = first.supportedTypes
 		return firstSt
 	}

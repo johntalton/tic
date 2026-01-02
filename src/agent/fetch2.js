@@ -56,6 +56,9 @@ const {
  * @property {string} [method = 'GET']
  * @property {OutgoingHttpHeaders} [headers]
  * @property {AbortSignal} [signal]
+ * @property {string} [mode]
+ * @property {string} [cache]
+ * @property {string} [credentials]
  */
 
 export class Fetch2 {

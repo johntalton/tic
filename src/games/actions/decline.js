@@ -1,5 +1,4 @@
 import { gameStore } from '../../store/game.js'
-import { userStore } from '../../store/user.js'
 import { Tic } from '../tic.js'
 import { resolveFromStore } from '../util.js'
 
@@ -11,11 +10,11 @@ import { resolveFromStore } from '../util.js'
 /**
  * @param {EncodedGameId} id
  * @param {StoreUserId} userId
- * @param {BodyFuture} body
- * @param {URLSearchParams} query
+ * @param {BodyFuture} _body
+ * @param {URLSearchParams} _query
  * @returns {Promise<ActionableGame>}
  */
-export async function handleDecline(id, userId, body, query) {
+export async function handleDecline(id, userId, _body, _query) {
 	const { game, gameObject } = await resolveFromStore(id, userId)
 
 	const updatedGame = Tic.decline(game, userId)

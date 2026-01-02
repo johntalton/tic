@@ -1,7 +1,6 @@
 import { Tic } from '../tic.js'
 import { resolveFromStore } from '../util.js'
 import { gameStore } from '../../store/game.js'
-import { userStore } from '../../store/user.js'
 
 /** @import { StoreUserId } from '../../types/store.js' */
 /** @import { EncodedGameId } from '../../types/public.js' */
@@ -11,11 +10,11 @@ import { userStore } from '../../store/user.js'
 /**
  * @param {EncodedGameId} encodedGameId
  * @param {StoreUserId} userId
- * @param {BodyFuture} body
- * @param {URLSearchParams} query
+ * @param {BodyFuture} _body
+ * @param {URLSearchParams} _query
  * @returns {Promise<ActionableGame>}
  */
-export async function handleAccept(encodedGameId, userId, body, query) {
+export async function handleAccept(encodedGameId, userId, _body, _query) {
 	const { game, gameObject } = await resolveFromStore(encodedGameId, userId)
 
 	const updatedGame = Tic.accept(game, userId)

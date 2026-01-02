@@ -10,7 +10,7 @@
  * @typedef {Object} BasicUserInfo
  * @property {string} displayName
  * @property {number} elo
- * @property {Glyph} [glyph]
+ * @property {Glyph|undefined} [glyph]
  */
 
 /**
@@ -57,13 +57,6 @@
 /**
  * @typedef {BasicUserInfo & WithId} StoreUserListItem
  */
-
-
-
-
-
-
-
 
 
 

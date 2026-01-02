@@ -13,15 +13,12 @@ const {
 	SSL_OP_NO_TLSv1,
 	SSL_OP_NO_TLSv1_1,
 	SSL_OP_NO_TLSv1_2,
-	SSL_OP_NO_TLSv1_3,
-	SSL_OP_NO_SSLv2,
-	SSL_OP_NO_SSLv3
 } = crypto.constants
 
-const HOST = process.env.HOST
-const PORT = process.env.PORT ?? 8443
-const IPV6_ONLY = process.env.IPV6_ONLY ?? false
-const CREDENTIALS = (process.env.CREDENTIALS ?? '').split(',').map(c => c.trim()).filter(c => c.length > 0)
+const HOST = process.env['HOST']
+const PORT = process.env['PORT'] ?? 8443
+const IPV6_ONLY = process.env['IPV6_ONLY'] ?? false
+const CREDENTIALS = (process.env['CREDENTIALS'] ?? '').split(',').map(c => c.trim()).filter(c => c.length > 0)
 
 // openssl req -x509 -newkey rsa:2048 -nodes -sha256 -subj '/CN=localhost' -keyout localhost-privkey.pem -out localhost-cert.pem
 class CredentialsCache {

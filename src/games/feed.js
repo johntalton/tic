@@ -7,7 +7,7 @@ import { identifiableGameId } from './util.js'
 /** @import { HandlerFn } from '../util/dig.js' */
 
 /** @type {HandlerFn<void>} */
-export async function handleGameFeed(matches, sessionUser, body, query, stream) {
+export async function handleGameFeed(_matches, sessionUser, _body, _query, stream) {
 	const channel = new BroadcastChannel('SSE')
 
 	if(sessionUser.tokens.sse === undefined) { throw new Error('access token required') }

@@ -9,6 +9,21 @@ export const DEFAULT_RECONNECT_INTERVAL_MS = 1000 * 3
 
 export const CONTENT_TYPE_EVENT_STREAM = 'text/event-stream'
 
+/**
+ * @typedef {Object} EventItem
+ * @property {string} [id]
+ * @property {string} [type]
+ * @property {any} [data]
+ */
+
+/**
+ * @typedef {Object} EventTransformItem
+ * @property {EventItem} [event]
+ * @property {number} [retry]
+ * @property {string} [comment]
+ */
+
+
 function eventSourceTransform() {
 	const SPACE = ' '
 	const COLON = ':'
@@ -28,9 +43,18 @@ function eventSourceTransform() {
 	let accumulator = ''
 	let ignoreNextLF = false
 	let firstLine = false
+
+	/** @type {EventItem|undefined} */
 	let nextEvent = undefined
 
-	const parseField = (field, value) => {
+	/**
+	 * @param {string} field
+	 * @param {string} value
+	 * @returns {EventTransformItem}
+	 */
+	function parseField(field, value) {
+		if(nextEvent === undefined) { return {} }
+
 		// If the field name is "event"
 		if(field === FIELD.EVENT) {
 			nextEvent.type = value
@@ -48,9 +72,9 @@ function eventSourceTransform() {
 		}
 		// If the field name is "retry"
 		else if(field === FIELD.RETRY) {
-			const valid = [ ...value ].map(v => !isNaN(v)).reduce((acc, v) => acc && v, true)
+			// const valid = [ ...value ].map(v => !isNaN(v)).reduce((acc, v) => acc && v, true)
 			const num = parseInt(value, BASE_10)
-			if(valid && Number.isInteger(num)) {
+			if(!isNaN(num) && Number.isInteger(num) && (num >= 0)) {
 				// console.log('retry', num)
 				return { retry: num }
 			}
@@ -59,13 +83,17 @@ function eventSourceTransform() {
 		return { }
 	}
 
-	const parseLine = line => {
+	/**
+	 * @param {string} line
+	 * @returns {EventTransformItem}
+	 */
+	function parseLine(line) {
 		if(nextEvent === undefined && line === EMPTY) { return {} }
 
 		// If the line is empty (a blank line)
 		// Dispatch the event
 		if(line === EMPTY) {
-			const event = nextEvent
+			const event = nextEvent ?? {}
 			nextEvent = undefined
 			if(Object.keys(event).length <= 0) { return { } }
 			return { event }

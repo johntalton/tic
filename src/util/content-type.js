@@ -1,3 +1,4 @@
+
 export const MIME_TYPE_JSON = 'application/json'
 export const MIME_TYPE_TEXT = 'text/plain'
 export const MIME_TYPE_EVENT_STREAM = 'text/event-stream'
@@ -5,6 +6,21 @@ export const MIME_TYPE_XML = 'application/xml'
 export const MIME_TYPE_URL_FORM_DATA = 'application/x-www-form-urlencoded'
 export const MIME_TYPE_MULTIPART_FORM_DATA = 'multipart/form-data'
 export const MIME_TYPE_OCTET_STREAM = 'application/octet-stream'
+
+export const KNOWN_TYPES = [
+	'application', 'audio', 'image', 'message',
+	'multipart','text', 'video'
+]
+
+export const TYPE_X_TOKEN_PREFIX = 'X-'
+
+export const SPECIAL_CHARS = [
+	'(', ')', '<', '>',
+	'@', ',', ';', ':',
+	'\\', '"', '/', '[',
+	']', '?', '.', '=',
+	' '
+]
 
 /**
  * @typedef {Object} ContentType
@@ -50,19 +66,26 @@ export const WELL_KNOWN = new Map([
  */
 export function parseContentType(contentTypeHeader) {
 	if(contentTypeHeader === undefined) { return undefined }
+	if(contentTypeHeader === null) { return undefined }
 
 	const wellKnown = WELL_KNOWN.get(contentTypeHeader)
 	if(wellKnown !== undefined) { return wellKnown }
 
 	const [ mimetypeRaw, ...parameterSet ] = contentTypeHeader.trim().split(SEPARATOR.PARAMETER).map(entry => entry.trim())
+	if(mimetypeRaw === undefined) { return undefined }
+	if(mimetypeRaw === '') { return undefined }
 
 	const [ type, subtype ] = mimetypeRaw
 		.split(SEPARATOR.SUBTYPE)
-		.map(t => t.trim())
+		.map(t => t.trim().toLowerCase())
+
+	if(type === undefined) { return undefined }
+	if(type === '') { return undefined }
+
 
 	const parameters = new Map(parameterSet.map(parameter => {
-		const [ key, value ] = parameter.split(SEPARATOR.KVP).map(p => p.trim())
-		return [ key, value ]
+		const [ key, value ] = parameter.split(SEPARATOR.KVP)
+		return [ key?.trim().toLowerCase(), value ]
 	}))
 
 	const charset = parameters.get(CHARSET)

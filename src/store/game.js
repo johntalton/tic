@@ -4,9 +4,9 @@ import { COUCH_STATUS_NOT_MODIFIED, CouchUtil } from './couch.js'
 /** @import { CouchGenericRows } from '../types/couch.js' */
 /** @import { StoreGameId, StoreGame, StoreGameBase, StoreGameListItem, StoreGameListItemRaw} from '../types/store.js' */
 
-const couchURL = process.env.COUCH_URL
-const username = process.env.COUCH_USER
-const password = process.env.COUCH_PASSWORD
+const couchURL = process.env['COUCH_URL']
+const username = process.env['COUCH_USER']
+const password = process.env['COUCH_PASSWORD']
 
 if(couchURL === undefined) { throw new Error('unspecified couch url') }
 if(username === undefined) { throw new Error('unspecified couch user') }
@@ -31,6 +31,7 @@ export function storeGameIdFromString(id) {
  * @returns {id is StoreGameId}
  */
 export function isStoreGameId(id) {
+	if(id === undefined || id.length === 0) { return false }
 	return true
 }
 
@@ -72,7 +73,7 @@ export class CouchGameStore {
 
 		feed.addEventListener('open', () => console.log('CouchDB Feed Open'))
 		feed.addEventListener('close', () => console.log('CouchDB Feed Close'))
-		feed.addEventListener('error', error => {
+		feed.addEventListener('error', _event => {
 			// add time to the interval up to max
 			if(feed.reconnectIntervalMS < RECONNECT_INTERVAL_MAX_MS) {
 				feed.reconnectIntervalMS += RECONNECT_INTERVAL_STEP_MS

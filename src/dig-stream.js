@@ -1,8 +1,6 @@
 import http2 from 'node:http2'
 import { TLSSocket } from 'node:tls'
 
-import { SSE_LAST_EVENT_ID } from '@johntalton/sse-util'
-
 import {
 	ENCODER_MAP,
 	sendError,
@@ -11,7 +9,7 @@ import {
 	sendPreflight,
 	sendSSE,
 	sendTooManyRequests,
-	sendUnauthorized
+	// sendUnauthorized
 } from './util/handle-stream-util.js'
 
 import { requestBody } from './util/body.js'
@@ -23,11 +21,9 @@ import { ROUTES } from './route.js'
 import { dig, digOptions } from './util/dig.js'
 import { RateLimiter } from './util/rate-limiter.js'
 import { getTokens } from './util/access-token.js'
-import { Forwarded, FORWARDED_KEY_FOR, KNOWN_FORWARDED_KEYS, SKIP_ANY } from './util/forwarded.js'
+import { Forwarded, FORWARDED_KEY_FOR, KNOWN_FORWARDED_KEYS } from './util/forwarded.js'
 
-/**
- * @import { ServerHttp2Stream, IncomingHttpHeaders } from 'node:http2'
- */
+/** @import { ServerHttp2Stream, IncomingHttpHeaders } from 'node:http2' */
 
 const { HTTP2_METHOD_OPTIONS } = http2.constants
 
@@ -61,9 +57,9 @@ const HTTP_HEADER_SEC_FETCH_DEST = 'sec-fetch-dest'
 
 const FORWARDED_KEY_SECRET = 'secret'
 const FORWARDED_ACCEPTABLE_KEYS = [ ...KNOWN_FORWARDED_KEYS, FORWARDED_KEY_SECRET ]
-const FORWARDED_REQUIRED = process.env.FORWARDED_REQUIRED === 'true'
-const FORWARDED_DROP_RIGHTMOST = (process.env.FORWARDED_SKIP_LIST ?? '').split(',').map(s => s.trim()).filter(s => s.length > 0)
-const FORWARDED_SECRET = process.env.FORWARDED_SECRET
+const FORWARDED_REQUIRED = process.env['FORWARDED_REQUIRED'] === 'true'
+const FORWARDED_DROP_RIGHTMOST = (process.env['FORWARDED_SKIP_LIST'] ?? '').split(',').map(s => s.trim()).filter(s => s.length > 0)
+const FORWARDED_SECRET = process.env['FORWARDED_SECRET']
 
 const CONTENT_TYPE_ASSUMED = CONTENT_TYPE_JSON
 // const ACCEPT_TYPE_ASSUMED = MIME_TYPE_JSON
@@ -79,15 +75,16 @@ const ipRequestPerSecondPolicy = {
 	name: 'ip',
 	quota: 25,
 	windowSeconds: 15,
-	size: 50
+	size: 50,
+	quotaUnits: 1
 }
 
 /**
  * @param {ServerHttp2Stream} stream
  * @param {IncomingHttpHeaders} header
- * @param {number} flags
+ * @param {number} _flags
  */
-async function handleStreamAsync(stream, header, flags) {
+async function handleStreamAsync(stream, header, _flags) {
 	const preambleStart = performance.now()
 
 	const authorization = header[HTTP2_HEADER_AUTHORIZATION]
@@ -134,6 +131,8 @@ async function handleStreamAsync(stream, header, flags) {
 		sendError(stream, 'undefined or unknown request method')
 		return
 	}
+
+	if(!(stream.session.socket instanceof TLSSocket)) { throw new Error('socket not TLS') }
 
 	const ip = stream.session.socket.remoteAddress
 	const port = stream.session.socket.remotePort

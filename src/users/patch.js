@@ -21,7 +21,7 @@ function isPatchSafe(body) {
 }
 
 /** @type {HandlerFn<IdentifiableUser>} */
-export async function patchUser(matches, sessionUser, requestBody, query) {
+export async function patchUser(matches, sessionUser, requestBody, _query) {
 	const patchUserId = matches.get(MATCHES.USER_ID)
 	if(patchUserId === undefined) { throw new Error('unspecified user') }
 	if(!isStoreUserId(patchUserId)) { throw new Error('invalid user id brand') }

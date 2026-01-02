@@ -5,7 +5,7 @@ import { isStoreUserId, userStore } from '../../store/user.js'
 /** @import { FriendsInfoList } from '../../types/public.js' */
 
 /** @type {HandlerFn<FriendsInfoList>} */
-export async function handleListFriends(matches, sessionUser, body, query) {
+export async function handleListFriends(matches, sessionUser, _body, _query) {
 	if(sessionUser.tokens.access === undefined) { throw new Error('access token required') }
 	const userId = await userStore.fromToken(sessionUser.tokens.access)
 
@@ -15,6 +15,9 @@ export async function handleListFriends(matches, sessionUser, body, query) {
 	if(!isStoreUserId(forUserId)) { throw new Error('invalid user id brand') }
 
 	const isSelf = userId === forUserId
+	if(!isSelf) {
+		// listing other people friends, should limit?
+	}
 
 	const requestedUserObject = await userStore.get(forUserId)
 	const { user: requestedUser } = requestedUserObject

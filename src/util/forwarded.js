@@ -36,8 +36,8 @@ export class Forwarded {
 					.map(kvp => {
 						const [ rawKey, rawValue ] = kvp.trim().split(SEPARATOR.KVP)
 
-						const key = rawKey.trim().toLowerCase()
-						if (!acceptedKeys.includes(key)) { return undefined }
+						const key = rawKey?.trim()?.toLowerCase()
+						if (key === undefined || !acceptedKeys.includes(key)) { return undefined }
 
 						const value = rawValue?.trim()
 						if(value === undefined) { return undefined }

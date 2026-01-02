@@ -8,7 +8,7 @@ import { addFriend } from './alter.js'
 // /u/USER/friend/FRIEND
 // adding FRIEND to USER
 /** @type {HandlerFn<FriendsListing>} */
-export async function handleAddFriend(matches, sessionUser, body, query) {
+export async function handleAddFriend(matches, sessionUser, _body, _query) {
 	if(sessionUser.tokens.access === undefined) { throw new Error('access token required') }
 	const userId = await userStore.fromToken(sessionUser.tokens.access)
 
@@ -36,7 +36,7 @@ export async function handleAddFriend(matches, sessionUser, body, query) {
 // /u/USER
 // adding USER as friend to Self
 /** @type {HandlerFn<FriendsListing>} */
-export async function handleAddUserAsFriend(matches, sessionUser, body, query) {
+export async function handleAddUserAsFriend(matches, sessionUser, _body, _query) {
 	if(sessionUser.tokens.access === undefined) { throw new Error('access token required') }
 	const userId = await userStore.fromToken(sessionUser.tokens.access)
 

@@ -9,7 +9,7 @@ import { removeFriend } from './alter.js'
 // /u/USER/friend/FRIEND
 // removing FRIEND to USER
 /** @type {HandlerFn<FriendsListing>} */
-export async function handleRemoveFriend(matches, sessionUser, body, query) {
+export async function handleRemoveFriend(matches, sessionUser, _body, _query) {
   if(sessionUser.tokens.access === undefined) { throw new Error('access token required') }
 	const userId = await userStore.fromToken(sessionUser.tokens.access)
 
@@ -37,7 +37,7 @@ export async function handleRemoveFriend(matches, sessionUser, body, query) {
 // /u/USER
 // removing USER as friend to Self
 /** @type {HandlerFn<FriendsListing>} */
-export async function handleRemoveUserAsFriend(matches, sessionUser, body, query) {
+export async function handleRemoveUserAsFriend(matches, sessionUser, _body, _query) {
   if(sessionUser.tokens.access === undefined) { throw new Error('access token required') }
 	const userId = await userStore.fromToken(sessionUser.tokens.access)
 
