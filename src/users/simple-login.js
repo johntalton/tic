@@ -1,4 +1,4 @@
-import { storeUserIdFromString, userStore } from '../store/user.js'
+import { storeUserIdFromString, userStore } from '../store/couch/user.js'
 import { ID } from '../util/id.js'
 import { isSingleGrapheme } from './grapheme.js'
 

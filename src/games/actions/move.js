@@ -1,4 +1,4 @@
-import { gameStore } from '../../store/game.js'
+import { gameStore } from '../../store/couch/game.js'
 import { timed, TIMING } from '../../util/timing.js'
 import { Tic } from '../tic.js'
 import { computeAndUpdateELO, resolveFromStore } from '../util.js'

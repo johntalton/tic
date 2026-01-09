@@ -7,7 +7,7 @@ import { handleOffer } from './offer.js'
 
 import { MATCHES } from '../../route.js'
 import { identifiableGameWithEncodedId, isStoreEncodedGameId } from '../util.js'
-import { userStore } from '../../store/user.js'
+import { userStore } from '../../store/couch/user.js'
 
 const ACTION_MAP = new Map([
 	[ 'accept', handleAccept ],

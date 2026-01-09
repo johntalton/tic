@@ -1,5 +1,5 @@
 import { MATCHES } from '../../route.js'
-import { isStoreUserId, userStore } from '../../store/user.js'
+import { isStoreUserId, userStore } from '../../store/couch/user.js'
 import { addFriend } from './alter.js'
 
 /** @import { HandlerFn } from '../../util/dig.js' */

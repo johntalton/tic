@@ -1,5 +1,5 @@
 import { MATCHES } from '../route.js'
-import { isStoreUserId, userStore } from '../store/user.js'
+import { isStoreUserId, userStore } from '../store/couch/user.js'
 import { timed, TIMING } from '../util/timing.js'
 
 /** @import { HandlerFn } from '../util/dig.js' */

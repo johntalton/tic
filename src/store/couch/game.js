@@ -1,8 +1,8 @@
 import { CouchContinuous, DEFAULT_RECONNECT_INTERVAL_MS } from './couch-continuous.js'
 import { COUCH_STATUS_NOT_MODIFIED, CouchUtil } from './couch.js'
 
-/** @import { CouchGenericRows } from '../types/couch.js' */
-/** @import { StoreGameId, StoreGame, StoreGameBase, StoreGameListItem, StoreGameListItemRaw} from '../types/store.js' */
+/** @import { CouchGenericRows } from '../../types/couch.js' */
+/** @import { StoreGameId, StoreGame, StoreGameBase, StoreGameListItem, StoreGameListItemRaw} from '../../types/store.js' */
 
 const couchURL = process.env['COUCH_URL']
 const username = process.env['COUCH_USER']
@@ -23,7 +23,8 @@ const RECONNECT_INTERVAL_MAX_MS = (60 * 1000)
  * @returns {StoreGameId}
  */
 export function storeGameIdFromString(id) {
-	return /** @type {StoreGameId} */ (id)
+	if(isStoreGameId(id)) { return id }
+	throw new Error('not a store game id')
 }
 
 /**
@@ -99,7 +100,7 @@ export class CouchGameStore {
 						game
 					})
 				})
-				.catch(e => console.warn('game feed error:', e))
+				.catch(e => console.warn('game change update error:', e))
 		})
 
 		return feed
@@ -169,9 +170,10 @@ export class CouchGameStore {
 		if(this.#useCache && this.#cache.has(id)) {
 			const potential = this.#cache.get(id)
 
-			// console.log('from cache', potential)
+			// console.log('try from cache', potential)
 
 			if(potential.expireAt > now) {
+				// console.log('cache not expired, return doc', now - potential.expireAt)
 				return potential.futureDoc
 			}
 
@@ -186,6 +188,7 @@ export class CouchGameStore {
 						potential.futureIsModified = undefined
 
 						if(!isModified) {
+							// console.log('extending unmodified doc cache time')
 							potential.expireAt = now + (1000 * 5)
 						}
 						else {
@@ -198,6 +201,7 @@ export class CouchGameStore {
 				})
 				.catch(error => {
 					// toss catch and throw
+					// console.log('in in ismodified call delete cache')
 					this.#cache.delete(id)
 					throw error
 				})
@@ -209,6 +213,11 @@ export class CouchGameStore {
 
 		// console.log('refresh from futureDoc', id)
 		const futureDoc = this.#get(id)
+
+		futureDoc.catch(e => {
+			// console.warn('cached game error removal', e)
+			this.#cache.delete(id)
+		})
 
 		this.#cache.set(id, {
 			expireAt: now + (1000 * 5),
@@ -271,4 +280,3 @@ export class CouchGameStore {
 }
 
 export const gameStore = new CouchGameStore(couchURL)
-

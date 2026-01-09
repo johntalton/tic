@@ -1,6 +1,6 @@
 
 import { MATCHES } from '../../route.js'
-import { isStoreUserId, userStore } from '../../store/user.js'
+import { isStoreUserId, userStore } from '../../store/couch/user.js'
 import { removeFriend } from './alter.js'
 
 /** @import { HandlerFn } from '../../util/dig.js' */

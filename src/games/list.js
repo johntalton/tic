@@ -1,5 +1,5 @@
-import { gameStore } from '../store/game.js'
-import { userStore } from '../store/user.js'
+import { gameStore } from '../store/couch/game.js'
+import { userStore } from '../store/couch/user.js'
 import { timed, TIMING } from '../util/timing.js'
 import { identifiableGameId } from './util.js'
 

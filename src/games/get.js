@@ -1,7 +1,7 @@
 import { Tic, isViewable } from './tic.js'
 import { identifiableGame, isStoreEncodedGameId, resolveFromStore } from './util.js'
 import { MATCHES } from '../route.js'
-import { userStore } from '../store/user.js'
+import { userStore } from '../store/couch/user.js'
 
 /** @import { HandlerFn } from '../util/dig.js' */
 /** @import { IdentifiableActionableGame } from '../types/public.js' */

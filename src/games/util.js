@@ -1,7 +1,7 @@
 import { isViewable } from './tic.js'
 import { ELO, WIN, LOSE, DRAW } from './elo.js'
-import { gameStore, storeGameIdFromString } from '../store/game.js'
-import { storeUserIdFromString, userStore } from '../store/user.js'
+import { gameStore, storeGameIdFromString } from '../store/couch/game.js'
+import { storeUserIdFromString, userStore } from '../store/couch/user.js'
 import { DisposableTimer, TIMING } from '../util/timing.js'
 
 // const KEY = await crypto.subtle.generateKey({

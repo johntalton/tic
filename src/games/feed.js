@@ -1,7 +1,7 @@
 import { ServerSentEvents } from '@johntalton/sse-util'
 
 import { isViewable } from './tic.js'
-import { userStore } from '../store/user.js'
+import { userStore } from '../store/couch/user.js'
 import { identifiableGameId } from './util.js'
 
 /** @import { HandlerFn } from '../util/dig.js' */
