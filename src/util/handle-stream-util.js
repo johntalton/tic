@@ -9,7 +9,7 @@ import {
 } from '@johntalton/sse-util'
 
 import { CHARSET_UTF8, CONTENT_TYPE_JSON, CONTENT_TYPE_TEXT } from './content-type.js'
-import { ServerTiming, HTTP_HEADER_SERVER_TIMING } from './server-timing.js'
+import { ServerTiming, HTTP_HEADER_SERVER_TIMING, HTTP_HEADER_TIMING_ALLOW_ORIGIN } from './server-timing.js'
 import { HTTP_HEADER_RATE_LIMIT, HTTP_HEADER_RATE_LIMIT_POLICY, RateLimit, RateLimitPolicy } from './rate-limit.js'
 
 const {
@@ -124,17 +124,17 @@ export function sendUnauthorized(stream) {
  * @param {ServerHttp2Stream} stream
  * @param {string} message
  */
-// export function sendNotFound(stream, message) {
-// 	console.log('404', message)
-// 	stream.respond({
-// 		[HTTP2_HEADER_ACCESS_CONTROL_ALLOW_ORIGIN]: ALLOWED_ORIGIN,
-// 		[HTTP2_HEADER_STATUS]: HTTP_STATUS_NOT_FOUND,
-// 		[HTTP2_HEADER_CONTENT_TYPE]: CONTENT_TYPE_TEXT,
-// 		[HTTP2_HEADER_SERVER]: SERVER_NAME
-// 	})
-// 	if(message !== undefined) { stream.write(message) }
-// 	stream.end()
-// }
+export function sendNotFound(stream, message) {
+	console.log('404', message)
+	stream.respond({
+		[HTTP2_HEADER_ACCESS_CONTROL_ALLOW_ORIGIN]: ALLOWED_ORIGIN,
+		[HTTP2_HEADER_STATUS]: HTTP_STATUS_NOT_FOUND,
+		[HTTP2_HEADER_CONTENT_TYPE]: CONTENT_TYPE_TEXT,
+		[HTTP2_HEADER_SERVER]: SERVER_NAME
+	})
+	if(message !== undefined) { stream.write(message) }
+	stream.end()
+}
 
 /**
  * @param {ServerHttp2Stream} stream
@@ -209,6 +209,7 @@ export function sendJSON_Encoded(stream, obj, encoding, meta) {
 		[HTTP2_HEADER_CACHE_CONTROL]: 'private',
 		[HTTP2_HEADER_STATUS]: HTTP_STATUS_OK,
 		[HTTP2_HEADER_SERVER]: SERVER_NAME,
+		[HTTP_HEADER_TIMING_ALLOW_ORIGIN]: ALLOWED_ORIGIN,
 		[HTTP_HEADER_SERVER_TIMING]: ServerTiming.encode(meta?.performance)
 	})
 
@@ -222,7 +223,9 @@ export function sendJSON_Encoded(stream, obj, encoding, meta) {
  * @param {SSEOptions} options
  */
 export function sendSSE(stream, origin, options) {
-	stream.session?.socket.setTimeout(0)
+	// stream.setTimeout(0)
+	// stream.session?.setTimeout(0)
+	// stream.session?.socket.setTimeout(0)
 	// stream.session.socket.setNoDelay(true)
 	// stream.session.socket.setKeepAlive(true)
 

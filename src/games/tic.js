@@ -122,6 +122,7 @@ export function isViewable(game, user) {
 /**
  * @param {Game} game
  * @param {string} user
+ * @returns {Array<string>}
  */
 export function roundRobinPlayer(game, user) {
 	const currentIndex = game.players.indexOf(user)
@@ -132,6 +133,7 @@ export function roundRobinPlayer(game, user) {
 
 /**
  * @param {Array<string>} players
+ * @returns {string}
  */
 export function randomPlayer(players) {
 	const index = Math.round(Math.random() * (players.length - 1))
@@ -188,7 +190,9 @@ export class Board {
 	static winner(board) {
 		for(const { name, condition } of WIN_CONDITIONS) {
 			const [ a, b, c ] = condition.map(index => board[index])
-			if(a !== EMPTY && a === b && b === c) { return { name, user: a } }
+			if(a !== undefined && a !== EMPTY && a === b && b === c) {
+				return { name, user: a }
+			}
 		}
 
 		return { user: EMPTY }

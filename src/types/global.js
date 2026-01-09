@@ -12,9 +12,9 @@
 
 /**
  * @typedef {Object} TokenSet
- * @property {Token} [access]
- * @property {SSEToken} [sse]
- * @property {RefreshToken} [refresh]
+ * @property {Token|undefined} [access]
+ * @property {SSEToken|undefined} [sse]
+ * @property {RefreshToken|undefined} [refresh]
  */
 
 /**

@@ -7,8 +7,9 @@ import { identifiableGameId } from './util.js'
 /** @import { HandlerFn } from '../util/dig.js' */
 
 /** @type {HandlerFn<void>} */
-export async function handleGameFeed(_matches, sessionUser, _body, _query, stream) {
+export async function handleGameFeed(_matches, sessionUser, _body, _query, stream, handlerPerformance, shutdownSignal) {
 	const channel = new BroadcastChannel('SSE')
+	console.log('SSE channel up')
 
 	if(sessionUser.tokens.sse === undefined) { throw new Error('access token required') }
 	const userId = await userStore.fromSSEToken(sessionUser.tokens.sse)
@@ -30,16 +31,26 @@ export async function handleGameFeed(_matches, sessionUser, _body, _query, strea
 
 	// stream.on('aborted', () => console.log('game feed stream aborted'))
 
-	stream.on('close', () => {
-		// console.log('SSE Game Feed Closed')
+	const abortHandler = () => {
+		console.log('SSE Game Feed Aborted', shutdownSignal.reason)
 		stream.close()
 		channel.close()
+	}
+
+	shutdownSignal.addEventListener('abort', abortHandler)
+
+	stream.on('close', () => {
+		console.log('SSE Game Feed Closed')
+		stream.close()
+		channel.close()
+		shutdownSignal.removeEventListener('abort', abortHandler)
 	})
 
 	stream.on('error', error => {
 		console.warn('Game Feed Error', error.message)
 		stream.close()
 		channel.close()
+		shutdownSignal.removeEventListener('abort', abortHandler)
 	})
 
 	// console.log('new Game SSE for', user)

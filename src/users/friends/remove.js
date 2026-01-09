@@ -9,9 +9,9 @@ import { removeFriend } from './alter.js'
 // /u/USER/friend/FRIEND
 // removing FRIEND to USER
 /** @type {HandlerFn<FriendsListing>} */
-export async function handleRemoveFriend(matches, sessionUser, _body, _query) {
+export async function handleRemoveFriend(matches, sessionUser, _body, _query, _stream, handlerPerformance) {
   if(sessionUser.tokens.access === undefined) { throw new Error('access token required') }
-	const userId = await userStore.fromToken(sessionUser.tokens.access)
+	const userId = await userStore.fromToken(sessionUser.tokens.access, handlerPerformance)
 
   const friendId = matches.get(MATCHES.FRIEND_ID)
   const forUserId = matches.get(MATCHES.USER_ID)
@@ -31,15 +31,15 @@ export async function handleRemoveFriend(matches, sessionUser, _body, _query) {
     throw new Error('you cant unfriend yourself')
   }
 
-  return removeFriend(forUserId, friendId)
+  return removeFriend(forUserId, friendId, handlerPerformance)
 }
 
 // /u/USER
 // removing USER as friend to Self
 /** @type {HandlerFn<FriendsListing>} */
-export async function handleRemoveUserAsFriend(matches, sessionUser, _body, _query) {
+export async function handleRemoveUserAsFriend(matches, sessionUser, _body, _query, _stream, handlerPerformance) {
   if(sessionUser.tokens.access === undefined) { throw new Error('access token required') }
-	const userId = await userStore.fromToken(sessionUser.tokens.access)
+	const userId = await userStore.fromToken(sessionUser.tokens.access, handlerPerformance)
 
   const friendUserId = matches.get(MATCHES.USER_ID)
   if(friendUserId === undefined) { throw new Error('can not remove unknown friend') }
@@ -50,7 +50,7 @@ export async function handleRemoveUserAsFriend(matches, sessionUser, _body, _que
     throw new Error('you cant unfriend yourself')
   }
 
-  return removeFriend(userId, friendUserId)
+  return removeFriend(userId, friendUserId, handlerPerformance)
 }
 
 

@@ -91,6 +91,13 @@ export class CouchContinuous extends EventTarget {
 					return
 				}
 
+				const contentType = headers.get('content-type')
+				if(contentType !== 'application/json') {
+					this.#failure(status, 'Unknown Content Type: ' + contentType)
+					this.close()
+					return
+				}
+
 				if(this.#readyState === CLOSED) {
 					return
 				}
@@ -105,33 +112,32 @@ export class CouchContinuous extends EventTarget {
 					return
 				}
 
+				const options = this.#controller === undefined ? {} : { signal: this.#controller.signal }
+
 				const stream = response.body
-					.pipeThrough(new TextDecoderStream(), { signal: this.#controller?.signal })
+					.pipeThrough(new TextDecoderStream(), options)
 
-				// Promise.resolve()
-				// 	.then(async () => {
-						for await(const chunk of stream) {
-							const lines = chunk.split('\n')
-							lines.forEach(line => {
-								if(line.length === 0) {
-									// heartbeat
-									return
-								}
-
-								const data = JSON.parse(line)
-								const event = new DataEvent(data)
-								this.dispatchEvent(event)
-
-							})
+				for await (const chunk of stream) {
+					const lines = chunk.split('\n')
+					lines.forEach(line => {
+						if(line.length === 0) {
+							// heartbeat
+							return
 						}
-					// })
-					// .catch(error => {
-					// 	console.log('couch continuous stream processing error', error)
-					// })
 
+						const data = JSON.parse(line)
+						const event = new DataEvent(data)
+						this.dispatchEvent(event)
+
+					})
+				}
 			})
-			.catch(error => {
-				// console.log('couch continuous fetch error - reconnect', error)
+			.catch(_error => {
+				console.log('couch continuous fetch error - reconnect', _error)
+				if(_error.cause?.code === 'ECONNRESET') {
+					console.log('couch continuous connection reset')
+				}
+
 				this.#controller = undefined
 				if(this.#readyState === CLOSED) { return }
 
@@ -153,12 +159,11 @@ export class CouchContinuous extends EventTarget {
 		this.#connect()
 	}
 
-
 	/**
-	 * @param {number} status
-	 * @param {string} message
+	 * @param {number} _status
+	 * @param {string} _message
 	 */
-	#failure(status, message) {
+	#failure(_status, _message) {
 		// console.log('couch continuous', status, message)
 		if(this.#readyState !== CLOSED) { this.#readyState = CLOSED }
 		this.dispatchEvent(new Event('error'))

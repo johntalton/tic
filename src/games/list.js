@@ -1,5 +1,6 @@
 import { gameStore } from '../store/game.js'
 import { userStore } from '../store/user.js'
+import { timed, TIMING } from '../util/timing.js'
 import { identifiableGameId } from './util.js'
 
 /** @import { HandlerFn } from '../util/dig.js' */
@@ -12,11 +13,15 @@ export const FILTER_SEPARATOR = '|'
 export const FILTER_BLANK = ''
 
 /** @type {HandlerFn<GameListing>} */
-export async function handleList(_matches, sessionUser, _body, query) {
+export async function handleList(_matches, sessionUser, _body, query, _stream, handlerPerformance) {
 	if(sessionUser.tokens.access === undefined) { throw new Error('access token required') }
-	const userId = await userStore.fromToken(sessionUser.tokens.access)
+	const userId = await userStore.fromToken(sessionUser.tokens.access, handlerPerformance)
 
-	const allDBGames = await gameStore.list(userId)
+	const allDBGames = await timed(
+		TIMING.GAME_LIST,
+		handlerPerformance,
+		() => gameStore.list(userId))
+
 	const allGames = await Promise.all(allDBGames.map(async game => {
 		const id = await identifiableGameId(game._id)
 		return {

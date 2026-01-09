@@ -1,4 +1,5 @@
 import { gameStore } from '../../store/game.js'
+import { timed, TIMING } from '../../util/timing.js'
 import { Tic } from '../tic.js'
 import { resolveFromStore } from '../util.js'
 
@@ -6,18 +7,20 @@ import { resolveFromStore } from '../util.js'
 /** @import { EncodedGameId } from '../../types/public.js' */
 /** @import { ActionableGame } from '../tic.js' */
 /** @import { BodyFuture } from '../../util//body.js' */
+/** @import { TimingsInfo } from '../../util/server-timing.js' */
 
 /**
  * @param {EncodedGameId} encodedGameId
  * @param {StoreUserId} userId
  * @param {BodyFuture} _body
  * @param {URLSearchParams} query
+ * @param {Array<TimingsInfo>} handlerPerformance
  * @returns {Promise<ActionableGame>}
  */
-export async function handleOffer(encodedGameId, userId, _body, query) {
-	const { game, gameObject } = await resolveFromStore(encodedGameId, userId)
+export async function handleOffer(encodedGameId, userId, _body, query, handlerPerformance) {
+	const { game, gameObject } = await resolveFromStore(encodedGameId, userId, handlerPerformance)
 
-	const targets = query.getAll('t') ?? query.getAll('targets')
+	const targets = [ ...query.getAll('t'), ...query.getAll('targets'), ...query.getAll('target') ]
 	const offer = { targets }
 	const updatedGame = Tic.offer(game, userId, offer)
 
@@ -32,7 +35,11 @@ export async function handleOffer(encodedGameId, userId, _body, query) {
 		},
 		game: updatedGame
 	}
-	await gameStore.set(gameObject._id, updatedGameObject)
+
+	await timed(
+		TIMING.GAME_OFFER,
+		handlerPerformance,
+		() => gameStore.set(gameObject._id, updatedGameObject))
 
 	return Tic.actionable(updatedGame, userId)
 }

@@ -13,10 +13,11 @@ export const METADATA = Symbol.for('METADATA')
 
 /** @import { BodyFuture } from './body.js' */
 /** @import { SessionUser } from '../types/global.js' */
+/** @import { TimingsInfo } from './server-timing.js' */
 
 /**
  * @template T
- * @typedef { (matches: Map<string, string>, user: SessionUser, body: BodyFuture, query: URLSearchParams, stream: ServerHttp2Stream) => Promise<T> } HandlerFn
+ * @typedef { (matches: Map<string, string>, user: SessionUser, body: BodyFuture, query: URLSearchParams, stream: ServerHttp2Stream, handlerPerformance: Array<TimingsInfo>, shutdownSignal: AbortSignal) => Promise<T> } HandlerFn
  */
 
 /**

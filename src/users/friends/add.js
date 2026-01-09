@@ -8,9 +8,9 @@ import { addFriend } from './alter.js'
 // /u/USER/friend/FRIEND
 // adding FRIEND to USER
 /** @type {HandlerFn<FriendsListing>} */
-export async function handleAddFriend(matches, sessionUser, _body, _query) {
+export async function handleAddFriend(matches, sessionUser, _body, _query, _stream, handlerPerformance) {
 	if(sessionUser.tokens.access === undefined) { throw new Error('access token required') }
-	const userId = await userStore.fromToken(sessionUser.tokens.access)
+	const userId = await userStore.fromToken(sessionUser.tokens.access, handlerPerformance)
 
 	const friendId = matches.get(MATCHES.FRIEND_ID)
 	const forUserId = matches.get(MATCHES.USER_ID)
@@ -30,15 +30,15 @@ export async function handleAddFriend(matches, sessionUser, _body, _query) {
 		throw new Error('you are always your own friend')
 	}
 
-	return addFriend(forUserId, friendId)
+	return addFriend(forUserId, friendId, handlerPerformance)
 }
 
 // /u/USER
 // adding USER as friend to Self
 /** @type {HandlerFn<FriendsListing>} */
-export async function handleAddUserAsFriend(matches, sessionUser, _body, _query) {
+export async function handleAddUserAsFriend(matches, sessionUser, _body, _query, _stream, handlerPerformance) {
 	if(sessionUser.tokens.access === undefined) { throw new Error('access token required') }
-	const userId = await userStore.fromToken(sessionUser.tokens.access)
+	const userId = await userStore.fromToken(sessionUser.tokens.access, handlerPerformance)
 
 	const friendUserId = matches.get(MATCHES.USER_ID)
 
@@ -50,7 +50,7 @@ export async function handleAddUserAsFriend(matches, sessionUser, _body, _query)
 		throw new Error('your always your own friend')
 	}
 
-	return addFriend(userId, friendUserId)
+	return addFriend(userId, friendUserId, handlerPerformance)
 }
 
 

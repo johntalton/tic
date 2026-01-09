@@ -20,10 +20,11 @@ import { AcceptLanguage } from './util/accept-language.js'
 import { ROUTES } from './route.js'
 import { dig, digOptions } from './util/dig.js'
 import { RateLimiter } from './util/rate-limiter.js'
-import { getTokens } from './util/access-token.js'
+import { getTokens } from './util/token.js'
 import { Forwarded, FORWARDED_KEY_FOR, KNOWN_FORWARDED_KEYS } from './util/forwarded.js'
 
 /** @import { ServerHttp2Stream, IncomingHttpHeaders } from 'node:http2' */
+/** @import { TimingsInfo } from './util/server-timing.js' */
 
 const { HTTP2_METHOD_OPTIONS } = http2.constants
 
@@ -83,8 +84,9 @@ const ipRequestPerSecondPolicy = {
  * @param {ServerHttp2Stream} stream
  * @param {IncomingHttpHeaders} header
  * @param {number} _flags
+ * @param {AbortSignal} shutdownSignal
  */
-async function handleStreamAsync(stream, header, _flags) {
+async function handleStreamAsync(stream, header, _flags, shutdownSignal) {
 	const preambleStart = performance.now()
 
 	const authorization = header[HTTP2_HEADER_AUTHORIZATION]
@@ -282,10 +284,23 @@ async function handleStreamAsync(stream, header, _flags) {
 	// core handler
 	//
 	const handlerStart = performance.now()
-	return Promise.try(handler, matches, user, body, requestUrl.searchParams, stream)
+	/** @type {Array<TimingsInfo>} */
+	const handlerPerformance = []
+	return Promise.try(
+			handler,
+			matches,
+			user,
+			body,
+			requestUrl.searchParams,
+			stream,
+			handlerPerformance,
+			shutdownSignal
+		)
 		.then(data => {
+
 			const handlerEnd = performance.now()
 			const meta = { performance: [
+				...handlerPerformance,
 				{ name: 'dig', duration: digEnd - digStart },
 				{ name: 'preamble', duration: preambleEnd - preambleStart },
 				{ name: 'body', duration: body.duration },
@@ -312,9 +327,10 @@ async function handleStreamAsync(stream, header, _flags) {
  * @param {ServerHttp2Stream} stream
  * @param {IncomingHttpHeaders} header
  * @param {number} flags
+ * @param {AbortSignal} shutdownSignal
  */
-export function handleStream(stream, header, flags) {
-	handleStreamAsync(stream, header, flags)
+export function handleStream(stream, header, flags, shutdownSignal) {
+	handleStreamAsync(stream, header, flags, shutdownSignal)
 		.catch(e => {
 			// console.warn('Error in stream handler', stream.writable, stream.closed, stream.aborted, stream.destroyed, stream.endAfterHeaders)
 			sendError(stream, `top level error: ${e.message}`)

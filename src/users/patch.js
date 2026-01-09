@@ -1,5 +1,6 @@
 import { MATCHES } from '../route.js'
 import { isStoreUserId, userStore } from '../store/user.js'
+import { timed, TIMING } from '../util/timing.js'
 
 /** @import { HandlerFn } from '../util/dig.js' */
 /** @import { UserPatchOptions, IdentifiableUser } from '../types/public.js' */
@@ -21,13 +22,13 @@ function isPatchSafe(body) {
 }
 
 /** @type {HandlerFn<IdentifiableUser>} */
-export async function patchUser(matches, sessionUser, requestBody, _query) {
+export async function patchUser(matches, sessionUser, requestBody, _query, _stream, handlerPerformance) {
 	const patchUserId = matches.get(MATCHES.USER_ID)
 	if(patchUserId === undefined) { throw new Error('unspecified user') }
 	if(!isStoreUserId(patchUserId)) { throw new Error('invalid user id brand') }
 
 	if(sessionUser.tokens.access === undefined) { throw new Error('access token required') }
-	const userId = await userStore.fromToken(sessionUser.tokens.access)
+	const userId = await userStore.fromToken(sessionUser.tokens.access, handlerPerformance)
 
 	if(userId !== patchUserId) { throw new Error('can only patch self') }
 
@@ -41,7 +42,11 @@ export async function patchUser(matches, sessionUser, requestBody, _query) {
 		throw new Error('invalid patch keys')
 	}
 
-	const userObject = await userStore.get(patchUserId)
+	const userObject = await timed(
+		TIMING.USER_PATCH_GET,
+		handlerPerformance,
+		() => userStore.get(patchUserId))
+
 	if (userObject === undefined) { throw new Error('unknown user') }
 	const { user: requestedUser } = userObject
 
@@ -60,7 +65,11 @@ export async function patchUser(matches, sessionUser, requestBody, _query) {
 		user: updatedUser
 	}
 
-	const ok = await userStore.set(patchUserId, updatedUserObject)
+	const ok = await timed(
+		TIMING.USER_PATCH_SET,
+		handlerPerformance,
+		() => userStore.set(patchUserId, updatedUserObject))
+
 	if(!ok) { throw new Error('failure to store patched user') }
 
 	return {

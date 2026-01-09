@@ -1,3 +1,4 @@
+import { DisposableTimer } from '../util/timing.js'
 import {
 	COUCH_STATUS_NOT_MODIFIED,
 	CouchUtil
@@ -6,6 +7,7 @@ import {
 /** @import { Token, SSEToken } from '../types/global.js' */
 /** @import { CouchGenericRows } from '../types/couch.js' */
 /** @import { StoreUserId, StoreUser, StoreUserListItem, StoreUserListItemRaw } from '../types/store.js' */
+/** @import { TimingsInfo } from '../util/server-timing.js' */
 
 /**
  * @typedef {Object} AccessTokenCacheItem
@@ -28,7 +30,8 @@ const authorizationHeaders = CouchUtil.basicAuthHeader(username, password)
  * @returns {StoreUserId}
  */
 export function storeUserIdFromString(id) {
-	return /** @type {StoreUserId} */ (id)
+	if(isStoreUserId(id)) { return id }
+	throw new Error('not a store user id')
 }
 
 /**
@@ -162,8 +165,7 @@ export class CouchUserStore {
 			headers: {
 				...authorizationHeaders,
 				'Accept': 'application/json'
-			},
-			signal: AbortSignal.timeout(200)
+			}
 		})
 
 		return result.rows.map(row => ({
@@ -175,8 +177,10 @@ export class CouchUserStore {
 	/**
 	 * @param {Token} token
 	 * @returns {Promise<StoreUserId>}
+	 * @param {Array<TimingsInfo>} handlerPerformance
 	 */
-	async fromToken(token) {
+	async fromToken(token, handlerPerformance) {
+		using _timer = new DisposableTimer('token', handlerPerformance)
 		const now = Date.now()
 
 		const potential = this.#accessTokenCache.get(token)

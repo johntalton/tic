@@ -2,6 +2,7 @@ import { isViewable } from './tic.js'
 import { ELO, WIN, LOSE, DRAW } from './elo.js'
 import { gameStore, storeGameIdFromString } from '../store/game.js'
 import { storeUserIdFromString, userStore } from '../store/user.js'
+import { DisposableTimer, TIMING } from '../util/timing.js'
 
 // const KEY = await crypto.subtle.generateKey({
 // 		name: 'AES-GCM',
@@ -13,13 +14,15 @@ import { storeUserIdFromString, userStore } from '../store/user.js'
 /** @import { StoreGameId, ResolvedStoreInfo, StoreUserId } from '../types/store.js' */
 /** @import { ActionableGame } from './tic.js' */
 /** @import { EncodedGameId, IdentifiableActionableGame } from '../types/public.js' */
+/** @import { TimingsInfo } from '../util/server-timing.js' */
 
 /**
  * @param {string} id
  * @returns {EncodedGameId}
  */
 export function storeEncodedGameIdFromString(id) {
-	return /** @type {EncodedGameId} */ (id)
+	if(isStoreEncodedGameId(id)) { return id }
+	throw new Error('not a encoded game id')
 }
 
 /**
@@ -35,15 +38,15 @@ export function isStoreEncodedGameId(id) {
 /**
  * @param {EncodedGameId} id
  * @param {StoreUserId} userId
+ * @param {Array<TimingsInfo>} handlerPerformance
  * @returns {Promise<ResolvedStoreInfo>}
  */
-export async function resolveFromStore(id, userId) {
-  // if(id === '404') { throw new Error('404 test id')}
-
+export async function resolveFromStore(id, userId, handlerPerformance) {
 	const gameId = await fromIdentifiableGameId(id)
 
+	using _timer = new DisposableTimer(TIMING.RESOLVE, handlerPerformance)
   const gameObject = await gameStore.get(gameId)
-  if(gameObject === undefined) { throw new Error('unknown game') }
+	if(gameObject === undefined) { throw new Error('unknown game') }
 
   const { game } = gameObject
   if(game === undefined) { throw new Error('object does not have a game') }
@@ -55,13 +58,16 @@ export async function resolveFromStore(id, userId) {
 
 /**
  * @param {ActionableGame} actionableGame
+ * @param {Array<TimingsInfo>} handlerPerformance
  */
-export async function computeAndUpdateELO(actionableGame) {
+export async function computeAndUpdateELO(actionableGame, handlerPerformance) {
   // resolved, compute and update players ELO
 	const { resolution } = actionableGame
 
 	// game not resolved yet, just skip
 	if(!resolution.resolved) { return }
+
+	using _timer = new DisposableTimer(TIMING.ELO, handlerPerformance)
 
 	const [ playerAObject, playerBObject ] = await Promise.all(
 		actionableGame.players

@@ -8,7 +8,7 @@ export const DEFAULT_ELO = 100
 /** @import { SigninInfo } from '../types/public.js' */
 
 /** @type {HandlerFn<SigninInfo>} */
-export async function handleSimpleLogin(matches, sessionUser, body, query) {
+export async function handleSimpleLogin(matches, sessionUser, body, query, _stream, handlerPerformance) {
 	const name = query.get('name')
 	if(name === null) { throw new Error('missing name') }
 

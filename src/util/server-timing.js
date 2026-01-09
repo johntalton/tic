@@ -2,6 +2,7 @@ export const KEY_DURATION = 'dur' // common in milliseconds
 export const KEY_DESCRIPTION = 'desc'
 
 export const HTTP_HEADER_SERVER_TIMING = 'Server-Timing'
+export const HTTP_HEADER_TIMING_ALLOW_ORIGIN = 'Timing-Allow-Origin'
 
 export const SEPARATOR = {
 	METRIC: ',',

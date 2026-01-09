@@ -2,12 +2,9 @@ import http2 from 'node:http2'
 import fs from 'node:fs'
 import crypto from 'node:crypto'
 
-// import { handleStream } from './handle-stream.js'
 import { handleStream } from './dig-stream.js'
 
-/**
- * @import { SecureServerOptions } from 'node:http2'
- */
+/** @import { SecureServerOptions, Http2Session } from 'node:http2' */
 
 const {
 	SSL_OP_NO_TLSv1,
@@ -73,25 +70,29 @@ const options = {
 	// noDelay: false,
 }
 
+const controller = new AbortController()
+const shutdownSignal = controller.signal
+// const sessions = new Set()
+
+
 const server = http2.createSecureServer(options)
-// server.setTimeout(1 * 1000)
+// server.setTimeout(200)
 
 CREDENTIALS.forEach(credential => {
 	server.addContext(credential, CredentialsCache.get(credential))
 })
 
-server.on('timeout', () => console.warn('Server Timeout'))
+// server.on('timeout', () => console.warn('Server Timeout'))
 server.on('tlsClientError', (error, socket) => {
-	// console.log(error)
 	if(error.code === 'ERR_SSL_SSL/TLS_ALERT_CERTIFICATE_UNKNOWN') {
 		// mute
 		return
 	}
 
 	// if(error.code === 'ECONNRESET') {}
-
 	console.warn('Server TLS Error', socket.servername, socket.remoteAddress, error.code)
 })
+
 server.on('sessionError', error => {
 	if(error.code === 'ECONNRESET') {
 		console.log('Server Session: Connection Reset')
@@ -101,25 +102,40 @@ server.on('sessionError', error => {
 })
 
 server.on('error', error => console.warn('Server Error', (error.code === 'EADDRINUSE') ? 'Address in use' : error))
-// server.on('session', session => console.log('New Session', session.alpnProtocol, session.originSet))
-server.on('stream', handleStream)
+
+// server.on('session', session => {
+// 	console.log('New Session', session.alpnProtocol, session.originSet)
+// 	sessions.add(session)
+// 	session.on('close', () => {
+// 		console.log('Delete Session')
+// 		sessions.delete(session)
+// 	})
+// })
+
+server.on('stream', (stream, header, flags) => handleStream(stream, header, flags, shutdownSignal))
+
 server.on('listening', () => console.log('Server Up', server.address()))
+
 server.on('close', () => {
 	console.log()
 	console.log('End of Line.')
 })
 
-const controller = new AbortController()
-const signal = controller.signal
-
 server.listen({
 	ipv6Only: IPV6_ONLY,
 	port: PORT,
 	host: HOST,
-	signal
+	signal: shutdownSignal
 })
 
+// 'SIGTERM', 'SIGKILL'
 process.on('SIGINT', () => {
-	if(signal.aborted) { process.exit() }
+	// server.getConnections((err, count) => console.log(err,count))
+	// for(const session of sessions) {
+	// 	console.log('open session')
+	// 	session.close()
+	// }
+
+	if(shutdownSignal.aborted) { process.exit() }
 	controller.abort('sigint')
 })

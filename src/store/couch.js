@@ -25,7 +25,12 @@ export class CouchUtil {
 	 * @param {RequestInit} options
 	 */
 	static async fetch(url, options) {
-		return fetch(url, options)
+		const actualOptions = {
+			...options,
+			signal: options?.signal ?? AbortSignal.timeout(200)
+		}
+
+		return fetch(url, actualOptions)
 			.catch(error => {
 				if(error.cause?.code === 'ETIMEDOUT') { throw new Error(`Couch Timeout: ${error.message}`, { cause: error }) }
 				if(error.cause?.code === 'UND_ERR_CONNECT_TIMEOUT') { throw new Error(`Couch Timeout (und): ${error.message}`, { cause: error }) }

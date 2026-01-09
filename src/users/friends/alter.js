@@ -1,16 +1,23 @@
 import { userStore } from '../../store/user.js'
+import { timed, TIMING } from '../../util/timing.js'
 
 /** @import { StoreUserId } from '../../types/store.js' */
 /** @import { FriendsListing } from '../../types/public.js' */
+/** @import { TimingsInfo } from '../../util/server-timing.js' */
 
 /**
  * @param {StoreUserId} userId
  * @param {boolean} add
  * @param {StoreUserId} friendId
+ * @param {Array<TimingsInfo>} handlerPerformance
  * @returns {Promise<FriendsListing>}
  */
-async function alterFriend(userId, add, friendId) {
-	const userObject = await userStore.get(userId)
+async function alterFriend(userId, add, friendId, handlerPerformance) {
+	const userObject = await timed(
+			TIMING.FRIENDS_ALTER_GET,
+			handlerPerformance,
+			() => userStore.get(userId))
+
 	const { user } = userObject
 	const { friends } = user
 
@@ -45,7 +52,11 @@ async function alterFriend(userId, add, friendId) {
 		}
 	}
 
-	const ok = await userStore.set(userId, updatedUserObject)
+	const ok = await timed(
+		TIMING.FRIENDS_ALTER_SET,
+		handlerPerformance,
+		() => userStore.set(userId, updatedUserObject))
+
 	if(!ok) { throw new Error('updating friends not ok') }
 
 	return { friends: [ ...updatedFriends ] }
@@ -54,11 +65,13 @@ async function alterFriend(userId, add, friendId) {
 /**
  * @param {StoreUserId} userId
  * @param {StoreUserId} friendId
+ * @param {Array<TimingsInfo>} handlerPerformance
  */
-export async function addFriend(userId, friendId) { return alterFriend(userId, true, friendId) }
+export async function addFriend(userId, friendId, handlerPerformance) { return alterFriend(userId, true, friendId, handlerPerformance) }
 
 /**
  * @param {StoreUserId} userId
  * @param {StoreUserId} friendId
+ * @param {Array<TimingsInfo>} handlerPerformance
  */
-export async function removeFriend(userId, friendId) { return alterFriend(userId, false, friendId) }
+export async function removeFriend(userId, friendId, handlerPerformance) { return alterFriend(userId, false, friendId, handlerPerformance) }

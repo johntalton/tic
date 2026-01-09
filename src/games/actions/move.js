@@ -1,4 +1,5 @@
 import { gameStore } from '../../store/game.js'
+import { timed, TIMING } from '../../util/timing.js'
 import { Tic } from '../tic.js'
 import { computeAndUpdateELO, resolveFromStore } from '../util.js'
 
@@ -6,16 +7,18 @@ import { computeAndUpdateELO, resolveFromStore } from '../util.js'
 /** @import { EncodedGameId } from '../../types/public.js' */
 /** @import { ActionableGame } from '../tic.js' */
 /** @import { BodyFuture } from '../../util//body.js' */
+/** @import { TimingsInfo } from '../../util/server-timing.js' */
 
 /**
  * @param {EncodedGameId} encodedGameId
  * @param {StoreUserId} userId
  * @param {BodyFuture} _body
  * @param {URLSearchParams} query
+ * @param {Array<TimingsInfo>} handlerPerformance
  * @returns {Promise<ActionableGame>}
  */
-export async function handleMove(encodedGameId, userId, _body, query) {
-	const { game, gameObject } = await resolveFromStore(encodedGameId, userId)
+export async function handleMove(encodedGameId, userId, _body, query, handlerPerformance) {
+	const { game, gameObject } = await resolveFromStore(encodedGameId, userId, handlerPerformance)
 
 	const positionStr = query.get('position')
 	if(positionStr === null) { throw new Error('missing move position') }
@@ -34,11 +37,14 @@ export async function handleMove(encodedGameId, userId, _body, query) {
 		game: updatedGame
 	}
 
-	await gameStore.set(gameObject._id, updatedGameObject)
+	await timed(
+		TIMING.GAME_MOVE,
+		handlerPerformance,
+		() => gameStore.set(gameObject._id, updatedGameObject))
 
 	const actionableGame = Tic.actionable(updatedGame, userId)
 
-	await computeAndUpdateELO(actionableGame)
+	await computeAndUpdateELO(actionableGame, handlerPerformance)
 
 	return actionableGame
 }

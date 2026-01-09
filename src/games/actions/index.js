@@ -27,9 +27,9 @@ const ACTION_MAP = new Map([
  */
 
 /** @type {HandlerFn<IdentifiableActionableGame>} */
-export async function handleAction(matches, sessionUser, requestBody, query) {
+export async function handleAction(matches, sessionUser, requestBody, query, _stream, handlerPerformance) {
 	if(sessionUser.tokens.access === undefined) { throw new Error('access token required') }
-	const userId = await userStore.fromToken(sessionUser.tokens.access)
+	const userId = await userStore.fromToken(sessionUser.tokens.access, handlerPerformance)
 
 	const action = matches.get(MATCHES.ACTION)
 	const gameId = matches.get(MATCHES.GAME_ID)
@@ -42,6 +42,6 @@ export async function handleAction(matches, sessionUser, requestBody, query) {
 	const handler = ACTION_MAP.get(action)
 	if(handler === undefined) { throw new Error('unknown action') }
 
-	const actionableGame = await handler(gameId, userId, requestBody, query)
+	const actionableGame = await handler(gameId, userId, requestBody, query, handlerPerformance)
 	return identifiableGameWithEncodedId(gameId, actionableGame)
 }
