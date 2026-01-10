@@ -29,7 +29,7 @@ import {
 
 
 import { handleSimpleLogin } from './users/simple-login.js'
-import { MIME_TYPE_EVENT_STREAM } from './util/content-type.js'
+import { MIME_TYPE_EVENT_STREAM } from '@johntalton/http-util/headers'
 
 /**
  * @import { RouteDefinition } from './util/dig.js'

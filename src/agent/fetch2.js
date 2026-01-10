@@ -18,10 +18,10 @@
 // }));
 
 import http2 from 'node:http2'
-import { requestBody } from '../util/body.js'
+import { requestBody } from '@johntalton/http-util/body'
 
 /** @import { OutgoingHttpHeaders } from 'node:http' */
-/** @import { BodyFuture } from '../util/body.js' */
+/** @import { BodyFuture } from '@johntalton/http-util/body' */
 
 /**
  * @typedef {Object} Fetch2ResponseHead
@@ -64,7 +64,7 @@ const {
 export class Fetch2 {
 	/**
 	 * @param {URL|string} urlOrString
-	 * @param {Fetch2Options} options
+	 * @param {Fetch2Options} [options]
 	 * @returns {Promise<Fetch2Response>}
 	 */
 	static async fetch(urlOrString, options) {

@@ -3,6 +3,15 @@ import { TLSSocket } from 'node:tls'
 
 import {
 	ENCODER_MAP,
+	HTTP_HEADER_FORWARDED,
+	HTTP_HEADER_ORIGIN,
+	HTTP_HEADER_SEC_CH_MOBILE,
+	HTTP_HEADER_SEC_CH_PLATFORM,
+	HTTP_HEADER_SEC_CH_UA,
+	HTTP_HEADER_SEC_FETCH_DEST,
+	HTTP_HEADER_SEC_FETCH_MODE,
+	HTTP_HEADER_SEC_FETCH_SITE,
+	HTTP_HEADER_USER_AGENT,
 	sendError,
 	sendJSON_Encoded,
 	// sendNotFound,
@@ -10,21 +19,34 @@ import {
 	sendSSE,
 	sendTooManyRequests,
 	// sendUnauthorized
-} from './util/handle-stream-util.js'
+} from '@johntalton/http-util/response'
 
-import { requestBody } from './util/body.js'
-import { parseContentType, CONTENT_TYPE_JSON, MIME_TYPE_JSON, MIME_TYPE_TEXT, MIME_TYPE_EVENT_STREAM, MIME_TYPE_XML } from './util/content-type.js'
-import { Accept } from './util/accept.js'
-import { AcceptEncoding } from './util/accept-encoding.js'
-import { AcceptLanguage } from './util/accept-language.js'
+import { requestBody } from '@johntalton/http-util/body'
+import {
+	parseContentType,
+	CONTENT_TYPE_JSON,
+	MIME_TYPE_JSON,
+	MIME_TYPE_TEXT,
+	MIME_TYPE_EVENT_STREAM,
+	MIME_TYPE_XML,
+
+	Accept,
+	AcceptEncoding,
+	AcceptLanguage,
+
+	Forwarded,
+	FORWARDED_KEY_FOR,
+	KNOWN_FORWARDED_KEYS
+} from '@johntalton/http-util/headers'
+
 import { ROUTES } from './route.js'
 import { dig, digOptions } from './util/dig.js'
 import { RateLimiter } from './util/rate-limiter.js'
 import { getTokens } from './util/token.js'
-import { Forwarded, FORWARDED_KEY_FOR, KNOWN_FORWARDED_KEYS } from './util/forwarded.js'
+
 
 /** @import { ServerHttp2Stream, IncomingHttpHeaders } from 'node:http2' */
-/** @import { TimingsInfo } from './util/server-timing.js' */
+/** @import { TimingsInfo } from '@johntalton/http-util/headers' */
 
 const { HTTP2_METHOD_OPTIONS } = http2.constants
 
@@ -44,23 +66,23 @@ const {
 	HTTP2_HEADER_HOST,
 	HTTP2_HEADER_VIA,
 	HTTP2_HEADER_CACHE_CONTROL,
+	HTTP2_HEADER_ETAG,
+	HTTP2_HEADER_IF_MATCH,
+	HTTP2_HEADER_IF_MODIFIED_SINCE,
+	HTTP2_HEADER_IF_NONE_MATCH,
+	HTTP2_HEADER_IF_RANGE,
+	HTTP2_HEADER_IF_UNMODIFIED_SINCE,
+	HTTP2_HEADER_LAST_MODIFIED
 } = http2.constants
 
-const HTTP_HEADER_ORIGIN = 'origin'
-const HTTP_HEADER_USER_AGENT = 'user-agent'
-const HTTP_HEADER_FORWARDED = 'forwarded'
-const HTTP_HEADER_SEC_CH_UA = 'sec-ch-ua'
-const HTTP_HEADER_SEC_CH_PLATFORM = 'sec-ch-ua-platform'
-const HTTP_HEADER_SEC_CH_MOBILE = 'sec-ch-ua-mobile'
-const HTTP_HEADER_SEC_FETCH_SITE = 'sec-fetch-site'
-const HTTP_HEADER_SEC_FETCH_MODE = 'sec-fetch-mode'
-const HTTP_HEADER_SEC_FETCH_DEST = 'sec-fetch-dest'
+const ALLOWED_ORIGINS = (process.env['ALLOWED_ORIGINS'] ?? '').split(',').map(s => s.trim())
 
 const FORWARDED_KEY_SECRET = 'secret'
 const FORWARDED_ACCEPTABLE_KEYS = [ ...KNOWN_FORWARDED_KEYS, FORWARDED_KEY_SECRET ]
 const FORWARDED_REQUIRED = process.env['FORWARDED_REQUIRED'] === 'true'
 const FORWARDED_DROP_RIGHTMOST = (process.env['FORWARDED_SKIP_LIST'] ?? '').split(',').map(s => s.trim()).filter(s => s.length > 0)
 const FORWARDED_SECRET = process.env['FORWARDED_SECRET']
+const SERVER_NAME = process.env['SERVER_NAME']
 
 const CONTENT_TYPE_ASSUMED = CONTENT_TYPE_JSON
 // const ACCEPT_TYPE_ASSUMED = MIME_TYPE_JSON
@@ -119,18 +141,26 @@ async function handleStreamAsync(stream, header, _flags, shutdownSignal) {
 	// const pragma = header['pragma']
 	// const cacheControl = header[HTTP2_HEADER_CACHE_CONTROL]
 
+	const allowedOrigin = (ALLOWED_ORIGINS.includes(origin) || ALLOWED_ORIGINS.includes('*')) ? origin : undefined
+
+	const meta = {
+		performance: [],
+		servername: SERVER_NAME,
+		origin: allowedOrigin
+	}
+
 	if(stream.session === undefined) {
-		sendError(stream, 'session undefined')
+		sendError(stream, 'session undefined', meta)
 		return
 	}
 
 	if(fullPathAndQuery === undefined || Array.isArray(fullPathAndQuery)) {
-		sendError(stream, 'undefined or unknown request path')
+		sendError(stream, 'undefined or unknown request path', meta)
 		return
 	}
 
 	if(method === undefined || Array.isArray(method)) {
-		sendError(stream, 'undefined or unknown request method')
+		sendError(stream, 'undefined or unknown request method', meta)
 		return
 	}
 
@@ -138,7 +168,8 @@ async function handleStreamAsync(stream, header, _flags, shutdownSignal) {
 
 	const ip = stream.session.socket.remoteAddress
 	const port = stream.session.socket.remotePort
-	const hostSNI = stream.session.socket.servername // TLS SNI
+	// @ts-ignore
+	const SNI = stream.session.socket.servername // TLS SNI
 
 	const requestUrl = new URL(fullPathAndQuery, `${scheme}://${authority}`)
 
@@ -147,7 +178,8 @@ async function handleStreamAsync(stream, header, _flags, shutdownSignal) {
 	// 	method, url:
 	// 	requestUrl.pathname,
 	// 	query: requestUrl.search,
-	// 	session: { hostSNI, ip, port },
+	// 	session: {, ip, port },
+	//  SNI,
 	// 	host,
 	// 	origin,
 	// 	authority,
@@ -183,17 +215,17 @@ async function handleStreamAsync(stream, header, _flags, shutdownSignal) {
 	const forwardedSecret = forwarded?.get(FORWARDED_KEY_SECRET)
 
 	if(FORWARDED_REQUIRED && forwarded === undefined) {
-		sendError(stream, 'missing forwarded')
+		sendError(stream, 'missing forwarded', meta)
 		return
 	}
 
 	if(FORWARDED_REQUIRED && forwardedFor === undefined) {
-		sendError(stream, 'missing forwarded for')
+		sendError(stream, 'missing forwarded for', meta)
 		return
 	}
 
 	if(FORWARDED_SECRET !== undefined && forwardedSecret !== FORWARDED_SECRET) {
-		sendError(stream, 'invalid forwarded secret')
+		sendError(stream, 'invalid forwarded secret', meta)
 		return
 	}
 
@@ -204,7 +236,7 @@ async function handleStreamAsync(stream, header, _flags, shutdownSignal) {
 	//
 	if(method === HTTP2_METHOD_OPTIONS) {
 		const allowedMethods = digOptions(ROUTES, requestUrl.pathname)
-		sendPreflight(stream, origin, allowedMethods)
+		sendPreflight(stream, allowedOrigin, allowedMethods, meta)
 		return
 	}
 
@@ -214,7 +246,7 @@ async function handleStreamAsync(stream, header, _flags, shutdownSignal) {
 	const rateLimitKey = `${ip}` // `${ip}:${header['x-k6-vuid']}`
 	const limitInfo = RateLimiter.test(ipRateStore, rateLimitKey, ipRequestPerSecondPolicy)
 	if(limitInfo.exhausted) {
-		sendTooManyRequests(stream, limitInfo, ipRequestPerSecondPolicy)
+		sendTooManyRequests(stream, limitInfo, [ ipRequestPerSecondPolicy ], meta)
 		return
 	}
 
@@ -273,11 +305,11 @@ async function handleStreamAsync(stream, header, _flags, shutdownSignal) {
 	//
 	if(isSSE) {
 		if(accept !== MIME_TYPE_EVENT_STREAM) {
-			sendError(stream, 'mime type event stream expect for SSE route')
+			sendError(stream, 'mime type event stream expect for SSE route', meta)
 			return
 		}
 
-		sendSSE(stream, origin, metadata)
+		sendSSE(stream, allowedOrigin, { ...meta, ...metadata })
 	}
 
 	//
@@ -299,19 +331,21 @@ async function handleStreamAsync(stream, header, _flags, shutdownSignal) {
 		.then(data => {
 
 			const handlerEnd = performance.now()
-			const meta = { performance: [
-				...handlerPerformance,
-				{ name: 'dig', duration: digEnd - digStart },
-				{ name: 'preamble', duration: preambleEnd - preambleStart },
-				{ name: 'body', duration: body.duration },
-				{ name: 'handler', duration: handlerEnd - handlerStart  }
-			] }
+			const finalMeta = {
+				...meta,
+				performance: [
+					...handlerPerformance,
+					{ name: 'dig', duration: digEnd - digStart },
+					{ name: 'preamble', duration: preambleEnd - preambleStart },
+					{ name: 'body', duration: body.duration },
+					{ name: 'handler', duration: handlerEnd - handlerStart  }
+				] }
 
 			// SSE header/response send above via sendSSE
 			if(isSSE) { return }
 
 			if(accept === MIME_TYPE_JSON) {
-				sendJSON_Encoded(stream, data, acceptedEncoding, meta)
+				sendJSON_Encoded(stream, data, acceptedEncoding, allowedOrigin, finalMeta)
 			}
 			else {
 				throw new Error('unknown accept type')
@@ -319,7 +353,7 @@ async function handleStreamAsync(stream, header, _flags, shutdownSignal) {
 
 		})
 		.catch(e => {
-			sendError(stream, 'Error: ' + e.message)
+			sendError(stream, 'Error: ' + e.message, meta)
 		})
 }
 
@@ -333,8 +367,8 @@ export function handleStream(stream, header, flags, shutdownSignal) {
 	handleStreamAsync(stream, header, flags, shutdownSignal)
 		.catch(e => {
 			// console.warn('Error in stream handler', stream.writable, stream.closed, stream.aborted, stream.destroyed, stream.endAfterHeaders)
-			sendError(stream, `top level error: ${e.message}`)
-
-			// stream.session.destroy()
+			// sendError(stream, `top level error: ${e.message}`, )
+			stream.close()
+			stream.session?.destroy()
 		})
 }

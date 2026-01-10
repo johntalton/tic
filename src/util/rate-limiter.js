@@ -1,5 +1,5 @@
 /**
- * @import { RateLimitPolicyInfo } from './rate-limit.js'
+ * @import { RateLimitPolicyInfo } from '@johntalton/http-util/headers'
  */
 
 /**

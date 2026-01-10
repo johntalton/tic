@@ -1,6 +1,6 @@
 import { isViewable } from './tic.js'
 import { ELO, WIN, LOSE, DRAW } from './elo.js'
-import { gameStore, storeGameIdFromString } from '../store/couch/game.js'
+import { gameStore, storeGameIdFromString } from '../store/store.js'
 import { storeUserIdFromString, userStore } from '../store/couch/user.js'
 import { DisposableTimer, TIMING } from '../util/timing.js'
 
@@ -14,7 +14,7 @@ import { DisposableTimer, TIMING } from '../util/timing.js'
 /** @import { StoreGameId, ResolvedStoreInfo, StoreUserId } from '../types/store.js' */
 /** @import { ActionableGame } from './tic.js' */
 /** @import { EncodedGameId, IdentifiableActionableGame } from '../types/public.js' */
-/** @import { TimingsInfo } from '../util/server-timing.js' */
+/** @import { TimingsInfo } from '@johntalton/http-util/headers' */
 
 /**
  * @param {string} id

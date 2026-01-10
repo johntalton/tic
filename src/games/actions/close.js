@@ -1,13 +1,13 @@
 import { Tic } from '../tic.js'
 import { resolveFromStore } from '../util.js'
-import { gameStore } from '../../store/couch/game.js'
+import { gameStore } from '../../store/store.js'
 import { timed, TIMING } from '../../util/timing.js'
 
 /** @import { StoreUserId } from '../../types/store.js' */
 /** @import { EncodedGameId } from '../../types/public.js' */
 /** @import { ActionableGame } from '../tic.js' */
-/** @import { BodyFuture } from '../../util//body.js' */
-/** @import { TimingsInfo } from '../../util/server-timing.js' */
+/** @import { BodyFuture } from '@johntalton/http-util/body' */
+/** @import { TimingsInfo } from '@johntalton/http-util/headers' */
 
 /**
  * @param {EncodedGameId} encodedGameId

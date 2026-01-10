@@ -1,4 +1,4 @@
-import { gameStore } from '../store/couch/game.js'
+import { gameStore } from '../store/store.js'
 import { userStore } from '../store/couch/user.js'
 import { timed, TIMING } from '../util/timing.js'
 import { identifiableGameId } from './util.js'

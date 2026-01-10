@@ -129,6 +129,9 @@ class GameAgent {
 				const { position } = action
 				console.log('handleAction - Move', game.id, position)
 				const updatedGame = await this.#api.move(game.id, position)
+				if(updatedGame.message !== undefined) {
+					console.log('Game Message:', updatedGame.message)
+				}
 				break
 			case 'Offer':
 				break
@@ -144,11 +147,30 @@ class GameAgent {
 		await this.#handleAction(game, action)
 	}
 
+	async #fetchAndProcessExistingGames() {
+		console.log('processed existing games')
+		try {
+			const knownGames = await this.#api.listing([ 'new', 'pending', 'active' ])
+			// console.log({ knownGames })
+
+			for (const knownGame of knownGames.games) {
+				const game = await this.#api.fetch(knownGame.id)
+				await this.#handleGame(game)
+					.catch(e => console.warn('error in list handler', e))
+			}
+		}
+		catch(e) {
+			console.warn('error processing existing games', e.message)
+		}
+	}
+
 	async #fetchAndProcessGames() {
 		this.#sse = new EventSource(`${this.#serviceUrl}/tic/v1/events?token=${this.#sseToken}`)
 		this.#sse?.addEventListener('open', () => {
 			console.log('SSE open')
 			// reprocess known games?
+			this.#fetchAndProcessExistingGames()
+				.catch(e => console.warn('Error on process via open SSE ', e.message))
 		})
 		this.#sse?.addEventListener('error', error => {
 			// this could be a failure to open, or a scheduled reconnect
@@ -167,20 +189,7 @@ class GameAgent {
 				.catch(error => console.warn('error in sse update handler', error))
 		})
 
-		console.log('processed existing games')
-		try {
-			const knownGames = await this.#api.listing([ 'new', 'pending', 'active' ])
-			// console.log({ knownGames })
-
-			for (const knownGame of knownGames.games) {
-				const game = await this.#api.fetch(knownGame.id)
-				await this.#handleGame(game)
-					.catch(e => console.warn('error in list handler', e))
-			}
-		}
-		catch(e) {
-			console.warn('error processing existing games', e.message)
-		}
+		return this.#fetchAndProcessExistingGames()
 	}
 
 	constructor(userId, accessToken, sseToken, ai) {

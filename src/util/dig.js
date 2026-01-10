@@ -11,9 +11,9 @@ export const METADATA = Symbol.for('METADATA')
 
 /** @import { ServerHttp2Stream } from 'node:http2' */
 
-/** @import { BodyFuture } from './body.js' */
+/** @import { BodyFuture } from '@johntalton/http-util/body' */
 /** @import { SessionUser } from '../types/global.js' */
-/** @import { TimingsInfo } from './server-timing.js' */
+/** @import { TimingsInfo } from '@johntalton/http-util/headers' */
 
 /**
  * @template T

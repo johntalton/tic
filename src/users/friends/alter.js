@@ -3,7 +3,7 @@ import { timed, TIMING } from '../../util/timing.js'
 
 /** @import { StoreUserId } from '../../types/store.js' */
 /** @import { FriendsListing } from '../../types/public.js' */
-/** @import { TimingsInfo } from '../../util/server-timing.js' */
+/** @import { TimingsInfo } from '@johntalton/http-util/headers' */
 
 /**
  * @param {StoreUserId} userId

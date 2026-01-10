@@ -1,6 +1,5 @@
 import { storeUserIdFromString, userStore } from '../store/couch/user.js'
 import { timed, TIMING } from '../util/timing.js'
-// import { MIME_TYPE_MULTIPART_FORM_DATA, MIME_TYPE_URL_FORM_DATA } from '../util/content-type.js'
 
 /** @import { HandlerFn } from '../util/dig.js' */
 /** @import { UserInfoList } from '../types/public.js' */

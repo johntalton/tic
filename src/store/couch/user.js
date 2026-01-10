@@ -7,7 +7,7 @@ import {
 /** @import { Token, SSEToken } from '../../types/global.js' */
 /** @import { CouchGenericRows } from '../../types/couch.js' */
 /** @import { StoreUserId, StoreUser, StoreUserListItem, StoreUserListItemRaw } from '../../types/store.js' */
-/** @import { TimingsInfo } from '../../util/server-timing.js' */
+/** @import { TimingsInfo } from '@johntalton/http-util/headers' */
 
 /**
  * @typedef {Object} AccessTokenCacheItem

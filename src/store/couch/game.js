@@ -1,5 +1,6 @@
 import { CouchContinuous, DEFAULT_RECONNECT_INTERVAL_MS } from './couch-continuous.js'
 import { COUCH_STATUS_NOT_MODIFIED, CouchUtil } from './couch.js'
+import { storeGameIdFromString } from '../store.js'
 
 /** @import { CouchGenericRows } from '../../types/couch.js' */
 /** @import { StoreGameId, StoreGame, StoreGameBase, StoreGameListItem, StoreGameListItemRaw} from '../../types/store.js' */
@@ -17,24 +18,6 @@ const authorizationHeaders = CouchUtil.basicAuthHeader(username, password)
 const RECONNECT_INTERVAL_INITIAL_MS = DEFAULT_RECONNECT_INTERVAL_MS
 const RECONNECT_INTERVAL_STEP_MS = (10 * 1000)
 const RECONNECT_INTERVAL_MAX_MS = (60 * 1000)
-
-/**
- * @param {string} id
- * @returns {StoreGameId}
- */
-export function storeGameIdFromString(id) {
-	if(isStoreGameId(id)) { return id }
-	throw new Error('not a store game id')
-}
-
-/**
- * @param {string} id
- * @returns {id is StoreGameId}
- */
-export function isStoreGameId(id) {
-	if(id === undefined || id.length === 0) { return false }
-	return true
-}
 
 export class CouchGameStore {
 	#url
@@ -279,4 +262,4 @@ export class CouchGameStore {
 	}
 }
 
-export const gameStore = new CouchGameStore(couchURL)
+export const couchGameStore = new CouchGameStore(couchURL)

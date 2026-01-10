@@ -1,8 +1,11 @@
+export const COUCH_STATUS_SERVER_ERROR = 500
 export const COUCH_STATUS_NOT_FOUND = 404
 export const COUCH_STATUS_NOT_MODIFIED = 304
 
 export const COUCH_HEADER_REQUEST_ID = 'X-Couch-Request-ID'
 export const COUCH_HEADER_BODY_TIME = 'X-CouchDB-Body-Time'
+
+export const COUCH_HEADER_ETAG = 'ETag'
 
 export class CouchUtil {
 	/**
@@ -57,6 +60,12 @@ export class CouchUtil {
 				const reason = json.reason
 
 				throw new Error(`Couch Not Found ${reason}`)
+			}
+			else if (response.status === COUCH_STATUS_SERVER_ERROR) {
+				const json = await response.json()
+				const reason = json.reason
+
+				throw new Error(`Couch Internal Server Error ${reason}`)
 			}
 
 			const text = await response.text()

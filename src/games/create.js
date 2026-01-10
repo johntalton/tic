@@ -1,5 +1,5 @@
 import { Tic } from './tic.js'
-import { gameStore, storeGameIdFromString } from '../store/couch/game.js'
+import { gameStore, storeGameIdFromString } from '../store/store.js'
 import { userStore } from '../store/couch/user.js'
 import { identifiableGame } from './util.js'
 import { timed, TIMING } from '../util/timing.js'
