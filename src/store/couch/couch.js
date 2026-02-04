@@ -15,6 +15,7 @@ export class CouchUtil {
 	static basicAuthHeader(username, password) {
 		const encoder = new TextEncoder()
 		const u8 = encoder.encode(`${username}:${password}`)
+		// @ts-ignore
 		const encodedCredentials = u8.toBase64()
 		// const encodedCredentials = btoa(`${username}:${password}`)
 
@@ -30,7 +31,7 @@ export class CouchUtil {
 	static async fetch(url, options) {
 		const actualOptions = {
 			...options,
-			signal: options?.signal ?? AbortSignal.timeout(200)
+			signal: options?.signal ?? AbortSignal.timeout(500)
 		}
 
 		return fetch(url, actualOptions)

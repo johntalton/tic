@@ -1,19 +1,19 @@
 import { MATCHES } from '../../route.js'
-import { isStoreUserId, userStore } from '../../store/couch/user.js'
+import { userStore } from '../../store/store.js'
 import { timed, TIMING } from '../../util/timing.js'
+import { encodedUserId, fromEncodedUserId, isEncodedUserId } from '../util.js'
 
 /** @import { HandlerFn } from '../../util/dig.js' */
-/** @import { FriendsInfoList } from '../../types/public.js' */
+/** @import { FriendsInfoList } from '../../types/public.user.js' */
 
 /** @type {HandlerFn<FriendsInfoList>} */
 export async function handleListFriends(matches, sessionUser, _body, _query, _stream, handlerPerformance) {
-	if(sessionUser.tokens.access === undefined) { throw new Error('access token required') }
 	const userId = await userStore.fromToken(sessionUser.tokens.access, handlerPerformance)
 
-	const forUserId = matches.get(MATCHES.USER_ID)
-	if(forUserId === undefined) { throw new Error('unspecified user') }
+	const forEncodedUserId = matches.get(MATCHES.USER_ID)
+	if(!isEncodedUserId(forEncodedUserId)) { throw new Error('invalid user id brand') }
 
-	if(!isStoreUserId(forUserId)) { throw new Error('invalid user id brand') }
+	const forUserId = await fromEncodedUserId(forEncodedUserId)
 
 	const isSelf = userId === forUserId
 	if(!isSelf) {
@@ -37,5 +37,11 @@ export async function handleListFriends(matches, sessionUser, _body, _query, _st
 		handlerPerformance,
 		() => userStore.list(forUserId, friends))
 
-	return { friends: resolvedFriends }
+	return {
+		friends: await Promise.all(resolvedFriends.map(async friend => ({
+			...friend,
+			storeUserId: undefined,
+			id: await encodedUserId(friend.storeUserId)
+		})))
+	}
 }

@@ -3,25 +3,16 @@ import { timed, TIMING } from '../../util/timing.js'
 import { Tic } from '../tic.js'
 import { resolveFromStore } from '../util.js'
 
-/** @import { StoreUserId } from '../../types/store.js' */
-/** @import { EncodedGameId } from '../../types/public.js' */
-/** @import { ActionableGame } from '../tic.js' */
-/** @import { BodyFuture } from '@johntalton/http-util/body' */
-/** @import { TimingsInfo } from '@johntalton/http-util/headers' */
+/** @import { ActionHandlerFn } from './index.js' */
+/** @import { StoreGameEnvelope } from '../../types/store.game.js'  */
 
-/**
- * @param {EncodedGameId} id
- * @param {StoreUserId} userId
- * @param {BodyFuture} _body
- * @param {URLSearchParams} _query
- * @param {Array<TimingsInfo>} handlerPerformance
- * @returns {Promise<ActionableGame>}
- */
+/** @type {ActionHandlerFn} */
 export async function handleDecline(id, userId, _body, _query, handlerPerformance) {
 	const { game, gameObject } = await resolveFromStore(id, userId, handlerPerformance)
 
 	const updatedGame = Tic.decline(game, userId)
 
+	/** @type {StoreGameEnvelope} */
 	const updatedGameObject = {
 		...gameObject,
 		meta: {
@@ -34,7 +25,7 @@ export async function handleDecline(id, userId, _body, _query, handlerPerformanc
 	await timed(
 		TIMING.GAME_DECLINE,
 		handlerPerformance,
-		() => gameStore.set(gameObject._id, updatedGameObject))
+		() => gameStore.set(gameObject.storeGameId, updatedGameObject))
 
 
 	return Tic.actionable(updatedGame, userId)

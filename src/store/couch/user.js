@@ -3,10 +3,11 @@ import {
 	COUCH_STATUS_NOT_MODIFIED,
 	CouchUtil
 } from './couch.js'
+import { storeUserIdFromString } from '../store.js'
 
 /** @import { Token, SSEToken } from '../../types/global.js' */
-/** @import { CouchGenericRows } from '../../types/couch.js' */
-/** @import { StoreUserId, StoreUser, StoreUserListItem, StoreUserListItemRaw } from '../../types/store.js' */
+/** @import { CouchGenericRows, CouchStoreUser } from '../../types/couch.js' */
+/** @import { StoreUserId, StoreUserEnvelope, StoreUserListItem, StoreUserListItemRow, StoreUserEnvelopeBase } from '../../types/store.user.js' */
 /** @import { TimingsInfo } from '@johntalton/http-util/headers' */
 
 /**
@@ -25,43 +26,24 @@ if(password === undefined) { throw new Error('unspecified couch password') }
 
 const authorizationHeaders = CouchUtil.basicAuthHeader(username, password)
 
-/**
- * @param {string} id
- * @returns {StoreUserId}
- */
-export function storeUserIdFromString(id) {
-	if(isStoreUserId(id)) { return id }
-	throw new Error('not a store user id')
-}
-
-/**
- * @param {string} id
- * @returns {id is StoreUserId}
- */
-export function isStoreUserId(id) {
-	if(id === undefined) { return false }
-	if(id === '') { return false }
-	return true
-}
-
 export class CouchUserStore {
 	#url
 
 	/** @type {Map<string, AccessTokenCacheItem>} */
 	#accessTokenCache = new Map()
 
-	/** @type {Map<StoreUserId, Promise<StoreUser>>} */
+	/** @type {Map<StoreUserId, Promise<CouchStoreUser>>} */
 	#userCache = new Map()
 
 	/**
-	 * @param {string} url
+	 * @param {string|undefined} [url]
 	 */
-	constructor(url) { this.#url = url }
+	constructor(url) { this.#url = url ?? couchURL }
 
 	/**
 	 * @param {StoreUserId} id
-	 * @param {Omit<StoreUser, '_id'|'_rev'>} userObject
-	 * @returns {Promise<StoreUser|undefined>}
+	 * @param {StoreUserEnvelopeBase} userObject
+	 * @returns {Promise<StoreUserEnvelope|undefined>}
 	 */
 	async create(id, userObject) {
 		return CouchUtil.fetchJSON(`${this.#url}`, {
@@ -80,7 +62,7 @@ export class CouchUserStore {
 
 	/**
 	 * @param {StoreUserId} id
-	 * @param {StoreUser} userObject
+	 * @param {StoreUserEnvelope} userObject
 	 */
 	async set(id, userObject) {
 		this.#userCache.delete(id)
@@ -92,7 +74,13 @@ export class CouchUserStore {
 				'Content-Type': 'application/json',
 				'Accept': 'application/json'
 			},
-			body: JSON.stringify({ ...userObject, _id: id })
+			body: JSON.stringify({
+				...userObject,
+				storeUserId: undefined,
+				storeUserRevision: undefined,
+				_id: userObject.storeUserId,
+				_rev: userObject.storeUserRevision
+			})
 		})
 
 		return response.ok
@@ -100,7 +88,7 @@ export class CouchUserStore {
 
 	/**
 	 * @param {StoreUserId} id
-	 * @returns {Promise<StoreUser>}
+	 * @returns {Promise<CouchStoreUser>}
 	 */
 	async #get(id) {
 		return CouchUtil.fetchJSON(`${this.#url}/${id}`, {
@@ -131,19 +119,27 @@ export class CouchUserStore {
 
 	/**
 	 * @param {StoreUserId} id
-	 * @returns {Promise<StoreUser>}
+	 * @returns {Promise<StoreUserEnvelope>}
 	 */
 	async get(id) {
 		const potential = this.#userCache.get(id)
 		if(potential !== undefined) {
-			return potential
+			return potential.then(user => ({
+				...user,
+				storeUserId: storeUserIdFromString(user._id),
+				storeUserRevision: user._rev
+			}))
 		}
 
 		const futureUser = this.#get(id)
 
 		this.#userCache.set(id, futureUser)
 
-		return futureUser
+		return futureUser.then(user => ({
+				...user,
+				storeUserId: storeUserIdFromString(user._id),
+				storeUserRevision: user._rev
+			}))
 	}
 
 	/**
@@ -159,7 +155,7 @@ export class CouchUserStore {
 			url.searchParams.set('keys', userListKey)
 		}
 
-		/** @type {CouchGenericRows<StoreUserListItemRaw>} */
+		/** @type {CouchGenericRows<StoreUserListItemRow>} */
 		const result = await CouchUtil.fetchJSON(url, {
 			method: 'GET',
 			headers: {
@@ -169,18 +165,20 @@ export class CouchUserStore {
 		})
 
 		return result.rows.map(row => ({
-			id: storeUserIdFromString(row.key),
+			storeUserId: storeUserIdFromString(row.id),
 			...row.value
 		}))
 	}
 
 	/**
-	 * @param {Token} token
-	 * @returns {Promise<StoreUserId>}
+	 * @param {Token|undefined} token
 	 * @param {Array<TimingsInfo>} handlerPerformance
+	 * @returns {Promise<StoreUserId>}
 	 */
 	async fromToken(token, handlerPerformance) {
 		using _timer = new DisposableTimer('token', handlerPerformance)
+		if(token === undefined) { throw new Error('access token required') }
+
 		const now = Date.now()
 
 		const potential = this.#accessTokenCache.get(token)
@@ -229,5 +227,3 @@ export class CouchUserStore {
 		return userId
 	}
 }
-
-export const userStore = new CouchUserStore(couchURL)

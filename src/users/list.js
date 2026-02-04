@@ -1,24 +1,17 @@
-import { storeUserIdFromString, userStore } from '../store/couch/user.js'
+import { userStore } from '../store/store.js'
 import { timed, TIMING } from '../util/timing.js'
+import { encodedUserId, encodedUserIdFromString, fromEncodedUserId } from './util.js'
+import { SearchQueryList } from '../util/search-query-list.js'
 
 /** @import { HandlerFn } from '../util/dig.js' */
-/** @import { UserInfoList } from '../types/public.js' */
+/** @import { UserInfoList } from '../types/public.user.js' */
 
 /** @type {HandlerFn<UserInfoList>} */
 export async function listUsers(_matches, sessionUser, _body, query, _stream, handlerPerformance) {
-	if(sessionUser.tokens.access === undefined) { throw new Error('access token required') }
 	const userId = await userStore.fromToken(sessionUser.tokens.access, handlerPerformance)
 
-	const userFilterRaw = [ ...query.getAll('u'), ...query.getAll('user') ]
-	const userFilter = userFilterRaw.map(f => storeUserIdFromString(f))
-
-	// if((body.contentType.mimetype !== MIME_TYPE_MULTIPART_FORM_DATA) && (body.contentType.mimetype !== MIME_TYPE_URL_FORM_DATA)) {
-	// 	throw new Error('unknown body mime type')
-	// }
-
-	// // console.log('text', await body.text())
-	// const formData = await body.formData()
-	// console.log('users', [ ...formData.getAll('user'), ...formData.getAll('u') ])
+	const userFilterRaw = SearchQueryList.get(query, { plural: 'users', singular: 'user', short: 'u' })
+	const userFilter = await Promise.all(userFilterRaw.map(f => fromEncodedUserId(encodedUserIdFromString(f))))
 
 	const allUsers = await timed(
 		TIMING.USER_LIST,
@@ -26,6 +19,10 @@ export async function listUsers(_matches, sessionUser, _body, query, _stream, ha
 		() => userStore.list(userId, userFilter))
 
 	return {
-		users: allUsers
+		users: await Promise.all(allUsers.map(async user => ({
+			...user,
+			storeUserId: undefined,
+			id: await encodedUserId(user.storeUserId)
+		})))
 	}
 }

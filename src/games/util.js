@@ -1,8 +1,9 @@
-import { isViewable } from './tic.js'
+import { isViewable, EMPTY } from './tic.js'
 import { ELO, WIN, LOSE, DRAW } from './elo.js'
 import { gameStore, storeGameIdFromString } from '../store/store.js'
-import { storeUserIdFromString, userStore } from '../store/couch/user.js'
+import { userStore, storeUserIdFromString  } from '../store/store.js'
 import { DisposableTimer, TIMING } from '../util/timing.js'
+import { encodedUserId } from '../users/util.js'
 
 // const KEY = await crypto.subtle.generateKey({
 // 		name: 'AES-GCM',
@@ -11,13 +12,15 @@ import { DisposableTimer, TIMING } from '../util/timing.js'
 // 	false,
 // 	[ 'encrypt', 'decrypt' ])
 
-/** @import { StoreGameId, ResolvedStoreInfo, StoreUserId } from '../types/store.js' */
+/** @import { StoreUserId } from '../types/store.user.js' */
+/** @import { StoreGameId, ResolvedStoreInfo } from '../types/store.game.js' */
 /** @import { ActionableGame } from './tic.js' */
-/** @import { EncodedGameId, IdentifiableActionableGame } from '../types/public.js' */
+/** @import { EncodedGameId, IdentifiableActionableGame } from '../types/public.game.js' */
+/** @import { EncodedUserId } from '../types/public.user.js' */
 /** @import { TimingsInfo } from '@johntalton/http-util/headers' */
 
 /**
- * @param {string} id
+ * @param {string|undefined} id
  * @returns {EncodedGameId}
  */
 export function storeEncodedGameIdFromString(id) {
@@ -26,7 +29,7 @@ export function storeEncodedGameIdFromString(id) {
 }
 
 /**
- * @param {string} id
+ * @param {string|undefined} id
  * @returns {id is EncodedGameId}
  */
 export function isStoreEncodedGameId(id) {
@@ -46,18 +49,20 @@ export async function resolveFromStore(id, userId, handlerPerformance) {
 
 	using _timer = new DisposableTimer(TIMING.RESOLVE, handlerPerformance)
   const gameObject = await gameStore.get(gameId)
-	if(gameObject === undefined) { throw new Error('unknown game') }
 
   const { game } = gameObject
   if(game === undefined) { throw new Error('object does not have a game') }
 
-  if(!isViewable(game, userId)) { throw new Error('not viewable') }
+  if(!isViewable(game, userId)) {
+		// console.log('not viewable', userId, game)
+		throw new Error('not viewable')
+	}
 
   return { game, gameObject }
 }
 
 /**
- * @param {ActionableGame} actionableGame
+ * @param {ActionableGame<StoreUserId>} actionableGame
  * @param {Array<TimingsInfo>} handlerPerformance
  */
 export async function computeAndUpdateELO(actionableGame, handlerPerformance) {
@@ -73,12 +78,14 @@ export async function computeAndUpdateELO(actionableGame, handlerPerformance) {
 		actionableGame.players
 			.map(playerId => userStore.get(storeUserIdFromString(playerId))))
 
-		if(playerAObject === undefined || playerBObject === undefined) {
-			console.warn('undefined player object')
-			return
-		}
+	if(playerAObject === undefined || playerBObject === undefined) {
+		console.warn('undefined player object')
+		return
+	}
 
-	const scoreA = resolution.draw ? DRAW : ((resolution.winner.user === playerAObject._id) ? WIN : LOSE)
+	// console.log(playerAObject, playerBObject)
+
+	const scoreA = resolution.draw ? DRAW : ((resolution.winner.user === playerAObject.storeUserId) ? WIN : LOSE)
 	const scoreB = 1 - scoreA
 
 	const nextELO = ELO.compute(
@@ -112,8 +119,8 @@ export async function computeAndUpdateELO(actionableGame, handlerPerformance) {
 	}
 
 	return Promise.all([
-		userStore.set(storeUserIdFromString(updatedPlayerAObject._id), updatedPlayerAObject),
-		userStore.set(storeUserIdFromString(updatedPlayerBObject._id), updatedPlayerBObject)
+		userStore.set(storeUserIdFromString(updatedPlayerAObject.storeUserId), updatedPlayerAObject),
+		userStore.set(storeUserIdFromString(updatedPlayerBObject.storeUserId), updatedPlayerBObject)
 	])
 }
 
@@ -122,6 +129,7 @@ export async function computeAndUpdateELO(actionableGame, handlerPerformance) {
  * @returns {Promise<StoreGameId>}
  */
 export async function fromIdentifiableGameId(id) {
+	if(!id.startsWith('G:')) { throw new Error('not an encoded game id') }
 	return storeGameIdFromString(id.substring(2))
 
 	// const [ g, ciphertext64, nonce64 ] = id.split(':')
@@ -163,19 +171,58 @@ export async function identifiableGameId(id) {
 
 /**
  * @param {EncodedGameId} encodedGameId
- * @param {ActionableGame} actionableGame
+ * @param {ActionableGame<StoreUserId>} actionableGame
  * @returns {Promise<IdentifiableActionableGame>}
  */
 export async function identifiableGameWithEncodedId(encodedGameId, actionableGame) {
+	/**
+	 * @param {StoreUserId|EMPTY} id
+	 * @returns {Promise<EncodedUserId|EMPTY>}
+	 */
+	async function encodedUserIdOrEmpty(id) {
+		if(id === EMPTY) { return id }
+		return encodedUserId(id)
+	}
+
+	const [
+		owner,
+		players,
+		offers,
+		active,
+		board,
+		winnerUser
+	] = await Promise.all([
+		encodedUserId(actionableGame.owner),
+		Promise.all(actionableGame.players.map(encodedUserId)),
+		Promise.all(actionableGame.offers.map(encodedUserId)),
+		Promise.all(actionableGame.active.map(encodedUserId)),
+		Promise.all(actionableGame.board.map(encodedUserIdOrEmpty)),
+		encodedUserIdOrEmpty(actionableGame.resolution.winner.user)
+	])
+
 	return {
 		id: encodedGameId,
-		...actionableGame
+		...actionableGame,
+
+		owner,
+		players,
+		offers,
+		active,
+		board,
+
+		resolution: {
+			...actionableGame.resolution,
+			winner: {
+				...actionableGame.resolution.winner,
+				user: winnerUser
+			}
+		}
 	}
 }
 
 /**
  * @param {StoreGameId} gameId
- * @param {ActionableGame} actionableGame
+ * @param {ActionableGame<StoreUserId>} actionableGame
  * @returns {Promise<IdentifiableActionableGame>}
  */
 export async function identifiableGame(gameId, actionableGame) {

@@ -36,7 +36,7 @@ export const TIMING = {
  */
  export async function timed(name, target, cb) {
 	using _timer = new DisposableTimer(name, target)
-	return await Promise.try(cb)
+	return await Promise.try(cb) // await here otherwise timer disposed early
 }
 
 export class DisposableTimer {

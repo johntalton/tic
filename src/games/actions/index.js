@@ -7,7 +7,26 @@ import { handleOffer } from './offer.js'
 
 import { MATCHES } from '../../route.js'
 import { identifiableGameWithEncodedId, isStoreEncodedGameId } from '../util.js'
-import { userStore } from '../../store/couch/user.js'
+import { userStore } from '../../store/store.js'
+
+/** @import { HandlerFn } from '../../util/dig.js' */
+/** @import { IdentifiableActionableGame } from '../../types/public.game.js' */
+
+/** @import { ActionableGame } from '../tic.js' */
+/** @import { StoreUserId } from '../../types/store.user.js' */
+/** @import { EncodedGameId } from '../../types/public.game.js' */
+/** @import { BodyFuture } from '@johntalton/http-util/body' */
+/** @import { TimingsInfo } from '@johntalton/http-util/headers' */
+
+/**
+ * @typedef {(
+ * 	id: EncodedGameId,
+ * 	userId: StoreUserId,
+ * 	body: BodyFuture,
+ *	query: URLSearchParams,
+ *	handlerPerformance: Array<TimingsInfo>
+ * ) => Promise<ActionableGame<StoreUserId>>} ActionHandlerFn
+ */
 
 const ACTION_MAP = new Map([
 	[ 'accept', handleAccept ],
@@ -17,14 +36,6 @@ const ACTION_MAP = new Map([
 	[ 'move', handleMove ],
 	[ 'offer', handleOffer ]
 ])
-
-/**
- * @import { HandlerFn } from '../../util/dig.js'
- */
-
-/**
- * @import { IdentifiableActionableGame } from '../../types/public.js'
- */
 
 /** @type {HandlerFn<IdentifiableActionableGame>} */
 export async function handleAction(matches, sessionUser, requestBody, query, _stream, handlerPerformance) {

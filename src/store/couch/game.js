@@ -2,8 +2,15 @@ import { CouchContinuous, DEFAULT_RECONNECT_INTERVAL_MS } from './couch-continuo
 import { COUCH_STATUS_NOT_MODIFIED, CouchUtil } from './couch.js'
 import { storeGameIdFromString } from '../store.js'
 
-/** @import { CouchGenericRows } from '../../types/couch.js' */
-/** @import { StoreGameId, StoreGame, StoreGameBase, StoreGameListItem, StoreGameListItemRaw} from '../../types/store.js' */
+/** @import { CouchGenericRows, CouchStoreGame } from '../../types/couch.js' */
+/** @import { StoreGameId, StoreGameEnvelope, StoreGameEnvelopeBase, StoreGameListItem, StoreGameListItemRow} from '../../types/store.game.js' */
+
+/**
+ * @typedef {Object} CouchCacheGetGame
+ * @property {number} expireAt
+ * @property {Promise<CouchStoreGame>} futureDoc
+ * @property {Promise<boolean>|undefined} futureIsModified
+ */
 
 const couchURL = process.env['COUCH_URL']
 const username = process.env['COUCH_USER']
@@ -21,6 +28,7 @@ const RECONNECT_INTERVAL_MAX_MS = (60 * 1000)
 
 export class CouchGameStore {
 	#url
+	/** @type {Map<StoreGameId, CouchCacheGetGame>} */
 	#cache = new Map()
 	#useCache = true
 
@@ -33,17 +41,17 @@ export class CouchGameStore {
 	#feedChannel = new BroadcastChannel('SSE')
 
 	/**
-	 * @param {string} url
+	 * @param {string|undefined} [url]
 	 */
 	constructor(url) {
-		this.#url = url
+		this.#url = url ?? couchURL
 
 		// this.#eventSource = new EventSource(`${url}/_changes?feed=eventsource`)
 		// this.#eventSource.addEventListener('message', event => {
 		// 	console.log('CouchDB event', event)
 		// })
 
-		this.#feedUrl = new URL(`${url}/_changes?feed=continuous&heartbeat=true&filter=_view&view=basic/games_by_viewer`)
+		this.#feedUrl = new URL(`${this.#url}/_changes?feed=continuous&heartbeat=true&filter=_view&view=basic/games_by_viewer`)
 		this.#feed = this.#feedConnect()
 	}
 
@@ -66,6 +74,7 @@ export class CouchGameStore {
 			console.log('CouchDB Feed Error', feed.reconnectIntervalMS)
 		})
 		feed.addEventListener('data', event => {
+			// @ts-ignore
 			const { data } = event
 			const { id } = data
 
@@ -76,10 +85,12 @@ export class CouchGameStore {
 
 			this.get(id)
 				.then(gameObject => {
+					if(gameObject.type !== 'game.tic.v1') { return }
 					const { game } = gameObject
+
 					this.#feedChannel.postMessage({
 						type: 'game-change',
-						_id: id,
+						storeGameId: id,
 						game
 					})
 				})
@@ -112,7 +123,7 @@ export class CouchGameStore {
 
 	/**
 	 * @param {StoreGameId} id
-	 * @returns {Promise<StoreGame>}
+	 * @returns {Promise<CouchStoreGame>}
 	 */
 	async #get(id) {
 		return CouchUtil.fetchJSON(`${this.#url}/${id}`, {
@@ -143,21 +154,26 @@ export class CouchGameStore {
 
 	/**
 	 * @param {StoreGameId} id
-	 * @returns {Promise<StoreGame>}
+	 * @returns {Promise<StoreGameEnvelope>}
 	 */
 	async get(id) {
 		// console.log('get game', { id })
 		const now = Date.now()
 
 		// console.log('couch get game by id', id)
-		if(this.#useCache && this.#cache.has(id)) {
-			const potential = this.#cache.get(id)
-
+		const potential = this.#cache.get(id)
+		if(this.#useCache && potential !== undefined) {
 			// console.log('try from cache', potential)
 
 			if(potential.expireAt > now) {
 				// console.log('cache not expired, return doc', now - potential.expireAt)
-				return potential.futureDoc
+				return potential.futureDoc.then(doc => ({
+					...doc,
+					_id: undefined,
+					_rev: undefined,
+					storeGameId: storeGameIdFromString(doc._id),
+					storeGameRevision: doc._rev
+				}))
 			}
 
 			const doc = await potential.futureDoc
@@ -184,7 +200,7 @@ export class CouchGameStore {
 				})
 				.catch(error => {
 					// toss catch and throw
-					// console.log('in in ismodified call delete cache')
+					// console.log('in is modified call delete cache')
 					this.#cache.delete(id)
 					throw error
 				})
@@ -192,12 +208,19 @@ export class CouchGameStore {
 
 			return potential.futureIsModified
 				.then(() => potential.futureDoc)
+				.then(doc => ({
+					...doc,
+					_id: undefined,
+					_rev: undefined,
+					storeGameId: storeGameIdFromString(doc._id),
+					storeGameRevision: doc._rev
+				}))
 		}
 
 		// console.log('refresh from futureDoc', id)
 		const futureDoc = this.#get(id)
 
-		futureDoc.catch(e => {
+		futureDoc.catch(error => {
 			// console.warn('cached game error removal', e)
 			this.#cache.delete(id)
 		})
@@ -208,12 +231,18 @@ export class CouchGameStore {
 			futureIsModified: undefined
 		})
 
-		return futureDoc
+		return futureDoc.then(doc => ({
+				...doc,
+				_id: undefined,
+				_rev: undefined,
+				storeGameId: storeGameIdFromString(doc._id),
+				storeGameRevision: doc._rev
+			}))
 	}
 
 	/**
 	 * @param {StoreGameId} id
-	 * @param {StoreGame | StoreGameBase} value
+	 * @param {StoreGameEnvelope | StoreGameEnvelopeBase} value
 	 */
 	async set(id, value) {
 		this.#cache.delete(id)
@@ -225,7 +254,13 @@ export class CouchGameStore {
 				'Content-Type': 'application/json',
 				'Accept': 'application/json'
 			},
-			body: JSON.stringify({ ...value, _id: id })
+			body: JSON.stringify({
+				...value,
+				storeGameId: undefined,
+				storeGameRevision: undefined,
+				_id: id, // ('storeGameId' in value) ? value.storeGameId : undefined,
+				_rev: ('storeGameRevision' in value) ? value.storeGameRevision : undefined
+			})
 		})
 
 		return response.ok
@@ -245,7 +280,7 @@ export class CouchGameStore {
 		url.searchParams.set('reduce', 'false')
 		url.searchParams.set('include_docs', `${includeDocs}`)
 
-		/** @type {CouchGenericRows<StoreGameListItemRaw>} */
+		/** @type {CouchGenericRows<StoreGameListItemRow>} */
 		const result = await CouchUtil.fetchJSON(url, {
 				method: 'GET',
 				headers: {
@@ -255,11 +290,9 @@ export class CouchGameStore {
 			})
 
 		return result.rows.map(row => ({
-			_id: storeGameIdFromString(row.id),
+			storeGameId: storeGameIdFromString(row.id),
 			...row.value,
 			active: row.value.active?.includes(user)
 		}))
 	}
 }
-
-export const couchGameStore = new CouchGameStore(couchURL)

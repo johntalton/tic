@@ -1,33 +1,24 @@
 import { gameStore } from '../../store/store.js'
 import { timed, TIMING } from '../../util/timing.js'
-import { Tic } from '../tic.js'
+import { Tic, EMPTY } from '../tic.js'
 import { computeAndUpdateELO, resolveFromStore } from '../util.js'
 
-/** @import { StoreUserId } from '../../types/store.js' */
-/** @import { EncodedGameId } from '../../types/public.js' */
-/** @import { ActionableGame } from '../tic.js' */
-/** @import { BodyFuture } from '@johntalton/http-util/body' */
-/** @import { TimingsInfo } from '@johntalton/http-util/headers' */
+/** @import { ActionHandlerFn } from './index.js' */
+/** @import { StoreGameEnvelope } from '../../types/store.game.js' */
 
-/**
- * @param {EncodedGameId} encodedGameId
- * @param {StoreUserId} userId
- * @param {BodyFuture} _body
- * @param {URLSearchParams} query
- * @param {Array<TimingsInfo>} handlerPerformance
- * @returns {Promise<ActionableGame>}
- */
+/** @type {ActionHandlerFn} */
 export async function handleMove(encodedGameId, userId, _body, query, handlerPerformance) {
 	const { game, gameObject } = await resolveFromStore(encodedGameId, userId, handlerPerformance)
 
-	const positionStr = query.get('position')
+	const positionStr = query.get('position') ?? query.get('p')
 	if(positionStr === null) { throw new Error('missing move position') }
 	const position = parseInt(positionStr, 10)
 	const positionPlayerId = game.board[position]
-	if(positionPlayerId !== 0) { throw new Error('invalid move position') }
+	if(positionPlayerId !== EMPTY) { throw new Error('invalid move position') }
 
  	const updatedGame = Tic.move(game, userId, { position })
 
+	/** @type {StoreGameEnvelope} */
 	const updatedGameObject = {
 		...gameObject,
 		meta: {
@@ -40,11 +31,12 @@ export async function handleMove(encodedGameId, userId, _body, query, handlerPer
 	await timed(
 		TIMING.GAME_MOVE,
 		handlerPerformance,
-		() => gameStore.set(gameObject._id, updatedGameObject))
+		() => gameStore.set(gameObject.storeGameId, updatedGameObject))
 
 	const actionableGame = Tic.actionable(updatedGame, userId)
 
 	await computeAndUpdateELO(actionableGame, handlerPerformance)
+		.catch(error => console.warn('error updating elo', error))
 
 	return actionableGame
 }

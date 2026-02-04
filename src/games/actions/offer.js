@@ -1,32 +1,27 @@
 import { gameStore } from '../../store/store.js'
+import { encodedUserIdFromString, fromEncodedUserId } from '../../users/util.js'
+import { SearchQueryList } from '../../util/search-query-list.js'
 import { timed, TIMING } from '../../util/timing.js'
 import { Tic } from '../tic.js'
 import { resolveFromStore } from '../util.js'
 
-/** @import { StoreUserId } from '../../types/store.js' */
-/** @import { EncodedGameId } from '../../types/public.js' */
-/** @import { ActionableGame } from '../tic.js' */
-/** @import { BodyFuture } from '@johntalton/http-util/body' */
-/** @import { TimingsInfo } from '@johntalton/http-util/headers' */
+/** @import { ActionHandlerFn } from './index.js' */
+/** @import { StoreGameEnvelope } from '../../types/store.game.js' */
+/** @import { StoreUserId } from '../../types/store.user.js' */
+/** @import { Offer } from '../tic.js' */
 
-/**
- * @param {EncodedGameId} encodedGameId
- * @param {StoreUserId} userId
- * @param {BodyFuture} _body
- * @param {URLSearchParams} query
- * @param {Array<TimingsInfo>} handlerPerformance
- * @returns {Promise<ActionableGame>}
- */
+/** @type {ActionHandlerFn} */
 export async function handleOffer(encodedGameId, userId, _body, query, handlerPerformance) {
 	const { game, gameObject } = await resolveFromStore(encodedGameId, userId, handlerPerformance)
 
-	const targets = [ ...query.getAll('t'), ...query.getAll('targets'), ...query.getAll('target') ]
-	const offer = { targets }
+	const targetsList = SearchQueryList.get(query, { plural: 'targets', singular: 'target', short: 't' })
+
+	/** @type {Offer<StoreUserId>} */
+	const offer = { targets: await Promise.all(targetsList.map(t => fromEncodedUserId(encodedUserIdFromString(t)))) }
+
 	const updatedGame = Tic.offer(game, userId, offer)
 
-	// const autoAccept = query.get('a') ?? query.get('accept')
-	// const updatedGame = Tic.accept(game, user)
-
+	/** @type {StoreGameEnvelope} */
 	const updatedGameObject = {
 		...gameObject,
 		meta: {
@@ -39,7 +34,7 @@ export async function handleOffer(encodedGameId, userId, _body, query, handlerPe
 	await timed(
 		TIMING.GAME_OFFER,
 		handlerPerformance,
-		() => gameStore.set(gameObject._id, updatedGameObject))
+		() => gameStore.set(gameObject.storeGameId, updatedGameObject))
 
 	return Tic.actionable(updatedGame, userId)
 }

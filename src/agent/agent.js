@@ -33,7 +33,7 @@ class BasicAI {
 
 				break
 			case 'pending':
-				// console.log('proposeAction - Pending ')
+				// console.log('proposeAction - Pending ', game)
 				if(game.offers.includes(agentUserId) && game.actions.includes('Accept')) {
 					// console.log('Accepting Offered Game from', game.owner)
 					const shouldAccept = await this.#shouldAccept(game)
@@ -47,7 +47,7 @@ class BasicAI {
 
 				break
 			case 'active':
-				// console.log('proposeAction - Active')
+				// console.log('proposeAction - Active', game)
 				if(game.active.includes(agentUserId)) {
 					// console.log('proposeAction - Active Agents Turn')
 
@@ -154,9 +154,13 @@ class GameAgent {
 			// console.log({ knownGames })
 
 			for (const knownGame of knownGames.games) {
-				const game = await this.#api.fetch(knownGame.id)
-				await this.#handleGame(game)
-					.catch(e => console.warn('error in list handler', e))
+				try {
+					const game = await this.#api.fetch(knownGame.id)
+					await this.#handleGame(game)
+				}
+				catch(e) {
+					console.warn('error in list handler', e.message, e)
+				}
 			}
 		}
 		catch(e) {
@@ -174,12 +178,12 @@ class GameAgent {
 		})
 		this.#sse?.addEventListener('error', error => {
 			// this could be a failure to open, or a scheduled reconnect
-			// console.log('sse error', error)
+			console.log('sse error', error.message)
 		})
 		this.#sse?.addEventListener('update', update => {
 			const { lastEventId, data } = update
 			const json = JSON.parse(data)
-			// console.log('sse update', json)
+			console.log('sse update', json)
 
 			this.#api.fetch(json.id)
 				.then(async game => {
@@ -204,4 +208,4 @@ class GameAgent {
 	}
 }
 
-const gameAgent = new GameAgent('user:Agent', 'token:access:agent', 'token:sse:agent', new BasicAI())
+const gameAgent = new GameAgent('U:user:Agent', 'token:access:agent', 'token:sse:agent', new BasicAI())

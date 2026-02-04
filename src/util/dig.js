@@ -39,6 +39,7 @@ export const METADATA = Symbol.for('METADATA')
  * @param {Map<string, string>} matches
  */
 export function _dig(route, key, keys, matches) {
+	// console.log('_DIG', key, keys, matches)
 	const next = route[key] ?? route[MATCH]
 	if(next === undefined) { return undefined }
 
@@ -57,6 +58,7 @@ export function _dig(route, key, keys, matches) {
  * @returns {DigResult}
  */
 export function dig(routes, method, path) {
+	// console.log('DIG', method, path)
 	const matches = new Map()
 	const [ key, ...keys ] = path.substring(1).split('/')
 	const leaf = _dig(routes, key, keys, matches)

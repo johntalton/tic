@@ -1,20 +1,22 @@
 /**
- * @typedef {[
- * string|EMPTY, string|EMPTY, string|EMPTY,
- * string|EMPTY, string|EMPTY, string|EMPTY,
- * string|EMPTY, string|EMPTY, string|EMPTY
+ * @template U
+ * @typedef { readonly [
+ * U|EMPTY, U|EMPTY, U|EMPTY,
+ * U|EMPTY, U|EMPTY, U|EMPTY,
+ * U|EMPTY, U|EMPTY, U|EMPTY
  * ]} GameBoard
  */
 
 /**
+ * @template U
  * @typedef {Object} Game
  * @property {STATES} state
- * @property {string} owner
- * @property {Array<string>} players
- * @property {Array<string>} offers
- * @property {Array<string>} active
+ * @property {U} owner
+ * @property {Array<U>} players
+ * @property {Array<U>} offers
+ * @property {Array<U>} active
  *
- * @property {GameBoard} board
+ * @property {GameBoard<U>} board
  *
  * @property {string} [message]
  * @property {string} [reason]
@@ -22,9 +24,9 @@
 
 
 /**
+ * @template U
  * @typedef {Object} Offer
- * @property {string} [target]
- * @property {Array<string>} [targets]
+ * @property {Array<U>} targets
  */
 
 /**
@@ -33,22 +35,25 @@
  */
 
 /**
+ * @template U
  * @typedef {Object} Winner
- * @property {string|EMPTY} user
+ * @property {U|EMPTY} user
  * @property {string} [name]
  */
 
 /**
+ * @template U
  * @typedef {Object} Resolution
  * @property {boolean} full
  * @property {boolean} resolved
  * @property {boolean} draw
  * @property {boolean} win
- * @property {Winner} winner
+ * @property {Winner<U>} winner
  */
 
 /**
- * @typedef {Game & { resolution: Resolution, actions: Array<ACTIONS> }} ActionableGame
+ * @template U
+ * @typedef {Game<U> & { resolution: Resolution<U>, actions: Array<ACTIONS> }} ActionableGame
  */
 
 /** @enum {string} */
@@ -89,28 +94,33 @@ const USER_STATE_ACTIONS = {
 }
 
 /**
- * @param {Game} game
- * @param {string} user
+ * @template U
+ * @param {Game<U>} game
+ * @param {U} user
  */
 export function isOwner(game, user) { return game.owner === user }
 /**
- * @param {Game} game
- * @param {string} user
+ * @template U
+ * @param {Game<U>} game
+ * @param {U} user
  */
 export function isPlayer(game, user) { return game.players?.includes(user) }
 /**
- * @param {Game} game
- * @param {string} user
+ * @template U
+ * @param {Game<U>} game
+ * @param {U} user
  */
 export function isChallenger(game, user) { return game.offers?.includes(user) }
 /**
- * @param {Game} game
- * @param {string} user
+ * @template U
+ * @param {Game<U>} game
+ * @param {U} user
  */
 export function isCurrentActivePlayer(game, user) { return game.active?.includes(user)  }
 /**
- * @param {Game} game
- * @param {string} user
+ * @template U
+ * @param {Game<U>} game
+ * @param {U} user
  */
 export function isViewable(game, user) {
 	return isOwner(game, user)
@@ -120,30 +130,37 @@ export function isViewable(game, user) {
 }
 
 /**
- * @param {Game} game
- * @param {string} user
- * @returns {Array<string>}
+ * @template U
+ * @param {Game<U>} game
+ * @param {U} user
+ * @returns {Array<U>}
  */
 export function roundRobinPlayer(game, user) {
 	const currentIndex = game.players.indexOf(user)
 	if(currentIndex < 0) { return [] }
 	const nextIndex = (currentIndex + 1) % game.players.length
-	return [ game.players[nextIndex] ]
+	const player = game.players[nextIndex]
+	if(player === undefined) { return [] }
+	return [ player ]
 }
 
 /**
- * @param {Array<string>} players
- * @returns {string}
+ * @template U
+ * @param {Array<U>} players
+ * @returns {Array<U>}
  */
 export function randomPlayer(players) {
+	if(players.length <= 0) { return [] }
 	const index = Math.round(Math.random() * (players.length - 1))
-	return players[index]
+	if(players[index] === undefined) { return [] }
+	return [ players[index] ]
 }
 
 export class Action {
 	/**
-	 * @param {Game} game
-	 * @param {string} user
+	 * @template U
+	 * @param {Game<U>} game
+	 * @param {U} user
 	 * @returns {Array<ACTIONS>}
 	 */
 	static for(game, user) {
@@ -176,7 +193,10 @@ export const WIN_CONDITIONS = [
 ]
 
 export class Board {
-	/** @returns {GameBoard} */
+	/**
+	 * @template U
+	 * @returns {GameBoard<U>}
+	 */
 	static emptyBoard() { return [
 		EMPTY, EMPTY, EMPTY,
 		EMPTY, EMPTY, EMPTY,
@@ -184,8 +204,9 @@ export class Board {
 	]}
 
 	/**
-	 * @param {GameBoard} board
-	 * @returns {Winner}
+	 * @template U
+	 * @param {GameBoard<U>} board
+	 * @returns {Winner<U>}
 	 */
 	static winner(board) {
 		for(const { name, condition } of WIN_CONDITIONS) {
@@ -198,11 +219,15 @@ export class Board {
 		return { user: EMPTY }
 	}
 
-	/** @param {GameBoard} board  */
+	/**
+	 * @template U
+	 * @param {GameBoard<U>} board
+	 */
 	static isFull(board) { return !board.includes(EMPTY) }
 
 	/**
-	 * @param {Winner} winner
+	 * @template U
+	 * @param {Winner<U>} winner
 	 */
 	static #isWin(winner) { return winner.user !== EMPTY }
 
@@ -218,18 +243,28 @@ export class Board {
 	 */
 	static #isResolved(full, win) { return full || win }
 
-	/** @param {GameBoard} board  */
+	/**
+	 * @template U
+	 * @param {GameBoard<U>} board
+	 */
 	static isWin(board) { return Board.#isWin(Board.winner(board)) }
 
-	/** @param {GameBoard} board  */
+	/**
+	 * @template U
+	 * @param {GameBoard<U>} board
+	 */
 	static isDraw(board) { return Board.#isDraw(Board.isFull(board), Board.isWin(board)) }
 
-	/** @param {GameBoard} board  */
+	/**
+	 * @template U
+	 * @param {GameBoard<U>} board
+	 */
 	static isResolved(board) { return Board.#isResolved(Board.isFull(board), Board.isWin(board)) }
 
 	/**
-	 * @param {GameBoard} board
-	 * @returns {Resolution}
+	 * @template U
+	 * @param {GameBoard<U>} board
+	 * @returns {Resolution<U>}
 	 */
 	static resolution(board) {
 		const winner = Board.winner(board)
@@ -250,9 +285,10 @@ export class Board {
 
 export class Tic {
 	/**
-	 * @param {Game} game
-	 * @param {string} user
-	 * @returns {ActionableGame}
+	 * @template U
+	 * @param {Game<U>} game
+	 * @param {U} user
+	 * @returns {ActionableGame<U>}
 	 */
 	static actionable(game, user) {
 		return {
@@ -263,8 +299,9 @@ export class Tic {
 	}
 
 	/**
-	 * @param {string} user
-	 * @returns {Game}
+	 * @template U
+	 * @param {U} user
+	 * @returns {Game<U>}
 	 */
 	static create(user) {
 		// console.log('Tic::create', user)
@@ -286,16 +323,16 @@ export class Tic {
 	// owner
 
 	/**
-	 * @param {Game} game
-	 * @param {string} user
-	 * @param {Offer} offer
-	 * @returns {Game}
+	 * @template U
+	 * @param {Game<U>} game
+	 * @param {U} user
+	 * @param {Offer<U>} offer
+	 * @returns {Game<U>}
 	 */
 	static offer(game, user, offer) {
 		// console.log('Tic::offer(owner)', game, user, offer)
 
-		const { targets: targetsMaybe, target } = offer
-		const targets = targetsMaybe ?? [ target ]
+		const { targets } = offer
 		if(targets.length <= 0) { return { ...game, message: 'no target(s) in offer' }}
 
 		if(!isOwner(game, user)) { return { ...game, message: 'not the owner' } }
@@ -318,10 +355,11 @@ export class Tic {
 	}
 
 	/**
-	 * @param {Game} game
-	 * @param {string} user
+	 * @template U
+	 * @param {Game<U>} game
+	 * @param {U} user
 	 * @param {string} reason
-	 * @returns {Game}
+	 * @returns {Game<U>}
 	 */
 	static close(game, user, reason) {
 		// console.log('Tic::close(owner)', game, user)
@@ -341,10 +379,11 @@ export class Tic {
 	// player
 
 	/**
-	 * @param {Game} game
-	 * @param {string} user
+	 * @template U
+	 * @param {Game<U>} game
+	 * @param {U} user
 	 * @param {Move} move
-	 * @returns {Game}
+	 * @returns {Game<U>}
 	 */
 	static move(game, user, move) {
 		// console.log('Tic::move(player)', game, user, move)
@@ -357,6 +396,8 @@ export class Tic {
 
 		if(game.board[position] !== EMPTY) { return { ...game, message: 'invalid move' } }
 
+		/** @type {GameBoard<U>} */
+		// @ts-ignore
 		const updatedBoard = game.board.with(position, user)
 		const resolved = Board.isResolved(updatedBoard)
 
@@ -374,9 +415,10 @@ export class Tic {
 	}
 
 	/**
-	 * @param {Game} game
-	 * @param {string} user
-	 * @returns {Game}
+	 * @template U
+	 * @param {Game<U>} game
+	 * @param {U} user
+	 * @returns {Game<U>}
 	 */
 	static forfeit(game, user) {
 		// console.log('Tic::forfeit(player)', game, user)
@@ -397,9 +439,10 @@ export class Tic {
 	// challenger
 
 	/**
-	 * @param {Game} game
-	 * @param {string} user
-	 * @returns {Game}
+	 * @template U
+	 * @param {Game<U>} game
+	 * @param {U} user
+	 * @returns {Game<U>}
 	 */
 	static accept(game, user) {
 		// console.log('Tic::accept(challenger)', game, user)
@@ -412,7 +455,7 @@ export class Tic {
 		const offers = game.offers.filter(offer => offer !== user)
 		const players = new Set([ ...game.players, user ]).values().toArray()
 		const state = players.length === NUM_PLAYERS_TO_ACTIVATE ? STATES.ACTIVE : game.state
-		const active = state === STATES.ACTIVE ? [ randomPlayer(players) ]  : []
+		const active = state === STATES.ACTIVE ? randomPlayer(players) : []
 
 		return {
 			...game,
@@ -424,9 +467,10 @@ export class Tic {
 	}
 
 	/**
-	 * @param {Game} game
-	 * @param {string} user
-	 * @returns {Game}
+	 * @template U
+	 * @param {Game<U>} game
+	 * @param {U} user
+	 * @returns {Game<U>}
 	 */
 	static decline(game, user) {
 		// console.log('Tic::decline(challenger)', game, user)

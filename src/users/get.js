@@ -1,20 +1,22 @@
 import { MATCHES } from '../route.js'
-import { isStoreUserId, userStore } from '../store/couch/user.js'
+import { userStore } from '../store/store.js'
+import { encodedUserId, fromEncodedUserId, isEncodedUserId } from '../users/util.js'
 import { timed, TIMING } from '../util/timing.js'
 
 /** @import { HandlerFn } from '../util/dig.js' */
-/** @import { IdentifiableUser } from '../types/public.js' */
+/** @import { IdentifiableUser } from '../types/public.user.js' */
 
 /** @type {HandlerFn<IdentifiableUser>} */
 export async function getUser(matches, sessionUser, _body, _query, _stream, handlerPerformance) {
-	const lookupUserId = matches.get(MATCHES.USER_ID)
-	if(lookupUserId === undefined) { throw new Error('unknown user') }
-	if(!isStoreUserId(lookupUserId)) { throw new Error('invalid user id brand') }
+	const lookupEncodedUserId = matches.get(MATCHES.USER_ID)
 
-	if(sessionUser.tokens.access === undefined) { throw new Error('access token required') }
+	if(!isEncodedUserId(lookupEncodedUserId)) { throw new Error('invalid user id brand') }
+
 	const userId = await userStore.fromToken(sessionUser.tokens.access, handlerPerformance)
 
-	const isSelf = userId === lookupUserId
+	const lookupStoreUserId = await fromEncodedUserId(lookupEncodedUserId)
+
+	const isSelf = userId === lookupStoreUserId
 	if(!isSelf) {
 		// should we limit access
 	}
@@ -22,14 +24,13 @@ export async function getUser(matches, sessionUser, _body, _query, _stream, hand
 	const requestedUserObject = await timed(
 		TIMING.USER_GET,
 		handlerPerformance,
-		() => userStore.get(lookupUserId))
-
-	if(requestedUserObject === undefined) { throw new Error('unknown user') }
+		() => userStore.get(lookupStoreUserId))
 
 	const { user: requestedUser } = requestedUserObject
 
 	return {
-		id: lookupUserId,
-		...requestedUser
+		id: lookupEncodedUserId,
+		...requestedUser,
+		friends: await Promise.all(requestedUser.friends.map(encodedUserId))
 	}
 }

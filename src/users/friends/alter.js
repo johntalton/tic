@@ -1,8 +1,9 @@
-import { userStore } from '../../store/couch/user.js'
+import { userStore } from '../../store/store.js'
 import { timed, TIMING } from '../../util/timing.js'
+import { encodedUserId } from '../util.js'
 
-/** @import { StoreUserId } from '../../types/store.js' */
-/** @import { FriendsListing } from '../../types/public.js' */
+/** @import { FriendsListing } from '../../types/public.user.js' */
+/** @import { StoreUserId } from '../../types/store.user.js' */
 /** @import { TimingsInfo } from '@johntalton/http-util/headers' */
 
 /**
@@ -26,7 +27,7 @@ async function alterFriend(userId, add, friendId, handlerPerformance) {
 	if(add) {
 		if(updatedFriends.has(friendId)) {
 			// already friends
-			return { friends }
+			return { friends: await Promise.all(friends.map(encodedUserId)) }
 		}
 
 		updatedFriends.add(friendId)
@@ -34,7 +35,7 @@ async function alterFriend(userId, add, friendId, handlerPerformance) {
 	else {
 		if(updatedFriends.has(userId)) {
 			// not friends already
-			return { friends }
+			return { friends: await Promise.all(friends.map(encodedUserId)) }
 		}
 
 		updatedFriends.delete(friendId)
@@ -59,7 +60,7 @@ async function alterFriend(userId, add, friendId, handlerPerformance) {
 
 	if(!ok) { throw new Error('updating friends not ok') }
 
-	return { friends: [ ...updatedFriends ] }
+	return { friends: await Promise.all([ ...updatedFriends ].map(encodedUserId)) }
 }
 
 /**

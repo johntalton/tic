@@ -37,18 +37,7 @@ import { requestBody } from '@johntalton/http-util/body'
 const {
   HTTP2_HEADER_PATH,
   HTTP2_HEADER_STATUS,
-	HTTP2_HEADER_METHOD,
-	HTTP2_HEADER_AUTHORIZATION
-} = http2.constants
-
-const {
-	HTTP2_METHOD_GET,
-	HTTP2_METHOD_POST,
-	HTTP2_METHOD_PUT,
-	HTTP2_METHOD_DELETE,
-	HTTP2_METHOD_HEAD,
-	HTTP2_METHOD_OPTIONS,
-	HTTP2_METHOD_PATCH
+	HTTP2_HEADER_METHOD
 } = http2.constants
 
 /**
@@ -59,6 +48,7 @@ const {
  * @property {string} [mode]
  * @property {string} [cache]
  * @property {string} [credentials]
+ * @property {ArrayBufferLike|ArrayBufferView|Blob|FormData|URLSearchParams|string} [body]
  */
 
 export class Fetch2 {
@@ -72,6 +62,7 @@ export class Fetch2 {
 
 		const method = options?.method ?? 'GET'
 		const headers = options?.headers ?? []
+		const body = options?.body
 		const signal = options?.signal
 		const url = new URL(urlOrString)
 
@@ -88,6 +79,7 @@ export class Fetch2 {
 				[HTTP2_HEADER_PATH]: `${url.pathname}${url.search}`,
 				[HTTP2_HEADER_METHOD]: method
 			})
+			if(body !== undefined) { req.write(body) }
 			req.end()
 			req.on('error', error => reject(error))
 			promise.finally(() => client.close())

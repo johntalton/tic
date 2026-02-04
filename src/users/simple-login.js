@@ -1,11 +1,12 @@
-import { storeUserIdFromString, userStore } from '../store/couch/user.js'
+import { storeUserIdFromString, userStore } from '../store/store.js'
 import { ID } from '../util/id.js'
-import { isSingleGrapheme } from './grapheme.js'
+import { encodedUserId } from './util.js'
+// import { isSingleGrapheme } from './grapheme.js'
 
 export const DEFAULT_ELO = 100
 
 /** @import { HandlerFn } from '../util/dig.js' */
-/** @import { SigninInfo } from '../types/public.js' */
+/** @import { SigninInfo } from '../types/public.login.js' */
 
 /** @type {HandlerFn<SigninInfo>} */
 export async function handleSimpleLogin(matches, sessionUser, body, query, _stream, handlerPerformance) {
@@ -57,7 +58,7 @@ export async function handleSimpleLogin(matches, sessionUser, body, query, _stre
 		// console.log('created user', user)
 
 		return {
-			id: newUserId,
+			id: await encodedUserId(newUserId),
 			displayName,
 			accessToken,
 			sseToken
