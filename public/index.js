@@ -368,6 +368,8 @@ function handleSimpleLogout(event) {
 	USER.id = undefined
 	USER.displayName = undefined
 	USER.accessToken = undefined
+
+	localStorage.removeItem('simple-login')
 }
 
 
@@ -430,6 +432,14 @@ async function onContentLoadedAsync(params) {
 	if(simpleUserAutoLogin()) {
 		handleOnLoggedIn()
 	}
+
+	//
+	// const po = new PerformanceObserver((list) => {
+	// 	for (const entry of list.getEntries()) {
+	// 		console.log('Navigation Performance', entry.serverTiming)
+	// 	}
+	// })
+	// po.observe({type: 'resource', buffered: true})
 }
 
 function onContentLoaded() {

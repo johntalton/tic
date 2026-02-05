@@ -111,7 +111,7 @@ export class CanapeGameStore {
 				...value,
 				storeGameId: undefined,
 				storeGameRevision: undefined,
-				['settee:id']: id, //('storeGameId' in value) ? value.storeGameId : undefined,
+				['settee:id']: ('storeGameId' in value) ? value.storeGameId : undefined,
 				['settee:revision']: ('storeGameRevision' in value) ? value.storeGameRevision : undefined
 			})
 		})

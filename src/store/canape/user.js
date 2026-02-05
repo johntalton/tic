@@ -25,7 +25,23 @@ export class CanapeUserStore {
 	 * @returns {Promise<StoreUserEnvelope|undefined>}
 	 */
 	async create(id, userObject) {
-		throw new Error('create unimplemented')
+		const response = await Fetch2.fetch(`${this.#url}/${id}`, {
+			method: 'POST',
+			headers: {
+				'content-type': 'application/json',
+				'accept': 'application/json'
+			},
+			body: JSON.stringify(userObject),
+			signal: AbortSignal.timeout(200)
+		})
+
+		if(!response.ok) {
+			// const message = await response.text()
+			// console.log('create not ok', message, response)
+			throw new Error('create user not ok')
+		}
+
+		return response.json()
 	}
 
 	/**

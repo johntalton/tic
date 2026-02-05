@@ -35,7 +35,7 @@ export async function handleSimpleLogin(matches, sessionUser, body, query, _stre
 				'displayName': displayName,
 				// 'glyph': glyph,
 				'friends': [
-					// 'user:Agent'
+					storeUserIdFromString('user:Agent')
 				],
 				'elo': DEFAULT_ELO
 			},
