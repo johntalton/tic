@@ -240,7 +240,7 @@ export class EventSource extends EventTarget {
 		if(this.#reconnectTimer) { clearTimeout(this.#reconnectTimer) }
 		if(this.#readyState === CLOSED) { return }
 		if(this.#controller) {
-			this.#controller.abort()
+			this.#controller.abort('closed')
 			this.#controller = undefined
 		}
 		this.#readyState = CLOSED
@@ -305,8 +305,8 @@ export class EventSource extends EventTarget {
 
 				// console.log(response)
 				const stream = bodyReader
-					.pipeThrough(new TextDecoderStream())
-					.pipeThrough(eventSourceTransform())
+					.pipeThrough(new TextDecoderStream(), { signal: this.#controller?.signal })
+					.pipeThrough(eventSourceTransform(), { signal: this.#controller?.signal })
 					// .pipeTo(eventSourceWritable())
 
 				for await (const { event, retry, comment } of stream) {
@@ -337,7 +337,7 @@ export class EventSource extends EventTarget {
 				this.#scheduleReconnect()
 			})
 			.catch(error => {
-				// console.log('fetch processing error', error.message, this.#readyState)
+				console.log('fetch processing error', error, this.#reconnectTimer, this.#readyState)
 				this.#controller = undefined
 
 				// if closed no reconnect

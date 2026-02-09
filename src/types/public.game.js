@@ -20,3 +20,4 @@
  * @property {Array<GameListingItem>} games
  */
 
+export {}

@@ -78,9 +78,10 @@ export class Fetch2 {
 				...headers,
 				[HTTP2_HEADER_PATH]: `${url.pathname}${url.search}`,
 				[HTTP2_HEADER_METHOD]: method
-			})
+			}, { signal })
 			if(body !== undefined) { req.write(body) }
 			req.end()
+
 			req.on('error', error => reject(error))
 			promise.finally(() => client.close())
 
