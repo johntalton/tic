@@ -1,10 +1,12 @@
 import { ServerSentEvents } from '@johntalton/sse-util'
 
-import { isViewable } from './tic.js'
 import { userStore } from '../store/store.js'
+import { isViewable } from './tic.js'
 import { identifiableGameId } from './util.js'
 
 /** @import { HandlerFn } from '../util/dig.js' */
+
+const MILLISECONDS_PER_SECOND = 1000
 
 /** @type {HandlerFn<void>} */
 export async function handleGameFeed(_matches, sessionUser, _body, _query, stream, handlerPerformance, shutdownSignal) {
@@ -16,10 +18,12 @@ export async function handleGameFeed(_matches, sessionUser, _body, _query, strea
 		.catch(e => {
 			// console.warn('invalid user for feed')
 
-			ServerSentEvents.messageToEventStreamLines({
-				comment: `Offline`,
-				retryMs: 1000 * 60,
-			}).forEach(line => stream.write(line))
+			for(const line of ServerSentEvents.messageToEventStreamLines({
+				comment: 'Offline',
+				retryMs: MILLISECONDS_PER_SECOND * 60,
+			})) {
+				stream.write(line)
+			}
 
 			stream.end()
 
@@ -54,10 +58,12 @@ export async function handleGameFeed(_matches, sessionUser, _body, _query, strea
 	})
 
 	// console.log('new Game SSE for', user)
-	ServerSentEvents.messageToEventStreamLines({
+	for(const line of ServerSentEvents.messageToEventStreamLines({
 		comment: `SSE for ${userId}`,
-		retryMs: 1000 * 10
-	}).forEach(line => stream.write(line))
+		retryMs: MILLISECONDS_PER_SECOND * 10
+	})) {
+		stream.write(line)
+	}
 
 	channel.onmessage = msg => {
 		const { data } = msg
@@ -70,11 +76,14 @@ export async function handleGameFeed(_matches, sessionUser, _body, _query, strea
 		identifiableGameId(storeGameId)
 			.then(id => {
 				console.log('SSE event send id', id)
-				ServerSentEvents.messageToEventStreamLines({
+				for(const line of ServerSentEvents.messageToEventStreamLines({
 					// id: 1,
 					event: 'update',
 					data: [ JSON.stringify({ id }) ]
-				}).forEach(line => stream.write(line))
+				})) {
+					stream.write(line)
+				}
 			})
+			.catch(e => console.log('error handling sse game message', e))
 	}
 }

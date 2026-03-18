@@ -15,9 +15,10 @@ export class SearchQueryList {
 	 * @param {SearchQueryListOptions} options
 	 */
 	static get(query, options) {
-		const plural = options.plural
-		const singular = options.singular
-		const short = options.short
+		const { plural, singular, short } = options
+		// const plural = options.plural
+		// const singular = options.singular
+		// const short = options.short
 		const separator = options.separator ?? DEFAULT_SEPARATOR
 
 		const pluralString = plural ? query.get(plural) ?? EMPTY_STRING : EMPTY_STRING

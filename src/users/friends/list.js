@@ -1,6 +1,6 @@
 import { MATCHES } from '../../route.js'
 import { userStore } from '../../store/store.js'
-import { timed, TIMING } from '../../util/timing.js'
+import { TIMING, timed } from '../../util/timing.js'
 import { encodedUserId, fromEncodedUserId, isEncodedUserId } from '../util.js'
 
 /** @import { HandlerFn } from '../../util/dig.js' */

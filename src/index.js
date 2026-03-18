@@ -12,8 +12,10 @@ const {
 	SSL_OP_NO_TLSv1_2,
 } = crypto.constants
 
+const DEFAULT_PORT = 8443
+
 const HOST = process.env['HOST']
-const PORT = process.env['PORT'] ?? 8443
+const PORT = process.env['PORT'] ?? DEFAULT_PORT
 const IPV6_ONLY = process.env['IPV6_ONLY'] ?? false
 const CREDENTIALS = (process.env['CREDENTIALS'] ?? '').split(',').map(c => c.trim()).filter(c => c.length > 0)
 
@@ -78,9 +80,9 @@ const shutdownSignal = controller.signal
 const server = http2.createSecureServer(options)
 // server.setTimeout(200)
 
-CREDENTIALS.forEach(credential => {
+for(const credential of CREDENTIALS) {
 	server.addContext(credential, CredentialsCache.get(credential))
-})
+}
 
 // server.on('timeout', () => console.warn('Server Timeout'))
 server.on('tlsClientError', (error, socket) => {

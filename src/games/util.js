@@ -1,9 +1,8 @@
-import { isViewable, EMPTY } from './tic.js'
-import { ELO, WIN, LOSE, DRAW } from './elo.js'
-import { gameStore, storeGameIdFromString } from '../store/store.js'
-import { userStore, storeUserIdFromString  } from '../store/store.js'
-import { DisposableTimer, TIMING } from '../util/timing.js'
+import { gameStore, storeGameIdFromString, storeUserIdFromString, userStore } from '../store/store.js'
 import { encodedUserId } from '../users/util.js'
+import { DisposableTimer, TIMING } from '../util/timing.js'
+import { DRAW, ELO, LOSE, WIN } from './elo.js'
+import { EMPTY, isViewable } from './tic.js'
 
 // const KEY = await crypto.subtle.generateKey({
 // 		name: 'AES-GCM',

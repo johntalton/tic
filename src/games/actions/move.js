@@ -1,6 +1,6 @@
 import { gameStore } from '../../store/store.js'
-import { timed, TIMING } from '../../util/timing.js'
-import { Tic, EMPTY } from '../tic.js'
+import { TIMING, timed } from '../../util/timing.js'
+import { EMPTY, Tic } from '../tic.js'
 import { computeAndUpdateELO, resolveFromStore } from '../util.js'
 
 /** @import { ActionHandlerFn } from './index.js' */
@@ -12,7 +12,7 @@ export async function handleMove(encodedGameId, userId, _body, query, handlerPer
 
 	const positionStr = query.get('position') ?? query.get('p')
 	if(positionStr === null) { throw new Error('missing move position') }
-	const position = parseInt(positionStr, 10)
+	const position = Number.parseInt(positionStr, 10)
 	const positionPlayerId = game.board[position]
 	if(positionPlayerId !== EMPTY) { throw new Error('invalid move position') }
 

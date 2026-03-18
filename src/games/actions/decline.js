@@ -1,5 +1,5 @@
 import { gameStore } from '../../store/store.js'
-import { timed, TIMING } from '../../util/timing.js'
+import { TIMING, timed } from '../../util/timing.js'
 import { Tic } from '../tic.js'
 import { resolveFromStore } from '../util.js'
 

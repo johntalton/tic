@@ -1,8 +1,7 @@
+import { gameStore, storeGameIdFromString, userStore } from '../store/store.js'
+import { TIMING, timed } from '../util/timing.js'
 import { Tic } from './tic.js'
-import { gameStore, storeGameIdFromString } from '../store/store.js'
-import { userStore } from '../store/store.js'
 import { identifiableGame } from './util.js'
-import { timed, TIMING } from '../util/timing.js'
 
 /** @import { HandlerFn } from '../util/dig.js' */
 /** @import { IdentifiableActionableGame } from '../types/public.game.js' */

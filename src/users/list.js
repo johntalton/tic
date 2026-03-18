@@ -1,7 +1,7 @@
 import { userStore } from '../store/store.js'
-import { timed, TIMING } from '../util/timing.js'
-import { encodedUserId, encodedUserIdFromString, fromEncodedUserId } from './util.js'
 import { SearchQueryList } from '../util/search-query-list.js'
+import { TIMING, timed  } from '../util/timing.js'
+import { encodedUserId, encodedUserIdFromString, fromEncodedUserId  } from './util.js'
 
 /** @import { HandlerFn } from '../util/dig.js' */
 /** @import { UserInfoList } from '../types/public.user.js' */

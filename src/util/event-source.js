@@ -1,11 +1,16 @@
-import { SSE_BOM, ENDING, SSE_MIME } from '@johntalton/sse-util'
+/** biome-ignore-all lint/nursery/noExcessiveLinesPerFile: <explanation> */
+/** biome-ignore-all lint/style/useExportsLast: <explanation> */
+
+import { SSE_BOM, ENDING } from '@johntalton/sse-util'
+
+//
 import { Fetch2 } from '../agent/fetch2.js'
 
 export const CONNECTING = 0
 export const OPEN = 1
 export const CLOSED = 2
 
-export const DEFAULT_RECONNECT_INTERVAL_MS = 1000 * 3
+export const DEFAULT_RECONNECT_INTERVAL_MS = 3000
 
 export const CONTENT_TYPE_EVENT_STREAM = 'text/event-stream'
 
@@ -73,8 +78,8 @@ function eventSourceTransform() {
 		// If the field name is "retry"
 		else if(field === FIELD.RETRY) {
 			// const valid = [ ...value ].map(v => !isNaN(v)).reduce((acc, v) => acc && v, true)
-			const num = parseInt(value, BASE_10)
-			if(!isNaN(num) && Number.isInteger(num) && (num >= 0)) {
+			const num = Number.parseInt(value, BASE_10)
+			if(!Number.isNaN(num) && Number.isInteger(num) && (num >= 0)) {
 				// console.log('retry', num)
 				return { retry: num }
 			}
@@ -108,9 +113,10 @@ function eventSourceTransform() {
 			nextEvent = undefined
 			return { comment }
 		}
+
 		// If the line contains a U+003A COLON character (:)
 		// Process the field
-		else if(colon > 0) {
+		if(colon > 0) {
 			const space = line[colon + 1] === SPACE
 			const field = line.substring(0, colon)
 			const value = line.substring(colon + 1 + (space ? 1 : 0))
@@ -125,13 +131,14 @@ function eventSourceTransform() {
 
 	return new TransformStream({
 		start(controller) {
-
+			//
 		},
 
 		transform(chunk, controller) {
 			accumulator += chunk
 
-			var cr, lf
+			var cr
+			var lf
 			do {
 				if(!firstLine) { accumulator = accumulator.substring(SSE_BOM.length - 1) }
 

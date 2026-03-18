@@ -1,7 +1,7 @@
+import { gameStore } from '../../store/store.js'
+import { TIMING, timed } from '../../util/timing.js'
 import { Tic } from '../tic.js'
 import { resolveFromStore } from '../util.js'
-import { gameStore } from '../../store/store.js'
-import { timed, TIMING } from '../../util/timing.js'
 
 /** @import { ActionHandlerFn } from './index.js' */
 /** @import { StoreGameEnvelope } from '../../types/store.game.js' */

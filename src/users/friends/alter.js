@@ -1,5 +1,5 @@
 import { userStore } from '../../store/store.js'
-import { timed, TIMING } from '../../util/timing.js'
+import { TIMING, timed } from '../../util/timing.js'
 import { encodedUserId } from '../util.js'
 
 /** @import { FriendsListing } from '../../types/public.user.js' */

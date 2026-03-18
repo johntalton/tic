@@ -1,6 +1,11 @@
 import {
-	GET, POST, PATCH, DELETE,
-	MATCH, NAME, METADATA
+	DELETE,
+	GET,
+	MATCH,
+	METADATA,
+	NAME,
+	PATCH,
+	POST,
 } from './util/dig.js'
 
 import {

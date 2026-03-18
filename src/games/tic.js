@@ -1,3 +1,6 @@
+/** biome-ignore-all lint/nursery/noExcessiveClassesPerFile: <explanation> */
+/** biome-ignore-all lint/nursery/noExcessiveLinesPerFile: <explanation> */
+
 /**
  * @template U
  * @typedef { readonly [
@@ -74,7 +77,7 @@ export const ACTIONS = {
 	OFFER: 'Offer',
 }
 
-const USER_STATE_ACTIONS = {
+export const USER_STATE_ACTIONS = {
 	owner: {
 		[STATES.NEW]: [ACTIONS.CLOSE, ACTIONS.OFFER],
 		[STATES.PENDING]: [ACTIONS.CLOSE, ACTIONS.OFFER],
@@ -343,7 +346,7 @@ export class Tic {
 			.difference(new Set(game.players))
 			.values()
 			.toArray()
-			.filter(offer => offer !== undefined)
+			.filter(o => o !== undefined)
 
 		const state = STATES.PENDING
 
@@ -397,7 +400,7 @@ export class Tic {
 		if(game.board[position] !== EMPTY) { return { ...game, message: 'invalid move' } }
 
 		/** @type {GameBoard<U>} */
-		// @ts-ignore
+		// @ts-expect-error
 		const updatedBoard = game.board.with(position, user)
 		const resolved = Board.isResolved(updatedBoard)
 

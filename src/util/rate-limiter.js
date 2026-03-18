@@ -1,6 +1,7 @@
 /**
  * @import { RateLimitPolicyInfo } from '@johntalton/http-util/headers'
  */
+/** biome-ignore-all lint/nursery/noExcessiveClassesPerFile: <explanation> */
 
 /**
  * @typedef {Object} BucketInfo
@@ -8,6 +9,7 @@
  * @property {number} lastRefillTime
  */
 
+const MILLISECONDS_PER_SECOND = 1000
 
 export class Bucket {
 	/**
@@ -22,10 +24,10 @@ export class Bucket {
 		const elapsedTimeMs = (now - bucket.lastRefillTime)
 		// console.log(`${policy.name}: elapsed since last refile: ${elapsedTimeMs} Ms`)
 
-		if(elapsedTimeMs > (policy.windowSeconds * 1000)) {
+		if(elapsedTimeMs > (policy.windowSeconds * MILLISECONDS_PER_SECOND)) {
 			// console.log(`${policy.name}: refill`)
 
-			const quotaPerMs = policy.quota / policy.windowSeconds / 1000
+			const quotaPerMs = policy.quota / policy.windowSeconds / MILLISECONDS_PER_SECOND
 			const tokensPerElapsedTime = Math.round(quotaPerMs * elapsedTimeMs)
 
 			const tokensNeeded = Math.min(tokensPerElapsedTime, policy.size - bucket.tokenCount)
@@ -42,7 +44,7 @@ export class Bucket {
 			return { exhausted: false, }
 		}
 
-		const timeUntilRefillMs = Math.round(Math.max(0, policy.windowSeconds - (elapsedTimeMs / 1000)))
+		const timeUntilRefillMs = Math.round(Math.max(0, policy.windowSeconds - (elapsedTimeMs / MILLISECONDS_PER_SECOND)))
 		// console.log(`${policy.name}: limited until ${timeUntilRefillMs} S`)
 
 		return { exhausted: true, resetSeconds: timeUntilRefillMs }

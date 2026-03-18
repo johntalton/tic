@@ -1,3 +1,4 @@
+/** biome-ignore-all lint/nursery/noExcessiveLinesPerFile: <explanation> */
 import http2 from 'node:http2'
 import { TLSSocket } from 'node:tls'
 
@@ -93,7 +94,7 @@ const ipRequestPerSecondPolicy = {
 	quota: 25,
 	windowSeconds: 15,
 	size: 50,
-	quotaUnits: 1
+	quotaUnits: 'request'
 }
 
 /**
@@ -289,7 +290,7 @@ async function handleStreamAsync(stream, header, _flags, shutdownSignal) {
 	//
 	// setup future body
 	//
-	const contentLength = parseInt(fullContentLength, 10)
+	const contentLength = Number.parseInt(fullContentLength, 10)
 	const body = requestBody(stream, {
 		signal: AbortSignal.timeout(BODY_TIMEOUT_SEC),
 		contentType,
@@ -353,7 +354,7 @@ async function handleStreamAsync(stream, header, _flags, shutdownSignal) {
 		})
 		.catch(e => {
 			console.log('Error', e)
-			Response.error(stream, 'Error: ' + e.message, meta)
+			Response.error(stream, e.message, meta)
 		})
 }
 

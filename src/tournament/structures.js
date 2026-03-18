@@ -1,4 +1,5 @@
 /** @import { EncodedUserId, IdentifiableUser } from '../types/public.user.js' */
+/** biome-ignore-all lint/nursery/noExcessiveClassesPerFile: <explanation> */
 
 /** @import {
 	BracketState,

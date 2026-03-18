@@ -1,6 +1,6 @@
-import { CouchContinuous, DEFAULT_RECONNECT_INTERVAL_MS } from './couch-continuous.js'
-import { COUCH_STATUS_NOT_MODIFIED, CouchUtil } from './couch.js'
 import { storeGameIdFromString } from '../store.js'
+import { COUCH_STATUS_NOT_MODIFIED, CouchUtil } from './couch.js'
+import { CouchContinuous, DEFAULT_RECONNECT_INTERVAL_MS } from './couch-continuous.js'
 
 /** @import { CouchGenericRows, CouchStoreGame } from '../../types/couch.js' */
 /** @import { StoreGameId, StoreGameEnvelope, StoreGameEnvelopeBase, StoreGameListItem, StoreGameListItemRow} from '../../types/store.game.js' */
@@ -22,9 +22,10 @@ if(password === undefined) { throw new Error('unspecified couch password') }
 
 const authorizationHeaders = CouchUtil.basicAuthHeader(username, password)
 
+const MILLISECONDS_PER_SECOND = 1000
 const RECONNECT_INTERVAL_INITIAL_MS = DEFAULT_RECONNECT_INTERVAL_MS
-const RECONNECT_INTERVAL_STEP_MS = (10 * 1000)
-const RECONNECT_INTERVAL_MAX_MS = (60 * 1000)
+const RECONNECT_INTERVAL_STEP_MS = (10 * MILLISECONDS_PER_SECOND)
+const RECONNECT_INTERVAL_MAX_MS = (60 * MILLISECONDS_PER_SECOND)
 
 export class CouchGameStore {
 	#url
@@ -186,14 +187,15 @@ export class CouchGameStore {
 						// console.log('clear future mod')
 						potential.futureIsModified = undefined
 
-						if(!isModified) {
-							// console.log('extending unmodified doc cache time')
-							potential.expireAt = now + (1000 * 5)
-						}
-						else {
+						if(isModified) {
 							// console.log('refresh from modified futureDoc')
 							potential.futureDoc = this.#get(id)
-							potential.expireAt = now + (1000 * 5)
+							potential.expireAt = now + (MILLISECONDS_PER_SECOND * 5)
+
+						}
+						else {
+							// console.log('extending unmodified doc cache time')
+							potential.expireAt = now + (MILLISECONDS_PER_SECOND * 5)
 						}
 
 						return isModified
@@ -220,13 +222,13 @@ export class CouchGameStore {
 		// console.log('refresh from futureDoc', id)
 		const futureDoc = this.#get(id)
 
-		futureDoc.catch(error => {
+		futureDoc.catch(_error => {
 			// console.warn('cached game error removal', e)
 			this.#cache.delete(id)
 		})
 
 		this.#cache.set(id, {
-			expireAt: now + (1000 * 5),
+			expireAt: now + (MILLISECONDS_PER_SECOND * 5),
 			futureDoc,
 			futureIsModified: undefined
 		})

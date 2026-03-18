@@ -1,4 +1,4 @@
-/** @import { TokenSet, Token, SSEToken, RefreshToken } from '../types/global.js' */
+/** @import { TokenSet, Token, SSEToken } from '../types/global.js' */
 
 export const SPACE_CHAR = ' '
 export const BEARER = 'Bearer'
@@ -28,7 +28,7 @@ export function accessToken(authorizationHeader) {
 
 	const [ bearer, token ] = authorizationHeader.split(SPACE_CHAR)
 	if(bearer !== BEARER) { throw new Error('authorization type not Bearer') }
-	if(token == undefined || token === '') { return undefined }
+	if(token === undefined || token === '') { return undefined }
 	return accessTokenFromString(token)
 }
 
@@ -38,9 +38,9 @@ export function accessToken(authorizationHeader) {
  */
 export function sseToken(query) {
 	if(!query.has('token')) { return undefined }
-	const sseToken = query.get('token') ?? undefined
-	if(sseToken === undefined) { return undefined}
-	return sseTokenFromString(sseToken)
+	const token = query.get('token') ?? undefined
+	if(token === undefined) { return undefined}
+	return sseTokenFromString(token)
 }
 
 /**

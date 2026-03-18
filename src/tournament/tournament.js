@@ -1,8 +1,8 @@
-import { GameAPI } from '../agent/node-game-api.js'
-import { EventSource } from '../util/event-source.js'
-
-import { Tournament, Bracket, Stage, Round, Fixture, Match } from './structures.js'
+/** biome-ignore-all lint/style/useExportsLast: <explanation> */
 import { MethodologyFactory } from './methodology.js'
+import { Tournament, Bracket, Round, Match } from './structures.js'
+import { EventSource } from '../util/event-source.js'
+import { GameAPI } from '../agent/node-game-api.js'
 
 /** @import { EncodedGameId, IdentifiableActionableGame, GameListing } from '../types/public.game.js' */
 
@@ -111,7 +111,7 @@ async function processTournamentStage(tournament, stage) {
 	if(bracket === undefined) { throw new Error('invalid bracket') }
 
 	//
-	const ready = stage.rounds.map(Round.ready).reduce((acc, ready) => acc && ready, true)
+	const ready = stage.rounds.map(Round.ready).reduce((acc, r) => acc && r, true)
 	const rounds = methodology.rounds(stage, bracket)
 	console.log('\tprocessStage adding rounds', rounds)
 	stage.rounds.push(...rounds)
@@ -237,8 +237,11 @@ async function main() {
 	eventSource.addEventListener('error', event => {
 		console.log('SSE error')
 	})
-	eventSource.addEventListener('update', event => {
-		console.log('SSE update')
+	eventSource.addEventListener('update', async event => {
+		console.log('SSE update', event)
+
+		// await processTournament(tournament)
+		// await Store.update(tournament.tournamentId, tournament)
 	})
 
 	const tournament = await Store.create(Tournament.id(), {
@@ -247,7 +250,7 @@ async function main() {
 			{
 				name: 'group-one',
 				mode: 'invite-only',
-				invites: [ 'U:user:PNWbohDYLzDfsl08kNfd', 'U:user:Agent' ],
+				invites: [ 'U:user:UY102c8Yj5uvmPLK7qcE', 'U:user:Agent' ],
 				players: []
 			}
 		],
@@ -267,24 +270,24 @@ async function main() {
 
 	//
 	await processTournament(tournament)
-	Store.update(tournament.tournamentId, tournament)
+	await Store.update(tournament.tournamentId, tournament)
 
 	//
 	Bracket.accept(tournament.brackets[0], 'U:user:Agent')
-	Bracket.accept(tournament.brackets[0], 'U:user:PNWbohDYLzDfsl08kNfd')
-	Store.update(tournament.tournamentId, tournament)
+	Bracket.accept(tournament.brackets[0], 'U:user:UY102c8Yj5uvmPLK7qcE')
+	await Store.update(tournament.tournamentId, tournament)
 
 	//
 	await processTournament(tournament)
-	Store.update(tournament.tournamentId, tournament)
+	await Store.update(tournament.tournamentId, tournament)
 
 	//
 	tournament.stages[0].rounds[0].state = 'open'
-	Store.update(tournament.tournamentId, tournament)
+	await Store.update(tournament.tournamentId, tournament)
 
 	//
 	await processTournament(tournament)
-	Store.update(tournament.tournamentId, tournament)
+	await Store.update(tournament.tournamentId, tournament)
 
 
 	//
@@ -292,7 +295,7 @@ async function main() {
 	// console.log(JSON.stringify(await Store.get(tournament.tournamentId), undefined, 1))
 }
 
-main()
+
 
 process.on('SIGINT', event => {
 	console.log('SigInt', event)
@@ -311,3 +314,5 @@ process.on('SIGINT', event => {
 
 	shutdown.abort('SigInt')
 })
+
+await main()

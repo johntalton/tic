@@ -1,9 +1,9 @@
 import { DisposableTimer } from '../../util/timing.js'
+import { storeUserIdFromString } from '../store.js'
 import {
 	COUCH_STATUS_NOT_MODIFIED,
 	CouchUtil
 } from './couch.js'
-import { storeUserIdFromString } from '../store.js'
 
 /** @import { Token, SSEToken } from '../../types/global.js' */
 /** @import { CouchGenericRows, CouchStoreUser } from '../../types/couch.js' */
@@ -25,6 +25,8 @@ if(username === undefined) { throw new Error('unspecified couch user') }
 if(password === undefined) { throw new Error('unspecified couch password') }
 
 const authorizationHeaders = CouchUtil.basicAuthHeader(username, password)
+
+const MILLISECONDS_PER_SECOND = 1000
 
 export class CouchUserStore {
 	#url
@@ -200,7 +202,7 @@ export class CouchUserStore {
 		const userId = result.rows[0].value
 
 		this.#accessTokenCache.set(token, {
-			expireAt: now + (1000 * 60),
+			expireAt: now + (MILLISECONDS_PER_SECOND * 60),
 			userId
 		})
 

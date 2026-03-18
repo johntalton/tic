@@ -1,8 +1,7 @@
-import { gameStore } from '../store/store.js'
-import { userStore } from '../store/store.js'
+import { gameStore, userStore } from '../store/store.js'
 import { encodedUserId } from '../users/util.js'
 import { SearchQueryList } from '../util/search-query-list.js'
-import { timed, TIMING } from '../util/timing.js'
+import { TIMING, timed } from '../util/timing.js'
 import { identifiableGameId } from './util.js'
 
 /** @import { HandlerFn } from '../util/dig.js' */

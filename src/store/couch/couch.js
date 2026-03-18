@@ -58,13 +58,15 @@ export class CouchUtil {
 		if(!response.ok) {
 			if(response.status === COUCH_STATUS_NOT_FOUND) {
 				const json = await response.json()
-				const reason = json.reason
+				const { reason } = json
 
+				console.log('couch not found', url)
 				throw new Error(`Couch Not Found ${reason}`)
 			}
-			else if (response.status === COUCH_STATUS_SERVER_ERROR) {
+
+			if (response.status === COUCH_STATUS_SERVER_ERROR) {
 				const json = await response.json()
-				const reason = json.reason
+				const { reason } = json
 
 				throw new Error(`Couch Internal Server Error ${reason}`)
 			}

@@ -1,10 +1,12 @@
-export const WIN = 1
-export const LOSE = 0
-export const DRAW = 0.5
 
 const BASE = 10
 const DIVISOR = 400
 const K_FACTOR = 32
+
+export const WIN = 1
+export const LOSE = 0
+export const DRAW = 0.5
+
 
 /**
  * @typedef {Object} ELOInfo

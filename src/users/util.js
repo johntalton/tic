@@ -9,7 +9,7 @@ import { storeUserIdFromString } from '../store/store.js'
  */
 export function encodedUserIdFromString(id) {
 	if(isEncodedUserId(id)) { return id }
-	throw new Error(`not a encoded game id: ${id}`)
+	throw new Error(`not a encoded user id: ${id}`)
 }
 
 /**

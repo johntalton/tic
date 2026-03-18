@@ -1,5 +1,5 @@
 import { MATCHES } from '../../route.js'
-import { isStoreUserId, userStore } from '../../store/store.js'
+import { userStore } from '../../store/store.js'
 import { fromEncodedUserId, isEncodedUserId } from '../util.js'
 import { addFriend } from './alter.js'
 
