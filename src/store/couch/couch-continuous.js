@@ -1,15 +1,18 @@
-
+/** biome-ignore-all lint/nursery/noExcessiveClassesPerFile: data event itself */
 /**
  * @typedef {Object} CouchContinuousOptions
  * @property {number} [reconnectIntervalMS]
  * @property {Record<string, string> | [string,string][]} headers
  */
 
+
 export const CONNECTING = 0
 export const OPEN = 1
 export const CLOSED = 2
 
-export const DEFAULT_RECONNECT_INTERVAL_MS = 1000 * 10
+
+export const MSEC_PER_SEC = 1000
+export const DEFAULT_RECONNECT_INTERVAL_MS = MSEC_PER_SEC * 10
 
 export class DataEvent extends Event {
 	data
@@ -82,6 +85,7 @@ export class CouchContinuous extends EventTarget {
 			},
 			signal: this.#controller.signal
 		})
+			// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: core handler is complex
 			.then(async response => {
 				const { status, headers } = response
 
@@ -93,7 +97,7 @@ export class CouchContinuous extends EventTarget {
 
 				const contentType = headers.get('content-type')
 				if(contentType !== 'application/json') {
-					this.#failure(status, 'Unknown Content Type: ' + contentType)
+					this.#failure(status, `Unknown Content Type: ${contentType}`)
 					this.close()
 					return
 				}
@@ -119,7 +123,7 @@ export class CouchContinuous extends EventTarget {
 
 				for await (const chunk of stream) {
 					const lines = chunk.split('\n')
-					lines.forEach(line => {
+					for(const line of lines) {
 						if(line.length === 0) {
 							// heartbeat
 							return
@@ -129,7 +133,7 @@ export class CouchContinuous extends EventTarget {
 						const event = new DataEvent(data)
 						this.dispatchEvent(event)
 
-					})
+					}
 				}
 			})
 			.catch(_error => {

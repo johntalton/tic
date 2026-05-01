@@ -1,4 +1,4 @@
-/** @import { ActionableGame, Game } from '../games/tic.js' */
+/** @import { ActionableGame, Game } from '../games/game.js' */
 /** @import { EncodedUserId } from './public.user.js' */
 
 /** @typedef {string & { readonly _brand: 'egid' }} EncodedGameId */

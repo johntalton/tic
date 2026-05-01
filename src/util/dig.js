@@ -26,10 +26,20 @@ export const METADATA = Symbol.for('METADATA')
  */
 
 /**
+ * @typedef {Object} DigResultMetadata
+ * @property {boolean} sse
+ * @property {boolean} bom
+ * @property {boolean} active
+ * @property {Array<string>} encodings
+ * @property {Array<string>} mimeTypes
+ * @property {Array<string>} languages
+ */
+
+/**
  * @typedef {Object} DigResult
  * @property {HandlerFn<any>} handler
  * @property {Map<string, string>} matches
- * @property {Object} metadata
+ * @property {DigResultMetadata} metadata
  */
 
 /**

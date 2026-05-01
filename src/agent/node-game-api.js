@@ -3,7 +3,7 @@ import { Fetch2 } from './fetch2.js'
 /** @import { Token } from '../types/global.js' */
 /** @import { EncodedGameId, IdentifiableActionableGame, GameListing } from '../types/public.game.js' */
 /** @import { EncodedUserId, IdentifiableUser } from '../types/public.user.js' */
-/** @import { ActionableGame } from '../games/tic.js' */
+/** @import { ActionableGame } from '../games/game.js' */
 
 export class GameAPI {
 	#baseUrl
@@ -51,7 +51,7 @@ export class GameAPI {
 	 * @returns {Promise<IdentifiableActionableGame>}
 	 */
 	async create() {
-		const url = new URL(`/tic/v1/game`, this.#baseUrl)
+		const url = new URL('/tic/v1/game', this.#baseUrl)
 		url.searchParams.set('t', this.#user.id)
 		url.searchParams.set('a', 'true')
 
@@ -174,7 +174,9 @@ export class GameAPI {
 	 */
 	async offer(gameId, targets) {
 		const sp = new URLSearchParams()
-		targets.forEach(target => sp.append('t', target))
+		for(const target of targets) {
+			sp.append('t', target)
+		}
 		return this.#action(gameId, 'offer', sp)
 	}
 
@@ -185,7 +187,7 @@ export class GameAPI {
 	 */
 	async move(gameId, position) {
 		const sp = new URLSearchParams()
-		sp.set('position', position)
+		sp.set('position', `${position}`)
 		return this.#action(gameId, 'move', sp)
 	}
 }

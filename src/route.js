@@ -1,25 +1,13 @@
-import {
-	DELETE,
-	GET,
-	MATCH,
-	METADATA,
-	NAME,
-	PATCH,
-	POST,
-} from './util/dig.js'
+import { MIME_TYPE_EVENT_STREAM } from '@johntalton/http-util/headers'
+
+import { handleAction } from './games/actions/index.js'
+import { handleGameFeed } from './games/feed.js'
 
 import {
 	handleGame,
 	handleList,
 	handleNew
 } from './games/index.js'
-
-import {
-	handleAction
-} from './games/actions/index.js'
-
-import { handleGameFeed } from './games/feed.js'
-
 import {
 	getSelf,
 	getUser,
@@ -31,10 +19,16 @@ import {
 	listUsers,
 	patchUser
 } from './users/index.js'
-
-
 import { handleSimpleLogin } from './users/simple-login.js'
-import { MIME_TYPE_EVENT_STREAM } from '@johntalton/http-util/headers'
+import {
+	DELETE,
+	GET,
+	MATCH,
+	METADATA,
+	NAME,
+	PATCH,
+	POST,
+} from './util/dig.js'
 
 /**
  * @import { RouteDefinition } from './util/dig.js'
@@ -47,12 +41,14 @@ export const MATCHES = {
 	ACTION: 'action'
 }
 
-const GAMES_ROUTE =  {
+/** @type {RouteDefinition<any>} */
+export const GAMES_ROUTE =  {
 	[GET]: handleList,
 	//[POST]: handleNew
 }
 
-const GAME_ROUTE = {
+/** @type {RouteDefinition<any>} */
+export const GAME_ROUTE = {
 	[POST]: handleNew,
 	[MATCH]: {
 		// [METADATA]: { encodings: [ ] },
@@ -65,7 +61,8 @@ const GAME_ROUTE = {
 	}
 }
 
-const FRIENDS_ROUTE = {
+/** @type {RouteDefinition<any>} */
+export const FRIENDS_ROUTE = {
 	friends: {
 		[GET]: handleListFriends
 	},
@@ -80,11 +77,13 @@ const FRIENDS_ROUTE = {
 	}
 }
 
-const USERS_ROUTE = {
+/** @type {RouteDefinition<any>} */
+export const USERS_ROUTE = {
 	[GET]: listUsers,
 }
 
-const USER_ROUTE = {
+/** @type {RouteDefinition<any>} */
+export const USER_ROUTE = {
 	self: {
 		[GET]: getSelf
 	},

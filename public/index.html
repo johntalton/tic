@@ -26,9 +26,9 @@
 				<label for="UserName">User Name</label>
 				<input id="UserName" type="text" autocomplete="given-name" placeholder="user name"/>
 
-				<button data-action="register">Register User</button>
+				<button type="button" data-action="register">Register User</button>
 				<div data-or-divider>-- Or --</div>
-				<button data-action="login">Login</button>
+				<button type="button" data-action="login">Login</button>
 			</form>
 		</dialog>
 
@@ -54,6 +54,24 @@
 				<button-set>
 					 <button type="button" commandFor="SimpleLogoutConfirm" command="close">Cancel</button>
 					<button type="submit" data-confirm id="SimpleLogout">Logout</button>
+				</button-set>
+			</form>
+		</dialog>
+
+		<dialog id="CreateGame">
+			<span>Create Game</span>
+
+			<form method="dialog">
+				<label>Select Game Type</label>
+				<select id="createGameTypeSelect" name="gameType" required>
+					<option value="TTT">TTT</option>
+					<option value="Reversi">Reversi</option>
+					<option value="C4">Connect Four</option>
+				</select>
+
+				<button-set>
+					<button type="button" commandFor="CreateGame" command="close">Cancel</button>
+					<button type="submit" data-create>Create</button>
 				</button-set>
 			</form>
 		</dialog>
@@ -110,9 +128,9 @@
 		<header aria-label="main navigation">
 			<h1>Tic</h1>
 			<button-set>
-				<button data-not-logged-in commandFor="SimpleUser" command="show-modal"><i>👤</i></button>
-				<button data-logged-in commandFor='SimpleLogoutConfirm' command="show-modal"><i>👤</i></button>
-				<button data-aside-toggle commandFor="Aside" command="--toggle-aside">
+				<button type="button" data-not-logged-in commandFor="SimpleUser" command="show-modal"><i>👤</i></button>
+				<button type="button" data-logged-in commandFor='SimpleLogoutConfirm' command="show-modal"><i>👤</i></button>
+				<button type="button" data-aside-toggle commandFor="Aside" command="--toggle-aside">
 					<!-- <img data-icon src="./icons/burger.svg" alt="Menu"> -->
 					<i>🟰</i>
 				</button>
@@ -121,7 +139,7 @@
 		<progress id="GlobalProgress" min="0" max="100" value="25"></progress>
 		<div id="Toast" data-toast>
 			<output></output>
-			<button commandFor="Toast" command="--hide-toast">
+			<button type="button" commandFor="Toast" command="--hide-toast">
 				<!-- <img data-icon src="./icons/close.svg" alt="Close"/> -->
 				 <i>❌</i>
 			</button>
@@ -138,7 +156,7 @@
 					</select>
 
 					<!-- <button><i>⛭</i></button> -->
-					<button id="CreateNewGame" data-logged-in>
+					<button id="CreateNewGame" type="button" commandFor="CreateGame" command="show-modal" data-logged-in>
 						<!-- <img data-icon src="./icons/plus.svg" alt="New Game"/> -->
 						 <i>+</i>
 						New Game
@@ -185,14 +203,19 @@
 			<section id="GameFields">
 				<span data-no-game-fields>No Game Loaded</span>
 
+
+				<template id="BoardPositionButton">
+					<button type="button" data-position="0"><i><output></output></i></button>
+				</template>
+
 				<template id="GameTemplate">
 					<game-field game-id="">
 						<button-set data-actions>
-							<button data-action="accept" disabled><localized-output key="accept">Accept</localized-output></button>
-							<button data-action="close">Close</button>
-							<button data-action="decline" disabled>Decline</button>
-							<button data-action="forfeit" disabled>Forfeit</button>
-							<button data-action="offer" disabled>Offer</button>
+							<button type="button" data-action="accept" disabled><localized-output key="accept">Accept</localized-output></button>
+							<button type="button" data-action="close">Close</button>
+							<button type="button" data-action="decline" disabled>Decline</button>
+							<button type="button" data-action="forfeit" disabled>Forfeit</button>
+							<button type="button" data-action="offer" disabled>Offer</button>
 						</button-set>
 
 						<game-message>
@@ -209,18 +232,18 @@
 							<span data-key="closed">Closed <output data-close-reason></output></span>
 						</game-message>
 
-						<game-board win-line="">
-							<button data-position="0"><i><output></output></i></button>
-							<button data-position="1"><i><output></output></i></button>
-							<button data-position="2"><i><output></output></i></button>
+						<game-board win-line="" type="">
+							<!-- <button type="button" data-position="1"><i><output></output></i></button>
+							<button type="button" data-position="2"><i><output></output></i></button>
 
-							<button data-position="3"><i><output></output></i></button>
-							<button data-position="4"><i><output></output></i></button>
-							<button data-position="5"><i><output></output></i></button>
+							<button type="button" data-position="3"><i><output></output></i></button>
+							<button type="button" data-position="4"><i><output></output></i></button>
+							<button type="button" data-position="5"><i><output></output></i></button>
 
-							<button data-position="6"><i><output></output></i></button>
-							<button data-position="7"><i><output></output></i></button>
-							<button data-position="8"><i><output></output></i></button>
+							<button type="button" data-position="6"><i><output></output></i></button>
+							<button type="button" data-position="7"><i><output></output></i></button>
+							<button type="button" data-position="8"><i><output></output></i></button> -->
+
 						</game-board>
 					</game-field>
 				</template>

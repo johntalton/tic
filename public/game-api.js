@@ -48,10 +48,11 @@ export class GameAPI {
 		return response.json()
 	}
 
-	async create() {
-		const url = new URL(`/tic/v1/game`, this.#baseUrl)
-		url.searchParams.set('t', this.#user.id)
-		url.searchParams.set('a', 'true')
+	async create(type) {
+		const url = new URL('/tic/v1/game', this.#baseUrl)
+		// url.searchParams.set('t', this.#user.id)
+		// url.searchParams.set('a', 'true')
+		url.searchParams.set('type', type)
 
 		const response = await fetch(url, {
 			method: 'POST',
@@ -158,7 +159,7 @@ export class GameAPI {
 	 */
 	async offer(gameId, targets) {
 		const sp = new URLSearchParams()
-		targets.forEach(target => sp.append('t', target))
+		for(const target of targets) { sp.append('t', target)}
 		return this.#action(gameId, 'offer', sp)
 	}
 

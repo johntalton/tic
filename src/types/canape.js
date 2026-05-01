@@ -33,5 +33,3 @@ export const CANAPE_KEY_REV = 'settee:revision'
  * @property {number} offset
  * @property {Array<CanapeGenericRow<T>>} rows
  */
-
-export default {}

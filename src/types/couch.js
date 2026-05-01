@@ -33,5 +33,3 @@ export const COUCH_KEY_REV = '_rev'
  * @property {number} offset
  * @property {Array<CouchGenericRow<T>>} rows
  */
-
-export {}

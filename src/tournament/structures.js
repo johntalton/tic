@@ -117,9 +117,9 @@ export class Tournament {
 	 * @returns {TournamentId}
 	 */
 	static id() {
-		const u8 = new Uint8Array(5)
+		const DEFAULT_ID_SIZE = 5
+		const u8 = new Uint8Array(DEFAULT_ID_SIZE)
 		crypto.getRandomValues(u8)
-		// @ts-ignore
 		return u8.toHex()
 	}
 

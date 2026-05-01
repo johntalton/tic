@@ -7,6 +7,8 @@ export const COUCH_HEADER_BODY_TIME = 'X-CouchDB-Body-Time'
 
 export const COUCH_HEADER_ETAG = 'ETag'
 
+export const DEFAULT_TIMEOUT_MS = 500
+
 export class CouchUtil {
 	/**
 	 * @param {string} username
@@ -15,7 +17,6 @@ export class CouchUtil {
 	static basicAuthHeader(username, password) {
 		const encoder = new TextEncoder()
 		const u8 = encoder.encode(`${username}:${password}`)
-		// @ts-ignore
 		const encodedCredentials = u8.toBase64()
 		// const encodedCredentials = btoa(`${username}:${password}`)
 
@@ -31,7 +32,7 @@ export class CouchUtil {
 	static async fetch(url, options) {
 		const actualOptions = {
 			...options,
-			signal: options?.signal ?? AbortSignal.timeout(500)
+			signal: options?.signal ?? AbortSignal.timeout(DEFAULT_TIMEOUT_MS)
 		}
 
 		return fetch(url, actualOptions)

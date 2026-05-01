@@ -85,29 +85,29 @@ export class Fetch2 {
 			req.on('error', error => reject(error))
 			promise.finally(() => client.close())
 
-			req.on('response', (headers) => {
-				const statusString = headers[HTTP2_HEADER_STATUS]
+			req.on('response', (responseHeaders) => {
+				const statusString = responseHeaders[HTTP2_HEADER_STATUS]
 				if(statusString === undefined || !Number.isFinite(statusString) || Array.isArray(statusString)) {
 					reject(new Error('unknown status'))
 					return
 				}
 
-				const status = parseInt(statusString, 10)
+				const status = Number.parseInt(statusString, 10)
 
 				// console.log('f2 requestBody')
-				const body = requestBody(req, { signal })
+				const futureBody = requestBody(req, { signal })
 
 				resolve({
 					ok: (status >= 200 && status < 300),
 					status,
-					headers: new Map(Object.entries(headers)),
+					headers: new Map(Object.entries(responseHeaders)),
 
-					get body() { return body.body },
-					arrayBuffer: () => body.arrayBuffer(),
-					bytes: () => body.bytes(),
-					text: () => body.text(),
-					formData: () => body.formData(),
-					json: () => body.json()
+					get body() { return futureBody.body },
+					arrayBuffer: () => futureBody.arrayBuffer(),
+					bytes: () => futureBody.bytes(),
+					text: () => futureBody.text(),
+					formData: () => futureBody.formData(),
+					json: () => futureBody.json()
 				})
 			})
 		})

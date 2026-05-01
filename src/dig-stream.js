@@ -31,7 +31,8 @@ import {
 
 	Forwarded,
 	FORWARDED_KEY_FOR,
-	KNOWN_FORWARDED_KEYS
+	KNOWN_FORWARDED_KEYS,
+	SecFetch
 } from '@johntalton/http-util/headers'
 
 import { ROUTES } from './route.js'
@@ -91,9 +92,9 @@ const BODY_BYTE_LENGTH = 1000 * 1000
 const ipRateStore = new Map()
 const ipRequestPerSecondPolicy = {
 	name: 'ip',
-	quota: 25,
-	windowSeconds: 15,
-	size: 50,
+	quota: 50,
+	windowSeconds: 10,
+	size: 150,
 	quotaUnits: 'request'
 }
 
@@ -127,9 +128,16 @@ async function handleStreamAsync(stream, header, _flags, shutdownSignal) {
 	const secUA = header[HTTP_HEADER_SEC_CH_UA]
 	const secPlatform = header[HTTP_HEADER_SEC_CH_PLATFORM]
 	const secMobile = header[HTTP_HEADER_SEC_CH_MOBILE]
+	//
 	const secFetchSite = header[HTTP_HEADER_SEC_FETCH_SITE]
 	const secFetchMode = header[HTTP_HEADER_SEC_FETCH_MODE]
 	const secFetchDest = header[HTTP_HEADER_SEC_FETCH_DEST]
+
+	const secFetch = {
+		site: SecFetch.parseSite(secFetchSite),
+		mode: SecFetch.parseMode(secFetchMode),
+		dest: SecFetch.parseDestination(secFetchDest)
+	}
 
 	// const priority = header['priority']
 
@@ -146,6 +154,38 @@ async function handleStreamAsync(stream, header, _flags, shutdownSignal) {
 		servername: SERVER_NAME,
 		origin: allowedOrigin
 	}
+
+
+	if(authorization !== undefined && Array.isArray(authorization)) {
+		Response.error(stream, 'authorization isArray', meta)
+		return
+	}
+
+	if(fullContentType !== undefined && Array.isArray(fullContentType)) {
+		Response.error(stream, 'fullContentType isArray', meta)
+		return
+	}
+
+	if(fullContentLength !== undefined && Array.isArray(fullContentLength)) {
+		Response.error(stream, 'fullContentLength isArray', meta)
+		return
+	}
+
+	if(fullAcceptEncoding !== undefined && Array.isArray(fullAcceptEncoding)) {
+		Response.error(stream, 'fullAcceptEncoding isArray', meta)
+		return
+	}
+
+	if(fullAccept !== undefined && Array.isArray(fullAccept)) {
+		Response.error(stream, 'fullAccept isArray', meta)
+		return
+	}
+
+	if(fullAcceptLanguage !== undefined && Array.isArray(fullAcceptLanguage)) {
+		Response.error(stream, 'fullAcceptLanguage isArray', meta)
+		return
+	}
+
 
 	if(stream.session === undefined) {
 		Response.error(stream, 'session undefined', meta)
@@ -234,7 +274,7 @@ async function handleStreamAsync(stream, header, _flags, shutdownSignal) {
 	//
 	if(method === HTTP2_METHOD_OPTIONS) {
 		const allowedMethods = digOptions(ROUTES, requestUrl.pathname)
-		Response.preflight(stream, allowedMethods, meta)
+		Response.preflight(stream, allowedMethods, undefined, undefined, meta)
 		return
 	}
 
@@ -290,7 +330,7 @@ async function handleStreamAsync(stream, header, _flags, shutdownSignal) {
 	//
 	// setup future body
 	//
-	const contentLength = Number.parseInt(fullContentLength, 10)
+	const contentLength = fullContentLength === undefined ? undefined : Number.parseInt(fullContentLength, 10)
 	const body = requestBody(stream, {
 		signal: AbortSignal.timeout(BODY_TIMEOUT_SEC),
 		contentType,
@@ -345,7 +385,7 @@ async function handleStreamAsync(stream, header, _flags, shutdownSignal) {
 			if(isSSE) { return }
 
 			if(accept === MIME_TYPE_JSON) {
-				Response.json(stream, data, acceptedEncoding, undefined, undefined, { priv: true, maxAge: 0 }, finalMeta)
+				Response.json(stream, data, acceptedEncoding, undefined, undefined, { priv: true, maxAge: 0 }, undefined, finalMeta)
 			}
 			else {
 				throw new Error('unknown accept type')

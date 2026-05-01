@@ -27,6 +27,8 @@ const RECONNECT_INTERVAL_INITIAL_MS = DEFAULT_RECONNECT_INTERVAL_MS
 const RECONNECT_INTERVAL_STEP_MS = (10 * MILLISECONDS_PER_SECOND)
 const RECONNECT_INTERVAL_MAX_MS = (60 * MILLISECONDS_PER_SECOND)
 
+const DEFAULT_EXPIRATION_EXTENSION_SEC = 5
+
 export class CouchGameStore {
 	#url
 	/** @type {Map<StoreGameId, CouchCacheGetGame>} */
@@ -75,7 +77,6 @@ export class CouchGameStore {
 			console.log('CouchDB Feed Error', feed.reconnectIntervalMS)
 		})
 		feed.addEventListener('data', event => {
-			// @ts-ignore
 			const { data } = event
 			const { id } = data
 
@@ -168,12 +169,12 @@ export class CouchGameStore {
 
 			if(potential.expireAt > now) {
 				// console.log('cache not expired, return doc', now - potential.expireAt)
-				return potential.futureDoc.then(doc => ({
-					...doc,
+				return potential.futureDoc.then(cachedDoc => ({
+					...cachedDoc,
 					_id: undefined,
 					_rev: undefined,
-					storeGameId: storeGameIdFromString(doc._id),
-					storeGameRevision: doc._rev
+					storeGameId: storeGameIdFromString(cachedDoc._id),
+					storeGameRevision: cachedDoc._rev
 				}))
 			}
 
@@ -190,12 +191,12 @@ export class CouchGameStore {
 						if(isModified) {
 							// console.log('refresh from modified futureDoc')
 							potential.futureDoc = this.#get(id)
-							potential.expireAt = now + (MILLISECONDS_PER_SECOND * 5)
+							potential.expireAt = now + (MILLISECONDS_PER_SECOND * DEFAULT_EXPIRATION_EXTENSION_SEC)
 
 						}
 						else {
 							// console.log('extending unmodified doc cache time')
-							potential.expireAt = now + (MILLISECONDS_PER_SECOND * 5)
+							potential.expireAt = now + (MILLISECONDS_PER_SECOND * DEFAULT_EXPIRATION_EXTENSION_SEC)
 						}
 
 						return isModified
@@ -210,12 +211,12 @@ export class CouchGameStore {
 
 			return potential.futureIsModified
 				.then(() => potential.futureDoc)
-				.then(doc => ({
-					...doc,
+				.then(cachedDoc => ({
+					...cachedDoc,
 					_id: undefined,
 					_rev: undefined,
-					storeGameId: storeGameIdFromString(doc._id),
-					storeGameRevision: doc._rev
+					storeGameId: storeGameIdFromString(cachedDoc._id),
+					storeGameRevision: cachedDoc._rev
 				}))
 		}
 
@@ -228,7 +229,7 @@ export class CouchGameStore {
 		})
 
 		this.#cache.set(id, {
-			expireAt: now + (MILLISECONDS_PER_SECOND * 5),
+			expireAt: now + (MILLISECONDS_PER_SECOND * DEFAULT_EXPIRATION_EXTENSION_SEC),
 			futureDoc,
 			futureIsModified: undefined
 		})

@@ -1,6 +1,6 @@
 import { gameStore } from '../../store/store.js'
 import { TIMING, timed } from '../../util/timing.js'
-import { Tic } from '../tic.js'
+import { GameManager } from '../game.js'
 import { resolveFromStore } from '../util.js'
 
 /** @import { ActionHandlerFn } from './index.js' */
@@ -11,7 +11,7 @@ export async function handleClose(encodedGameId, userId, _body, query, handlerPe
 	const { game, gameObject } = await resolveFromStore(encodedGameId, userId, handlerPerformance)
 
 	const reason = query.get('reason') ?? 'unspecified'
-	const updatedGame = Tic.close(game, userId, reason)
+	const updatedGame = GameManager.close(game, userId, reason)
 
 	/** @type {StoreGameEnvelope} */
 	const updatedGameObject = {
@@ -28,5 +28,5 @@ export async function handleClose(encodedGameId, userId, _body, query, handlerPe
 		handlerPerformance,
 		() => gameStore.set(gameObject.storeGameId, updatedGameObject))
 
-	return Tic.actionable(updatedGame, userId)
+	return GameManager.actionable(updatedGame, userId)
 }

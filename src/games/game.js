@@ -1,19 +1,21 @@
-/** biome-ignore-all lint/nursery/noExcessiveClassesPerFile: <explanation> */
-/** biome-ignore-all lint/nursery/noExcessiveLinesPerFile: <explanation> */
+/** biome-ignore-all lint/nursery/noExcessiveClassesPerFile: action helper */
+/** biome-ignore-all lint/nursery/noExcessiveLinesPerFile: complex */
+import { BoardFactory } from './boards/boards.js'
+
+/** @import { BoardType } from './boards/boards.js' */
+
+export const EMPTY = 0
 
 /**
  * @template U
- * @typedef { readonly [
- * U|EMPTY, U|EMPTY, U|EMPTY,
- * U|EMPTY, U|EMPTY, U|EMPTY,
- * U|EMPTY, U|EMPTY, U|EMPTY
- * ]} GameBoard
+ * @typedef {Array<U|EMPTY>} GameBoard
  */
 
 /**
  * @template U
  * @typedef {Object} Game
  * @property {STATES} state
+ * @property {BoardType|undefined} [type]
  * @property {U} owner
  * @property {Array<U>} players
  * @property {Array<U>} offers
@@ -24,7 +26,6 @@
  * @property {string} [message]
  * @property {string} [reason]
  */
-
 
 /**
  * @template U
@@ -179,114 +180,7 @@ export class Action {
 	}
 }
 
-export const EMPTY = 0
-
-export const WIN_CONDITIONS = [
-	{ name: 'row0', condition: [0, 1, 2] },
-	{ name: 'row1', condition: [3, 4, 5] },
-	{ name: 'row2', condition: [6, 7, 8] },
-
-	{ name: 'col0', condition: [0, 3, 6] },
-	{ name: 'col1', condition: [1, 4, 7] },
-	{ name: 'col2', condition: [2, 5, 8] },
-
-	{ name: 'backSlash', condition: [0, 4, 8] },
-
-	{ name: 'forwardSlash', condition: [2, 4, 6] }
-]
-
-export class Board {
-	/**
-	 * @template U
-	 * @returns {GameBoard<U>}
-	 */
-	static emptyBoard() { return [
-		EMPTY, EMPTY, EMPTY,
-		EMPTY, EMPTY, EMPTY,
-		EMPTY, EMPTY, EMPTY
-	]}
-
-	/**
-	 * @template U
-	 * @param {GameBoard<U>} board
-	 * @returns {Winner<U>}
-	 */
-	static winner(board) {
-		for(const { name, condition } of WIN_CONDITIONS) {
-			const [ a, b, c ] = condition.map(index => board[index])
-			if(a !== undefined && a !== EMPTY && a === b && b === c) {
-				return { name, user: a }
-			}
-		}
-
-		return { user: EMPTY }
-	}
-
-	/**
-	 * @template U
-	 * @param {GameBoard<U>} board
-	 */
-	static isFull(board) { return !board.includes(EMPTY) }
-
-	/**
-	 * @template U
-	 * @param {Winner<U>} winner
-	 */
-	static #isWin(winner) { return winner.user !== EMPTY }
-
-	/**
-	 * @param {boolean} full
-	 * @param {boolean} win
-	 */
-	static #isDraw(full, win) { return full && !win }
-
-	/**
-	 * @param {boolean} full
-	 * @param {boolean} win
-	 */
-	static #isResolved(full, win) { return full || win }
-
-	/**
-	 * @template U
-	 * @param {GameBoard<U>} board
-	 */
-	static isWin(board) { return Board.#isWin(Board.winner(board)) }
-
-	/**
-	 * @template U
-	 * @param {GameBoard<U>} board
-	 */
-	static isDraw(board) { return Board.#isDraw(Board.isFull(board), Board.isWin(board)) }
-
-	/**
-	 * @template U
-	 * @param {GameBoard<U>} board
-	 */
-	static isResolved(board) { return Board.#isResolved(Board.isFull(board), Board.isWin(board)) }
-
-	/**
-	 * @template U
-	 * @param {GameBoard<U>} board
-	 * @returns {Resolution<U>}
-	 */
-	static resolution(board) {
-		const winner = Board.winner(board)
-		const full = Board.isFull(board)
-		const win = Board.#isWin(winner)
-		const draw = Board.#isDraw(full, win)
-		const resolved = Board.#isResolved(full, win)
-
-		return {
-			full,
-			resolved,
-			draw,
-			win,
-			winner
-		}
-	}
-}
-
-export class Tic {
+export class GameManager {
 	/**
 	 * @template U
 	 * @param {Game<U>} game
@@ -296,7 +190,7 @@ export class Tic {
 	static actionable(game, user) {
 		return {
 			...game,
-			resolution: Board.resolution(game.board),
+			resolution: BoardFactory.resolution(game.type, game.board),
 			actions: Action.for(game, user)
 		}
 	}
@@ -304,23 +198,23 @@ export class Tic {
 	/**
 	 * @template U
 	 * @param {U} user
+	 * @param {BoardType} type
 	 * @returns {Game<U>}
 	 */
-	static create(user) {
+	static create(user, type) {
 		// console.log('Tic::create', user)
 
-		const game = {
+		return {
 			state: STATES.NEW,
+			type,
 
 			owner: user,
 			players: [],
 			offers: [],
 			active: [],
 
-			board: Board.emptyBoard()
+			board: BoardFactory.emptyBoard(type)
 		}
-
-		return game
 	}
 
 	// owner
@@ -391,18 +285,14 @@ export class Tic {
 	static move(game, user, move) {
 		// console.log('Tic::move(player)', game, user, move)
 
-		const { position } = move
-
 		if(game.state !== STATES.ACTIVE) { return { ...game, message: 'inactive game' } }
 		if(!isPlayer(game, user)) { return { ...game, message: 'not a player' } }
 		if(!isCurrentActivePlayer(game, user)) { return { ...game, message: 'not current player' } }
 
-		if(game.board[position] !== EMPTY) { return { ...game, message: 'invalid move' } }
+		if(!BoardFactory.isValidMove(game.type, game.board, user, move)) { return { ...game, message: 'invalid move' } }
 
-		/** @type {GameBoard<U>} */
-		// @ts-expect-error
-		const updatedBoard = game.board.with(position, user)
-		const resolved = Board.isResolved(updatedBoard)
+		const updatedBoard = BoardFactory.move(game.type, game.board, user, move)
+		const resolved = BoardFactory.isResolved(game.type, updatedBoard)
 
 		const state = resolved ? STATES.RESOLVED : game.state
 		const offers = resolved ? [] : game.offers
@@ -460,12 +350,15 @@ export class Tic {
 		const state = players.length === NUM_PLAYERS_TO_ACTIVATE ? STATES.ACTIVE : game.state
 		const active = state === STATES.ACTIVE ? randomPlayer(players) : []
 
+		const updatedBoard = (state === STATES.ACTIVE) ? BoardFactory.openingLayout(game.type, game.board, players) : game.board
+
 		return {
 			...game,
 			state,
 			offers,
 			players,
-			active
+			active,
+			board: updatedBoard
 		}
 	}
 

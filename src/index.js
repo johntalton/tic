@@ -1,10 +1,10 @@
-import http2 from 'node:http2'
-import fs from 'node:fs'
 import crypto from 'node:crypto'
+import fs from 'node:fs'
+import http2 from 'node:http2'
 
 import { handleStream } from './dig-stream.js'
 
-/** @import { SecureServerOptions, Http2Session } from 'node:http2' */
+/** @import { SecureServerOptions } from 'node:http2' */
 
 const {
 	SSL_OP_NO_TLSv1,

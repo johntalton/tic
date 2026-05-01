@@ -5,6 +5,8 @@ import { storeGameIdFromString } from '../store.js'
 /** @import { StoreGameId, StoreGameEnvelope, StoreGameEnvelopeBase, StoreGameListItem, StoreGameListItemRow} from '../../types/store.game.js' */
 /** @import { CanapeGenericRows, CanapeStoreGame } from '../../types/canape.js' */
 
+const DEFAULT_TIMEOUT_MS = 200
+
 export class CanapeGameStore {
 	#url
 	#feedChannel = new BroadcastChannel('SSE')
@@ -20,7 +22,6 @@ export class CanapeGameStore {
 		feed.addEventListener('error', () => { console.log('Canape SSE Error') })
 		feed.addEventListener('message', event => { console.log('Canape SSE Message', event) })
 		feed.addEventListener('update', event => {
-			// @ts-ignore
 			const { data, lastEventId, origin } = event
 
 			/** @type {{ id: StoreGameId }} */
@@ -67,7 +68,7 @@ export class CanapeGameStore {
 			headers: {
 				'accept': 'application/json'
 			},
-			signal: AbortSignal.timeout(200)
+			signal: AbortSignal.timeout(DEFAULT_TIMEOUT_MS)
 		})
 			.catch(e => {
 				// console.log(e)
@@ -106,7 +107,7 @@ export class CanapeGameStore {
 				'Content-Type': 'application/json',
 				'Accept': 'application/json'
 			},
-			signal: AbortSignal.timeout(200),
+			signal: AbortSignal.timeout(DEFAULT_TIMEOUT_MS),
 			body: JSON.stringify({
 				...value,
 				storeGameId: undefined,
@@ -129,7 +130,7 @@ export class CanapeGameStore {
 			headers: {
 				'accept': 'application/json'
 			},
-			signal: AbortSignal.timeout(200)
+			signal: AbortSignal.timeout(DEFAULT_TIMEOUT_MS)
 		})
 
 		if(!response.ok) {

@@ -1,3 +1,4 @@
+// biome-ignore lint/security/noSecrets: alphabet listing
 export const ALPHABET = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_'
 
 export class ID {

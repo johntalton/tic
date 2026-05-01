@@ -1,7 +1,7 @@
 import { ServerSentEvents } from '@johntalton/sse-util'
 
 import { userStore } from '../store/store.js'
-import { isViewable } from './tic.js'
+import { isViewable } from './game.js'
 import { identifiableGameId } from './util.js'
 
 /** @import { HandlerFn } from '../util/dig.js' */
@@ -9,7 +9,7 @@ import { identifiableGameId } from './util.js'
 const MILLISECONDS_PER_SECOND = 1000
 
 /** @type {HandlerFn<void>} */
-export async function handleGameFeed(_matches, sessionUser, _body, _query, stream, handlerPerformance, shutdownSignal) {
+export async function handleGameFeed(_matches, sessionUser, _body, _query, stream, _handlerPerformance, shutdownSignal) {
 	const channel = new BroadcastChannel('SSE')
 	console.log('SSE channel up')
 

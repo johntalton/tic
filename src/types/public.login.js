@@ -12,3 +12,4 @@
  * @property {RefreshToken} refreshToken
  */
 
+export {}

@@ -1,3 +1,17 @@
+/** biome-ignore-all lint/nursery/noExcessiveClassesPerFile: <explanation> */
+/** biome-ignore-all lint/nursery/noExcessiveLinesPerFile: <explanation> */
+
+import { range } from './range.js'
+
+
+function buttonCountForGameType(type) {
+	if(type === 'TTT') { return 9 }
+	if(type === 'Reversi') { return 64 }
+	if(type === 'C4') { return 42 }
+
+	throw new Error('unknown board type')
+}
+
 class UIListing {
 	static selectGameListingItem(gameId) {
 		const gameListElement = document.getElementById('GamesListing')
@@ -126,6 +140,7 @@ class UIListing {
 }
 
 class UIField {
+
 	static setGameMessage(gameId, key) {
 		const gameFieldElem = document.querySelector(`game-field[game-id="${gameId}"]`)
 		if(gameFieldElem === null) { return }
@@ -137,7 +152,7 @@ class UIField {
 		message?.toggleAttribute('data-active', true)
 	}
 
-	static createNewGameField(gameId, port) {
+	static createNewGameField(gameId, type, port) {
 		const templateElem = document.getElementById('GameTemplate')
 		if(!(templateElem instanceof HTMLTemplateElement)) { throw new Error('GameTemplate is not a template') }
 		if(templateElem === null) { throw new Error('missing Game Template') }
@@ -149,7 +164,24 @@ class UIField {
 		gameFieldElem.toggleAttribute('data-active', true)
 		gameFieldElem.setAttribute('game-id', gameId)
 
+
 		const gameBoardElem = gameFieldElem.querySelector('game-board')
+
+		const buttonTemplateElem = document.getElementById('BoardPositionButton')
+		if(!(buttonTemplateElem instanceof HTMLTemplateElement)) { throw new Error('Button Template is not a template') }
+		if(buttonTemplateElem === null) { throw new Error('missing Button Template') }
+
+		const buttonCount = buttonCountForGameType(type)
+
+		for(const position of range(0, buttonCount - 1)) {
+			const buttonTemplateDocument = buttonTemplateElem.content.cloneNode(true)
+			if(!(buttonTemplateDocument instanceof DocumentFragment)) { throw new Error('templateDocument is not a Document') }
+			const buttonElem = buttonTemplateDocument.querySelector('button')
+			if(buttonElem === null) { throw new Error('buttonTemplate does not have button') }
+			buttonElem?.setAttribute('data-position', `${position}`)
+			gameBoardElem?.append(buttonElem)
+		}
+
 
 		const buttonAccept = gameFieldElem.querySelector('button[data-action="accept"]')
 		const buttonClose = gameFieldElem.querySelector('button[data-action="close"]')
@@ -163,6 +195,11 @@ class UIField {
 		buttonForfeit?.addEventListener('click', event => port.postMessage({ type: 'forfeit', gameId }), { once: false })
 		buttonOffer?.addEventListener('click', event => port.postMessage({ type: 'offer', gameId }))
 
+
+
+
+
+		gameBoardElem?.setAttribute('type', type)
 		gameBoardElem?.addEventListener('click', event => {
 			event.preventDefault()
 			const { target } = event
@@ -229,7 +266,7 @@ class UIField {
 		const canMove = (game.active.includes(user.id))
 		gameFieldElem.toggleAttribute('can-move', canMove)
 
-		const { resolution, state } = game
+		const { resolution, state, type } = game
 		const { draw, full, resolved, win, winner } = resolution
 		const { name: winningPosition, user: winningUser } = winner
 
@@ -276,7 +313,7 @@ class UIField {
 		})
 	}
 
-	static activateGameField(gameId, port) {
+	static activateGameField(gameId, type, port) {
 		// console.log('load game', gameId)
 		const gameFieldsElem = document.getElementById('GameFields')
 		if(gameFieldsElem === null) { throw new Error('missing game fields container') }
@@ -290,7 +327,8 @@ class UIField {
 
 		const existingGameField = document.querySelector(`game-field[game-id="${gameId}"]`)
 		if(existingGameField === null) {
-			const newGameField = UI.Field.createNewGameField(gameId, port)
+			const newGameField = UI.Field.createNewGameField(gameId, type, port)
+			newGameField.toggleAttribute('data-active', true)
 			gameFieldsElem.append(newGameField)
 
 		} else {

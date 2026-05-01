@@ -1,6 +1,6 @@
 import { gameStore } from '../../store/store.js'
 import { TIMING, timed } from '../../util/timing.js'
-import { Tic } from '../tic.js'
+import { GameManager } from '../game.js'
 import { resolveFromStore } from '../util.js'
 
 /** @import { ActionHandlerFn } from './index.js' */
@@ -10,7 +10,7 @@ import { resolveFromStore } from '../util.js'
 export async function handleDecline(id, userId, _body, _query, handlerPerformance) {
 	const { game, gameObject } = await resolveFromStore(id, userId, handlerPerformance)
 
-	const updatedGame = Tic.decline(game, userId)
+	const updatedGame = GameManager.decline(game, userId)
 
 	/** @type {StoreGameEnvelope} */
 	const updatedGameObject = {
@@ -28,5 +28,5 @@ export async function handleDecline(id, userId, _body, _query, handlerPerformanc
 		() => gameStore.set(gameObject.storeGameId, updatedGameObject))
 
 
-	return Tic.actionable(updatedGame, userId)
+	return GameManager.actionable(updatedGame, userId)
 }

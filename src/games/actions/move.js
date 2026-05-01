@@ -1,6 +1,6 @@
 import { gameStore } from '../../store/store.js'
 import { TIMING, timed } from '../../util/timing.js'
-import { EMPTY, Tic } from '../tic.js'
+import { EMPTY, GameManager } from '../game.js'
 import { computeAndUpdateELO, resolveFromStore } from '../util.js'
 
 /** @import { ActionHandlerFn } from './index.js' */
@@ -16,7 +16,7 @@ export async function handleMove(encodedGameId, userId, _body, query, handlerPer
 	const positionPlayerId = game.board[position]
 	if(positionPlayerId !== EMPTY) { throw new Error('invalid move position') }
 
- 	const updatedGame = Tic.move(game, userId, { position })
+ 	const updatedGame = GameManager.move(game, userId, { position })
 
 	/** @type {StoreGameEnvelope} */
 	const updatedGameObject = {
@@ -33,7 +33,7 @@ export async function handleMove(encodedGameId, userId, _body, query, handlerPer
 		handlerPerformance,
 		() => gameStore.set(gameObject.storeGameId, updatedGameObject))
 
-	const actionableGame = Tic.actionable(updatedGame, userId)
+	const actionableGame = GameManager.actionable(updatedGame, userId)
 
 	await computeAndUpdateELO(actionableGame, handlerPerformance)
 		.catch(error => console.warn('error updating elo', error))

@@ -2,7 +2,7 @@ import { gameStore, storeGameIdFromString, storeUserIdFromString, userStore } fr
 import { encodedUserId } from '../users/util.js'
 import { DisposableTimer, TIMING } from '../util/timing.js'
 import { DRAW, ELO, LOSE, WIN } from './elo.js'
-import { EMPTY, isViewable } from './tic.js'
+import { EMPTY, isViewable } from './game.js'
 
 // const KEY = await crypto.subtle.generateKey({
 // 		name: 'AES-GCM',
@@ -13,7 +13,7 @@ import { EMPTY, isViewable } from './tic.js'
 
 /** @import { StoreUserId } from '../types/store.user.js' */
 /** @import { StoreGameId, ResolvedStoreInfo } from '../types/store.game.js' */
-/** @import { ActionableGame } from './tic.js' */
+/** @import { ActionableGame } from './game.js' */
 /** @import { EncodedGameId, IdentifiableActionableGame } from '../types/public.game.js' */
 /** @import { EncodedUserId } from '../types/public.user.js' */
 /** @import { TimingsInfo } from '@johntalton/http-util/headers' */
@@ -56,6 +56,9 @@ export async function resolveFromStore(id, userId, handlerPerformance) {
 		// console.log('not viewable', userId, game)
 		throw new Error('not viewable')
 	}
+
+	// Patch the game type if undefined for legacy games
+	if(game.type === undefined) { game.type = 'TTT' }
 
   return { game, gameObject }
 }
@@ -129,7 +132,7 @@ export async function computeAndUpdateELO(actionableGame, handlerPerformance) {
  */
 export async function fromIdentifiableGameId(id) {
 	if(!id.startsWith('G:')) { throw new Error('not an encoded game id') }
-	return storeGameIdFromString(id.substring(2))
+	return storeGameIdFromString(id.slice(2))
 
 	// const [ g, ciphertext64, nonce64 ] = id.split(':')
 

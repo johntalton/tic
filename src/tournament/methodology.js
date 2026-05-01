@@ -1,4 +1,4 @@
-/** biome-ignore-all lint/nursery/noExcessiveClassesPerFile: <explanation> */
+/** biome-ignore-all lint/nursery/noExcessiveClassesPerFile: factory */
 import { Bracket, Round } from './structures.js'
 
 /** @import {

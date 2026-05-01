@@ -1,7 +1,6 @@
-/**
- * @import { RateLimitPolicyInfo } from '@johntalton/http-util/headers'
- */
-/** biome-ignore-all lint/nursery/noExcessiveClassesPerFile: <explanation> */
+/** biome-ignore-all lint/nursery/noExcessiveClassesPerFile: Internal Bucket */
+
+/** @import { RateLimitPolicyInfo, RateLimitInfo } from '@johntalton/http-util/headers' */
 
 /**
  * @typedef {Object} BucketInfo
@@ -38,14 +37,16 @@ export class Bucket {
 			// console.log(`${policy.name}: current count after refill ${bucket.tokenCount}`)
 		}
 
+		const timeUntilRefillMs = Math.round(Math.max(0, policy.windowSeconds - (elapsedTimeMs / MILLISECONDS_PER_SECOND)))
+		// console.log(`${policy.name}: limited until ${timeUntilRefillMs} S`)
+
+
 		if((bucket.tokenCount - count) >= 0) {
 			bucket.tokenCount = Math.max(bucket.tokenCount - count, 0)
 			// console.log(`${policy.name}: current count ${bucket.tokenCount}`)
-			return { exhausted: false, }
+			return { exhausted: false, resetSeconds: timeUntilRefillMs }
 		}
 
-		const timeUntilRefillMs = Math.round(Math.max(0, policy.windowSeconds - (elapsedTimeMs / MILLISECONDS_PER_SECOND)))
-		// console.log(`${policy.name}: limited until ${timeUntilRefillMs} S`)
 
 		return { exhausted: true, resetSeconds: timeUntilRefillMs }
 	}
@@ -56,6 +57,7 @@ export class RateLimiter {
 	 * @param {Map<string, BucketInfo>} store
 	 * @param {string} key
 	 * @param {RateLimitPolicyInfo} policy
+	 * @returns {RateLimitInfo}
 	 */
 	static test(store, key, policy) {
 		if(!store.has(key)) {

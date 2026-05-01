@@ -1,6 +1,6 @@
 import { MATCHES } from '../route.js'
 import { userStore } from '../store/store.js'
-import { isViewable, Tic } from './tic.js'
+import { GameManager  } from './game.js'
 import { identifiableGame, isStoreEncodedGameId, resolveFromStore } from './util.js'
 
 /** @import { HandlerFn } from '../util/dig.js' */
@@ -14,11 +14,6 @@ export async function handleGame(matches, sessionUser, _body, _query, _stream, h
 	const userId = await userStore.fromToken(sessionUser.tokens.access, handlerPerformance)
 	const { game, gameObject } = await resolveFromStore(encodedGameId, userId, handlerPerformance)
 
-	if(!isViewable(game, userId)) {
-		// console.log('not viewable', userId, game)
-		throw new Error('not viewable')
-	}
-
-	const actionableGame = Tic.actionable(game, userId)
+	const actionableGame = GameManager.actionable(game, userId)
 	return identifiableGame(gameObject.storeGameId, actionableGame)
 }

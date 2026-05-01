@@ -1,7 +1,8 @@
 // import { login, register } from './webauthn.js'
+/** biome-ignore-all lint/nursery/noExcessiveLinesPerFile: <explanation> */
 import { GameAPI } from './game-api.js'
-import { UserAPI } from './user-api.js'
 import { UI } from './ui.js'
+import { UserAPI } from './user-api.js'
 
 import './localized-output.js'
 // import './elapsed-time.js'
@@ -144,12 +145,13 @@ function handleGameMove(gameId, position) {
 
 function handleActivateGameField(gameId) {
 	UI.Listing.selectGameListingItem(gameId)
-	UI.Field.activateGameField(gameId, clientPort)
+	// UI.Field.skeletonGame(gameId)
 	gameApi.fetch(gameId)
 		.then(game => {
 			refreshGlyphCache(game.players)
 			notificationGameIdSet.delete(gameId)
 			UI.Listing.clearGameListingItemNotification(gameId)
+			UI.Field.activateGameField(gameId, game.type, clientPort)
 			UI.Field.updateGameField(gameId, game, USER, glyphCache)
 		})
 		.catch(e => {
@@ -180,18 +182,23 @@ function handleLoadListing() {
 
 
 function handleCreateGame(event) {
-	const button = event.target
-	button.disabled = true
-	setTimeout(() => button.disabled = false, 1000)
+	// const button = event.target
+	// button.disabled = true
+	// setTimeout(() => button.disabled = false, 1000)
+	// const type = 'C4'
 
-	gameApi.create()
+	const typeSelect = document.getElementById('createGameTypeSelect')
+	if(!(typeSelect instanceof HTMLSelectElement)) { throw new Error('type selection not select element') }
+	const type = typeSelect.value
+
+	gameApi.create(type)
 		.then(game => {
 			refreshGlyphCache(game.players)
 
 			notificationGameIdSet.add(game.id)
 
 			UI.Listing.addGameListingItem(game, USER, notificationGameIdSet, clientPort)
-			UI.Field.activateGameField(game.id, clientPort)
+			UI.Field.activateGameField(game.id, game.type, clientPort)
 			UI.Field.updateGameField(game.id, game, USER, glyphCache)
 		})
 		.catch(e => {
@@ -249,6 +256,8 @@ function stopSSE() {
 
 
 function refreshGlyphCache(userIds) {
+	if(userIds.length <= 0) { return }
+
 	userApi.list(userIds)
 		.then(({ users }) => {
 			for(const user of users) {
@@ -415,7 +424,10 @@ async function onContentLoadedAsync(params) {
 	})
 
 	//
-	document.getElementById('CreateNewGame')?.addEventListener('click', handleCreateGame)
+	// document.getElementById('CreateNewGame')?.addEventListener('click', handleCreateGame)
+	const createDialog = document.getElementById('CreateGame')
+	const createForm = createDialog?.querySelector('form')
+	createForm?.addEventListener('submit', handleCreateGame)
 
 	//
 	document.getElementById('ListFilterForm')?.addEventListener('change', handleFilterChange)

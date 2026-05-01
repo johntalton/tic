@@ -1,4 +1,4 @@
-/** @import { Game } from '../games/tic.js' */
+/** @import { Game } from '../games/game.js' */
 /** @import { StoreUserId } from '../types/store.user.js' */
 
 /** @typedef {string & { readonly _brand: 'gid' }} StoreGameId */

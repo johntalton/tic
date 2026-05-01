@@ -1,6 +1,7 @@
+/** biome-ignore-all lint/nursery/noExcessiveClassesPerFile: <explanation> */
 import { GameAPI } from './node-game-api.js'
+import { GameManager } from '../games/game.js'
 import { EventSource } from '../util/event-source.js'
-import { Board, WIN_CONDITIONS } from '../games/tic.js'
 
 class BasicAI {
 	async #shouldAccept(game) {

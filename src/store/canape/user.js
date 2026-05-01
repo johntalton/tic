@@ -9,6 +9,8 @@ import { storeUserIdFromString } from '../store.js'
 import { Fetch2 } from '../../agent/fetch2.js'
 import { DisposableTimer } from '../../util/timing.js'
 
+const DEFAULT_TIMEOUT_MS = 200
+
 export class CanapeUserStore {
 	#url
 
@@ -32,7 +34,7 @@ export class CanapeUserStore {
 				'accept': 'application/json'
 			},
 			body: JSON.stringify(userObject),
-			signal: AbortSignal.timeout(200)
+			signal: AbortSignal.timeout(DEFAULT_TIMEOUT_MS)
 		})
 
 		if(!response.ok) {
@@ -62,7 +64,7 @@ export class CanapeUserStore {
 				['settee:id']: userObject.storeUserId,
 				['settee:revision']: userObject.storeUserRevision
 			}),
-			signal: AbortSignal.timeout(200)
+			signal: AbortSignal.timeout(DEFAULT_TIMEOUT_MS)
 		})
 
 		return response.ok
@@ -78,7 +80,7 @@ export class CanapeUserStore {
 			headers: {
 				'accept': 'application/json'
 			},
-			signal: AbortSignal.timeout(200)
+			signal: AbortSignal.timeout(DEFAULT_TIMEOUT_MS)
 		})
 
 		if(!response.ok) {
@@ -103,14 +105,15 @@ export class CanapeUserStore {
 	 */
 	async list(_user, usersList) {
 		const url = new URL(`${this.#url}/view/user_by_user`)
-		usersList?.forEach(user => url.searchParams.append('key', user))
+		// usersList?.forEach(user => url.searchParams.append('key', user))
+		for(const user of usersList ?? []) { url.searchParams.append('key', user) }
 
 		const response = await Fetch2.fetch(url, {
 			method: 'GET',
 			headers: {
 				'accept': 'application/json'
 			},
-			signal: AbortSignal.timeout(200)
+			signal: AbortSignal.timeout(DEFAULT_TIMEOUT_MS)
 		})
 
 		if(!response.ok) {
@@ -142,7 +145,7 @@ export class CanapeUserStore {
 			headers: {
 				'accept': 'application/json'
 			},
-			signal: AbortSignal.timeout(200)
+			signal: AbortSignal.timeout(DEFAULT_TIMEOUT_MS)
 		})
 
 		if(!response.ok) { throw new Error('canape user by token not ok') }
@@ -166,7 +169,7 @@ export class CanapeUserStore {
 			headers: {
 				'accept': 'application/json'
 			},
-			signal: AbortSignal.timeout(200)
+			signal: AbortSignal.timeout(DEFAULT_TIMEOUT_MS)
 		})
 
 		if(!response.ok) { throw new Error('canape user by token not ok') }
