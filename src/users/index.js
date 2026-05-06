@@ -1,5 +1,5 @@
-/** biome-ignore-all lint/performance/noBarrelFile: <explanation> */
-/** biome-ignore-all lint/performance/noReExportAll: <explanation> */
+/** biome-ignore-all lint/performance/noBarrelFile: is barrel */
+/** biome-ignore-all lint/performance/noReExportAll: because is barrel */
 //
 export * from './friends/add.js'
 export * from './friends/list.js'

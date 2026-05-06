@@ -70,7 +70,7 @@ export function _dig(route, key, keys, matches) {
 export function dig(routes, method, path) {
 	// console.log('DIG', method, path)
 	const matches = new Map()
-	const [ key, ...keys ] = path.substring(1).split('/')
+	const [ key, ...keys ] = path.slice(1).split('/')
 	const leaf = _dig(routes, key, keys, matches)
 	if(leaf === undefined) { throw new Error(`dig: no route @ "${path}"`) }
  	const handler = leaf[Symbol.for(method)]
@@ -91,7 +91,7 @@ export function dig(routes, method, path) {
  */
 export function digOptions(routes, path) {
 	const matches = new Map()
-	const [ key, ...keys ] = path.substring(1).split('/')
+	const [ key, ...keys ] = path.slice(1).split('/')
 	const leaf = _dig(routes, key, keys, matches)
 	return METHODS.filter(method => leaf[method] !== undefined)
 		.map(sym => Symbol.keyFor(sym))

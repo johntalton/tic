@@ -7,13 +7,14 @@ import { CouchUserStore } from './couch/user.js'
 /** @import { StoreGameId } from '../types/store.game.js' */
 /** @import { StoreUserId } from '../types/store.user.js' */
 
-export const USE_CANAPE = true
+export const USE_CANAPE = false
 
+// biome-ignore lint/nursery/noUnnecessaryConditions: configuration
 export const gameStore = USE_CANAPE ?
 	new CanapeGameStore('https://canape.next.local:6095/tic') :
 	new CouchGameStore()
 
-
+// biome-ignore lint/nursery/noUnnecessaryConditions: configuration
 export const userStore = USE_CANAPE ?
 	new CanapeUserStore('https://canape.next.local:6095/tic') :
 	new CouchUserStore()

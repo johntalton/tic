@@ -24,12 +24,12 @@ export function isEncodedUserId(id) {
 }
 
 /**
- * @param {EncodedUserId} encodedUserId
+ * @param {EncodedUserId} eUserId
  * @returns {Promise<StoreUserId>}
  */
-export async function fromEncodedUserId(encodedUserId) {
-	if(!isEncodedUserId(encodedUserId)) { throw new Error('not an encoded user id') }
-	return storeUserIdFromString(encodedUserId.substring(2))
+export async function fromEncodedUserId(eUserId) {
+	if(!isEncodedUserId(eUserId)) { throw new Error('not an encoded user id') }
+	return storeUserIdFromString(eUserId.slice(2))
 }
 
 /**

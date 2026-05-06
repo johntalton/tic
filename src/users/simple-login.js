@@ -1,15 +1,18 @@
 import { storeUserIdFromString, userStore } from '../store/store.js'
 import { ID } from '../util/id.js'
-import { encodedUserId } from './util.js'
 // import { isSingleGrapheme } from './grapheme.js'
+import { TIMING, timed } from '../util/timing.js'
+import { accessTokenFromString, refreshTokenFromString, sseTokenFromString } from '../util/token.js'
+import { encodedUserId } from './util.js'
 
 export const DEFAULT_ELO = 100
 
 /** @import { HandlerFn } from '../util/dig.js' */
 /** @import { SigninInfo } from '../types/public.login.js' */
+/** @import { StoreUserEnvelopeBase } from '../types/store.user.js' */
 
 /** @type {HandlerFn<SigninInfo>} */
-export async function handleSimpleLogin(matches, sessionUser, body, query, _stream, handlerPerformance) {
+export async function handleSimpleLogin(_matches, _sessionUser, _body, query, _stream, handlerPerformance) {
 	const name = query.get('name')
 	if(name === null) { throw new Error('missing name') }
 
@@ -22,14 +25,16 @@ export async function handleSimpleLogin(matches, sessionUser, body, query, _stre
 	} else {
 		const now = Date.now()
 		const newUserId = storeUserIdFromString(`user:${ID.generate()}`)
-		const accessToken = `token:access:${ID.generate()}`
-		const sseToken = `token:sse:${ID.generate()}`
+		const accessToken = accessTokenFromString(`token:access:${ID.generate()}`)
+		const sseToken = sseTokenFromString(`token:sse:${ID.generate()}`)
+		const refreshToken = refreshTokenFromString(`token:refresh:${ID.generate()}`)
 		const displayName = name
 
 		// const suggestedGlyph = '👩🏻‍❤️‍💋‍👩🏼'
 		// const glyph = isSingleGrapheme(suggestedGlyph) ? suggestedGlyph : undefined
 
-		const userObject = await userStore.create(newUserId, {
+		/** @type {StoreUserEnvelopeBase} */
+		const userOptions = {
 			'type': 'user.tic.v1',
 			'user': {
 				'displayName': displayName,
@@ -42,7 +47,7 @@ export async function handleSimpleLogin(matches, sessionUser, body, query, _stre
 			'session': {
 			// 	'key': ',
 				'token': accessToken,
-				'refreshToken': '',
+				'refreshToken': refreshToken,
 				'sseToken': sseToken,
 			// 	'expiresAt': ',
 			// 	'lastLogin': ',
@@ -52,16 +57,23 @@ export async function handleSimpleLogin(matches, sessionUser, body, query, _stre
 				createdAt: now,
 				updatedAt: now
 			}
-		})
+		}
+
+		const userObject = await timed(
+			TIMING.USER_CREATE,
+			handlerPerformance,
+			() => userStore.create(newUserId, userOptions)
+		)
 
 
-		// console.log('created user', user)
+		console.log('created user', userObject)
 
 		return {
 			id: await encodedUserId(newUserId),
 			displayName,
 			accessToken,
-			sseToken
+			sseToken,
+			refreshToken
 		}
 	}
 

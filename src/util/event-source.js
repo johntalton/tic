@@ -1,7 +1,7 @@
-/** biome-ignore-all lint/nursery/noExcessiveLinesPerFile: <explanation> */
-/** biome-ignore-all lint/style/useExportsLast: <explanation> */
+/** biome-ignore-all lint/nursery/noExcessiveLinesPerFile: single responsibility */
+/** biome-ignore-all lint/style/noSubstr: for now fix later */
 
-import { SSE_BOM, ENDING } from '@johntalton/sse-util'
+import { ENDING, SSE_BOM } from '@johntalton/sse-util'
 
 //
 import { Fetch2 } from '../agent/fetch2.js'
@@ -9,6 +9,8 @@ import { Fetch2 } from '../agent/fetch2.js'
 export const CONNECTING = 0
 export const OPEN = 1
 export const CLOSED = 2
+
+export const NO_CONTENT_STATUS = 204
 
 export const DEFAULT_RECONNECT_INTERVAL_MS = 3000
 
@@ -29,7 +31,7 @@ export const CONTENT_TYPE_EVENT_STREAM = 'text/event-stream'
  */
 
 
-function eventSourceTransform() {
+export function eventSourceTransform() {
 	const SPACE = ' '
 	const COLON = ':'
 	const EMPTY = ''
@@ -130,7 +132,7 @@ function eventSourceTransform() {
 	}
 
 	return new TransformStream({
-		start(controller) {
+		start(_controller) {
 			//
 		},
 
@@ -174,7 +176,7 @@ function eventSourceTransform() {
 			} while((cr >= 0 || lf >= 0) && accumulator.length > 0)
 		},
 
-		flush(controller) {
+		flush(_controller) {
 			// console.log('EventSourceTransform: flush')
 		}
 	})
@@ -257,9 +259,9 @@ export class EventSource extends EventTarget {
 		this.#readyState = CONNECTING
 		this.#controller = new AbortController()
 
-		const lastEventHeader = this.#lastEventId !== undefined ? {
+		const lastEventHeader = this.#lastEventId === undefined ? undefined : {
 			'Last-Event-ID': this.#lastEventId
-		} : undefined
+		}
 
 		Fetch2.fetch(this.#url, {
 			method: 'GET',
@@ -277,7 +279,7 @@ export class EventSource extends EventTarget {
 			.then(async response => {
 				const { status, headers } = response
 
-				if(status === 204) {
+				if(status === NO_CONTENT_STATUS) {
 					this.#failure(status, 'No Content')
 					this.close()
 					return

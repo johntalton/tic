@@ -1,39 +1,39 @@
-/** biome-ignore-all lint/nursery/noExcessiveLinesPerFile: <explanation> */
+/** biome-ignore-all lint/nursery/noExcessiveLinesPerFile: main handler is complex */
 import http2 from 'node:http2'
 import { TLSSocket } from 'node:tls'
 
-import {
-	ENCODER_MAP,
-	HTTP_HEADER_FORWARDED,
-	HTTP_HEADER_ORIGIN,
-	HTTP_HEADER_SEC_CH_MOBILE,
-	HTTP_HEADER_SEC_CH_PLATFORM,
-	HTTP_HEADER_SEC_CH_UA,
-	HTTP_HEADER_SEC_FETCH_DEST,
-	HTTP_HEADER_SEC_FETCH_MODE,
-	HTTP_HEADER_SEC_FETCH_SITE,
-	HTTP_HEADER_USER_AGENT
-} from '@johntalton/http-util/response'
-import { Response } from '@johntalton/http-util/response/object'
-
 import { requestBody } from '@johntalton/http-util/body'
 import {
-	parseContentType,
-	CONTENT_TYPE_JSON,
-	MIME_TYPE_JSON,
-	MIME_TYPE_TEXT,
-	MIME_TYPE_EVENT_STREAM,
-	MIME_TYPE_XML,
-
 	Accept,
 	AcceptEncoding,
 	AcceptLanguage,
 
-	Forwarded,
+	CONTENT_TYPE_JSON,
 	FORWARDED_KEY_FOR,
+	Forwarded,
 	KNOWN_FORWARDED_KEYS,
+
+	MIME_TYPE_EVENT_STREAM,
+	MIME_TYPE_JSON,
+	MIME_TYPE_TEXT,
+	MIME_TYPE_XML,
+
+	parseContentType,
 	SecFetch
 } from '@johntalton/http-util/headers'
+import {
+	ENCODER_MAP,
+	HTTP_HEADER_FORWARDED,
+	HTTP_HEADER_ORIGIN,
+	// HTTP_HEADER_SEC_CH_MOBILE,
+	// HTTP_HEADER_SEC_CH_PLATFORM,
+	// HTTP_HEADER_SEC_CH_UA,
+	HTTP_HEADER_SEC_FETCH_DEST,
+	HTTP_HEADER_SEC_FETCH_MODE,
+	HTTP_HEADER_SEC_FETCH_SITE,
+	// HTTP_HEADER_USER_AGENT
+} from '@johntalton/http-util/response'
+import { Response } from '@johntalton/http-util/response/object'
 
 import { ROUTES } from './route.js'
 import { dig, digOptions } from './util/dig.js'
@@ -54,21 +54,21 @@ const {
 	HTTP2_HEADER_AUTHORIZATION,
 	HTTP2_HEADER_CONTENT_TYPE,
 	HTTP2_HEADER_CONTENT_LENGTH,
-	HTTP2_HEADER_CONTENT_DISPOSITION,
+	// HTTP2_HEADER_CONTENT_DISPOSITION,
 	HTTP2_HEADER_ACCEPT,
 	HTTP2_HEADER_ACCEPT_ENCODING,
 	HTTP2_HEADER_ACCEPT_LANGUAGE,
-	HTTP2_HEADER_REFERER,
-	HTTP2_HEADER_HOST,
-	HTTP2_HEADER_VIA,
-	HTTP2_HEADER_CACHE_CONTROL,
-	HTTP2_HEADER_ETAG,
-	HTTP2_HEADER_IF_MATCH,
-	HTTP2_HEADER_IF_MODIFIED_SINCE,
-	HTTP2_HEADER_IF_NONE_MATCH,
-	HTTP2_HEADER_IF_RANGE,
-	HTTP2_HEADER_IF_UNMODIFIED_SINCE,
-	HTTP2_HEADER_LAST_MODIFIED
+	// HTTP2_HEADER_REFERER,
+	// HTTP2_HEADER_HOST,
+	// HTTP2_HEADER_VIA,
+	// HTTP2_HEADER_CACHE_CONTROL,
+	// HTTP2_HEADER_ETAG,
+	// HTTP2_HEADER_IF_MATCH,
+	// HTTP2_HEADER_IF_MODIFIED_SINCE,
+	// HTTP2_HEADER_IF_NONE_MATCH,
+	// HTTP2_HEADER_IF_RANGE,
+	// HTTP2_HEADER_IF_UNMODIFIED_SINCE,
+	// HTTP2_HEADER_LAST_MODIFIED
 } = http2.constants
 
 const ALLOWED_ORIGINS = (process.env['ALLOWED_ORIGINS'] ?? '').split(',').map(s => s.trim())
@@ -86,8 +86,9 @@ const DEFAULT_SUPPORTED_LANGUAGES = [ 'en-US', 'en' ]
 const DEFAULT_SUPPORTED_MIME_TYPES = [ MIME_TYPE_JSON, MIME_TYPE_XML, MIME_TYPE_TEXT ]
 const DEFAULT_SUPPORTED_ENCODINGS = [ ...ENCODER_MAP.keys() ]
 
-const BODY_TIMEOUT_SEC = 2 * 1000
-const BODY_BYTE_LENGTH = 1000 * 1000
+const MSEC_PER_SEC = 1000
+const BODY_TIMEOUT_SEC = 2 * MSEC_PER_SEC
+const BODY_BYTE_LENGTH = 1_000_000
 
 const ipRateStore = new Map()
 const ipRequestPerSecondPolicy = {
@@ -104,7 +105,9 @@ const ipRequestPerSecondPolicy = {
  * @param {number} _flags
  * @param {AbortSignal} shutdownSignal
  */
-async function handleStreamAsync(stream, header, _flags, shutdownSignal) {
+
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: main handler
+async  function handleStreamAsync(stream, header, _flags, shutdownSignal) {
 	const preambleStart = performance.now()
 
 	const authorization = header[HTTP2_HEADER_AUTHORIZATION]
@@ -116,24 +119,24 @@ async function handleStreamAsync(stream, header, _flags, shutdownSignal) {
 	const fullAcceptEncoding = header[HTTP2_HEADER_ACCEPT_ENCODING]
 	const fullAcceptLanguage = header[HTTP2_HEADER_ACCEPT_LANGUAGE]
 	const origin = header[HTTP_HEADER_ORIGIN]
-	const host = header[HTTP2_HEADER_HOST]
+	// const host = header[HTTP2_HEADER_HOST]
 	const authority = header[HTTP2_HEADER_AUTHORITY]
 	const scheme = header[HTTP2_HEADER_SCHEME]
 	// const lastEventID = header[SSE_LAST_EVENT_ID.toLowerCase()]
-	const UA = header[HTTP_HEADER_USER_AGENT]
-	const referer = header[HTTP2_HEADER_REFERER]
+	// const UA = header[HTTP_HEADER_USER_AGENT]
+	// const referer = header[HTTP2_HEADER_REFERER]
 	const fullForwarded = header[HTTP_HEADER_FORWARDED]
 
 	// SEC Client Hints
-	const secUA = header[HTTP_HEADER_SEC_CH_UA]
-	const secPlatform = header[HTTP_HEADER_SEC_CH_PLATFORM]
-	const secMobile = header[HTTP_HEADER_SEC_CH_MOBILE]
+	// const secUA = header[HTTP_HEADER_SEC_CH_UA]
+	// const secPlatform = header[HTTP_HEADER_SEC_CH_PLATFORM]
+	// const secMobile = header[HTTP_HEADER_SEC_CH_MOBILE]
 	//
 	const secFetchSite = header[HTTP_HEADER_SEC_FETCH_SITE]
 	const secFetchMode = header[HTTP_HEADER_SEC_FETCH_MODE]
 	const secFetchDest = header[HTTP_HEADER_SEC_FETCH_DEST]
 
-	const secFetch = {
+	const _secFetch = {
 		site: SecFetch.parseSite(secFetchSite),
 		mode: SecFetch.parseMode(secFetchMode),
 		dest: SecFetch.parseDestination(secFetchDest)
@@ -205,9 +208,8 @@ async function handleStreamAsync(stream, header, _flags, shutdownSignal) {
 	if(!(stream.session.socket instanceof TLSSocket)) { throw new Error('socket not TLS') }
 
 	const ip = stream.session.socket.remoteAddress
-	const port = stream.session.socket.remotePort
-	// @ts-ignore
-	const SNI = stream.session.socket.servername // TLS SNI
+	const _port = stream.session.socket.remotePort
+	const _SNI = stream.session.socket.servername // TLS SNI
 
 	const requestUrl = new URL(fullPathAndQuery, `${scheme}://${authority}`)
 
@@ -322,7 +324,7 @@ async function handleStreamAsync(stream, header, _flags, shutdownSignal) {
 	const supportedEncodings = forceIdentity ? [] : DEFAULT_SUPPORTED_ENCODINGS
 	const acceptedEncoding = AcceptEncoding.select(fullAcceptEncoding, metadata.encodings ?? supportedEncodings)
 	const accept = Accept.select(fullAccept, metadata.mimeTypes ?? DEFAULT_SUPPORTED_MIME_TYPES)
-	const acceptedLanguage = AcceptLanguage.select(fullAcceptLanguage, metadata.languages ?? DEFAULT_SUPPORTED_LANGUAGES)
+	const _acceptedLanguage = AcceptLanguage.select(fullAcceptLanguage, metadata.languages ?? DEFAULT_SUPPORTED_LANGUAGES)
 
 	//
 	const preambleEnd = performance.now()

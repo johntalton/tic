@@ -19,6 +19,7 @@ export const TIMING = {
 	FRIENDS_GET: 'get',
 	FRIENDS_LIST: 'list',
 
+	USER_CREATE: 'create',
 	USER_GET: 'get',
 	USER_LIST: 'list',
 	USER_PATCH_GET: 'get',

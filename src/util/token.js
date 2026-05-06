@@ -1,4 +1,4 @@
-/** @import { TokenSet, Token, SSEToken } from '../types/global.js' */
+/** @import { TokenSet, Token, SSEToken, RefreshToken } from '../types/global.js' */
 
 export const SPACE_CHAR = ' '
 export const BEARER = 'Bearer'
@@ -17,6 +17,24 @@ export function accessTokenFromString(str) {
  */
 export function sseTokenFromString(str) {
 	return /** @type {SSEToken} */ (str)
+}
+
+/**
+ * @param {string} str
+ * @returns {str is RefreshToken}
+ */
+export function isRefreshToken(str) {
+	if(str === undefined) { return false }
+	return true
+}
+
+/**
+ * @param {string} str
+ * @returns {RefreshToken}
+ */
+export function refreshTokenFromString(str) {
+	if(isRefreshToken(str)) { return str }
+	throw new Error('invalid refresh token type')
 }
 
 /**
