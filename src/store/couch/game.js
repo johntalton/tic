@@ -188,7 +188,7 @@ export class CouchGameStore {
 						// console.log('clear future mod')
 						potential.futureIsModified = undefined
 
-						if(isModified) {
+						if(isModified === true) {
 							// console.log('refresh from modified futureDoc')
 							potential.futureDoc = this.#get(id)
 							potential.expireAt = now + (MILLISECONDS_PER_SECOND * DEFAULT_EXPIRATION_EXTENSION_SEC)

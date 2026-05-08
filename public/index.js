@@ -7,16 +7,20 @@ import { UserAPI } from './user-api.js'
 import './localized-output.js'
 // import './elapsed-time.js'
 
+/** @import { GameId, UserId, SessionUser } from './types.js' */
+
 const COMMON_API_URL = 'https://tic.next.local:8443'
 const SIMPLE_LOGIN_URL = COMMON_API_URL
 const WEB_AUTH_N_URL = COMMON_API_URL
 const TIC_URL = COMMON_API_URL
 
+/** @type {SessionUser} */
 const USER = {
-	// id: 'bob123',
-	// displayName: 'Bob',
-	// token: '...',
-	// sseToken: '...'
+	isLoggedIn: false
+	// id: undefined,
+	// displayName: undefined,
+	// accessToken: undefined,
+	// sseToken: undefined
 }
 
 const gameApi = new GameAPI(USER, TIC_URL)
@@ -25,7 +29,10 @@ const userApi = new UserAPI(USER, TIC_URL)
 const glyphCache = new Map()
 
 const notificationGameIdSet = new Set()
+
+/** @type {EventSource|undefined} */
 var sseStream = undefined
+
 const { port1: gamePort, port2: clientPort } = new MessageChannel()
 
 gamePort.start()
@@ -54,6 +61,9 @@ gamePort.addEventListener('message', message => {
 	}
 })
 
+/**
+ * @param {GameId} gameId
+ */
 function handleAccept(gameId) {
 	gameApi.accept(gameId)
 		.then(updatedGame => {
@@ -66,6 +76,9 @@ function handleAccept(gameId) {
 		})
 }
 
+/**
+ * @param {GameId} gameId
+ */
 function handleDecline(gameId) {
 	gameApi.decline(gameId)
 		.then(updatedGame => {
@@ -78,6 +91,9 @@ function handleDecline(gameId) {
 		})
 }
 
+/**
+ * @param {GameId} gameId
+ */
 function handleClose(gameId, confirmed = false, reason = undefined) {
 	if(!confirmed) {
 		UI.Dialog.confirmClose(gameId, clientPort)
@@ -95,6 +111,9 @@ function handleClose(gameId, confirmed = false, reason = undefined) {
 		})
 }
 
+/**
+ * @param {GameId} gameId
+ */
 function handleForfeit(gameId, confirmed = false) {
 	if(!confirmed) {
 		UI.Dialog.confirmForfeit(gameId, clientPort)
@@ -112,7 +131,14 @@ function handleForfeit(gameId, confirmed = false) {
 		})
 }
 
+/**
+ * @param {GameId} gameId
+ * @param {Array<UserId>} targets
+ * @param {boolean} includeSelf
+ */
 function handleOffer(gameId, targets, includeSelf) {
+	if(!USER.isLoggedIn) { throw new Error('User not logged In') }
+
 	if(targets === undefined) {
 		// const futureFriends = userApi.friends()
 		UI.Dialog.startOffer(gameId, clientPort)
@@ -131,6 +157,10 @@ function handleOffer(gameId, targets, includeSelf) {
 		.catch(e => console.warn(e))
 }
 
+/**
+ * @param {GameId} gameId
+ * @param {string} position
+ */
 function handleGameMove(gameId, position) {
 	gameApi.move(gameId, position)
 		.then(updatedGame => {
@@ -143,6 +173,9 @@ function handleGameMove(gameId, position) {
 		})
 }
 
+/**
+ * @param {GameId} gameId
+ */
 function handleActivateGameField(gameId) {
 	UI.Listing.selectGameListingItem(gameId)
 	// UI.Field.skeletonGame(gameId)
@@ -180,8 +213,10 @@ function handleLoadListing() {
 
 
 
-
-function handleCreateGame(event) {
+/**
+ * @param {Event} _event
+ */
+function handleCreateGame(_event) {
 	// const button = event.target
 	// button.disabled = true
 	// setTimeout(() => button.disabled = false, 1000)
@@ -207,6 +242,9 @@ function handleCreateGame(event) {
 		})
 }
 
+/**
+ * @param {MessageEvent} message
+ */
 function handleSSEUpdate(message) {
 	const { lastEventId, data } = message
 	const json = JSON.parse(data)
@@ -236,6 +274,8 @@ function handleSSEUpdate(message) {
 }
 
 function startSSE() {
+	if(!USER.isLoggedIn) { throw new Error('User not logged In') }
+
 	const url = new URL('/tic/v1/events', TIC_URL)
 	url.searchParams.set('token', USER.sseToken)
 	sseStream = new EventSource(url, {
@@ -247,14 +287,16 @@ function startSSE() {
 }
 
 function stopSSE() {
-	sseStream.close()
+	sseStream?.close()
 	sseStream = undefined
 }
 
 
 
 
-
+/**
+ * @param {Array<string>} userIds
+ */
 function refreshGlyphCache(userIds) {
 	if(userIds.length <= 0) { return }
 
@@ -300,6 +342,8 @@ function refreshGlyphCache(userIds) {
 // }
 
 function handleOnLoggedIn() {
+	if(!USER.isLoggedIn) { throw new Error('User not logged In') }
+
 	refreshGlyphCache([ USER.id ])
 
 	userApi.friends()
@@ -321,6 +365,7 @@ function simpleUserAutoLogin() {
 
 	const { id, displayName, accessToken, sseToken } = JSON.parse(info)
 
+	USER.isLoggedIn = true
 	USER.id = id
 	USER.displayName = displayName
 	USER.accessToken = accessToken
@@ -330,7 +375,20 @@ function simpleUserAutoLogin() {
 	return true
 }
 
+/**
+ * @param {Event} event
+ */
 function handleSimpleLoginForm(event) {
+	if(event.target === null) {
+		UI.Global.showToast('Missing From')
+		return
+	}
+
+	if(!(event.target instanceof HTMLFormElement)) {
+		UI.Global.showToast('Invalid From')
+		return
+	}
+
 	const fd = new FormData(event.target)
 	const name = fd.get('username')
 	if(name === null || typeof name != 'string') {
@@ -368,15 +426,20 @@ function handleSimpleLoginForm(event) {
 		})
 }
 
+/**
+ * @param {Event} event
+ */
 function handleSimpleLogout(event) {
 	// localStorage.removeItem('simple-login')
 	UI.Global.logout(USER)
 	stopSSE()
 	notificationGameIdSet.clear()
 
+	USER.isLoggedIn = false
 	USER.id = undefined
 	USER.displayName = undefined
 	USER.accessToken = undefined
+	USER.sseToken = undefined
 
 	localStorage.removeItem('simple-login')
 }
@@ -389,7 +452,7 @@ function loadTheme() {
 }
 
 
-async function onContentLoadedAsync(params) {
+async function onContentLoadedAsync() {
 	// document.querySelector('[data-action="login"]')?.addEventListener('click', handleLogin)
 	// document.querySelector('[data-action="register"]')?.addEventListener('click', handleRegister)
 
@@ -463,5 +526,5 @@ function onContentLoaded() {
 }
 
 (document.readyState === 'loading') ?
-	document.addEventListener('DOMContentLoaded', onContentLoaded) :
+	document.addEventListener('DOMContentLoaded', onContentLoaded, { once: true }) :
 	onContentLoaded()

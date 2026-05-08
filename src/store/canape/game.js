@@ -28,7 +28,7 @@ export class CanapeGameStore {
 			const json = JSON.parse(data)
 			const { id } = json
 
-			console.log('Canape SSE Update', id)
+			console.log('Canape SSE Update', id, lastEventId, origin)
 
 			this.get(id)
 				.then(gameObject => {

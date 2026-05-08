@@ -1,16 +1,26 @@
+/** @import { UserId, SessionUser, User } from './types.js' */
 
 
 export class UserAPI {
+	/** @type {URL|string} */
 	#baseUrl
 	#user
 
+	/**
+	 * @param {SessionUser} user
+	 * @param {URL|string} baseUrl
+	 */
 	constructor(user, baseUrl) {
 		this.#user = user
 		this.#baseUrl = baseUrl
 	}
 
-
+	/**
+	 * @returns {Promise<{ friends: Array<User> }>}
+	 */
 	async friends() {
+		if(!this.#user.isLoggedIn) { throw new Error('user not logged in') }
+
 		const url = new URL(`/tic/v1/user/${this.#user.id}/friends`, this.#baseUrl)
 
 		const response = await fetch(url, {
@@ -30,7 +40,13 @@ export class UserAPI {
 		return response.json()
 	}
 
+	/**
+	 * @param {Array<UserId>} ids
+	 * @returns {Promise<{ users: Array<User> }>}
+	 */
 	async list(ids) {
+		if(!this.#user.isLoggedIn) { throw new Error('user not logged in') }
+
 		const url = new URL(`/tic/v1/users`, this.#baseUrl)
 		ids.forEach(id => url.searchParams.append('u', id))
 

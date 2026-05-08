@@ -23,7 +23,7 @@ export function isBoardType(type) {
 export class BoardFactory {
 	/**
 	 * @template U
-	 * @param {BoardType} type
+	 * @param {BoardType|undefined} type
 	 * @returns {GameBoard<U>}
 	 */
 	static emptyBoard(type) {
@@ -36,7 +36,7 @@ export class BoardFactory {
 
 	/**
 	 * @template U
-	 * @param {BoardType} type
+	 * @param {BoardType|undefined} type
 	 * @param {GameBoard<U>} board
 	 * @param {Array<U>} users
 	 */
@@ -50,7 +50,7 @@ export class BoardFactory {
 
 	/**
 	 * @template U
-	 * @param {BoardType} type
+	 * @param {BoardType|undefined} type
 	 * @param {GameBoard<U>} board
 	 * @param {U} user
 	 * @param {Move} move
@@ -65,7 +65,7 @@ export class BoardFactory {
 
 	/**
 	 * @template U
-	 * @param {BoardType} type
+	 * @param {BoardType|undefined} type
 	 * @param {GameBoard<U>} board
 	 * @param {U} user
 	 * @param {Move} move
@@ -81,7 +81,7 @@ export class BoardFactory {
 
 	/**
 	 * @template U
-	 * @param {BoardType} type
+	 * @param {BoardType|undefined} type
 	 * @param {GameBoard<U>} board
 	 */
 	static isResolved(type, board) {
@@ -94,7 +94,7 @@ export class BoardFactory {
 
 	/**
 	 * @template U
-	 * @param {BoardType} type
+	 * @param {BoardType|undefined} type
 	 * @param {GameBoard<U>} board
 	 * @returns {Resolution<U>}
 	 */

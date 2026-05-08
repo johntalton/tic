@@ -1,22 +1,11 @@
-/**
- * @typedef {Object} User
- * @property {string} id
- * @property {string} accessToken
- */
-
-/**
- * @typedef {string} GameId
- */
-
-
+/** @import { SessionUser, GameId, Game, BoardType } from './types.js' */
 
 export class GameAPI {
 	#baseUrl
-	/** @type {User} */
 	#user
 
 	/**
-	 * @param {User} user
+	 * @param {SessionUser} user
 	 * @param {string|URL} baseUrl
 	 */
 	constructor(user, baseUrl) {
@@ -26,8 +15,11 @@ export class GameAPI {
 
 	/**
 	 * @param {Array<string>} filter
+	 * @returns {Promise<Array<Game>>}
 	 */
 	async listing(filter) {
+		if(!this.#user.isLoggedIn) { throw new Error('user not logged in') }
+
 		const url = new URL('/tic/v1/games', this.#baseUrl)
 		url.searchParams.set('filter', filter.join('|'))
 
@@ -48,7 +40,13 @@ export class GameAPI {
 		return response.json()
 	}
 
+	/**
+	 * @param {BoardType} type
+	 * @returns {Promise<Game>}
+	 */
 	async create(type) {
+		if(!this.#user.isLoggedIn) { throw new Error('user not logged in') }
+
 		const url = new URL('/tic/v1/game', this.#baseUrl)
 		// url.searchParams.set('t', this.#user.id)
 		// url.searchParams.set('a', 'true')
@@ -73,8 +71,11 @@ export class GameAPI {
 
 	/**
 	 * @param {string} gameId
+	 * @returns {Promise<Game>}
 	 */
 	async fetch(gameId) {
+		if(!this.#user.isLoggedIn) { throw new Error('user not logged in') }
+
 		const response = await fetch(new URL(`/tic/v1/game/${gameId}`, this.#baseUrl), {
 			method: 'GET',
 			mode: 'cors',
@@ -96,10 +97,13 @@ export class GameAPI {
 	 * @param {GameId} gameId
 	 * @param {string} action
 	 * @param {URLSearchParams} [query]
+	 * @returns {Promise<Game>}
 	 */
 	async #action(gameId, action, query) {
+		if(!this.#user.isLoggedIn) { throw new Error('user not logged in') }
+
 		const url = new URL(`/tic/v1/game/${gameId}/${action}`, this.#baseUrl)
-		if(query !== undefined) { url.search = query }
+		if(query !== undefined) { url.search = query.toString() }
 
 		const response = await fetch(url, {
 			method: 'PATCH',
@@ -124,6 +128,7 @@ export class GameAPI {
 
 	/**
 	 * @param {GameId} gameId
+	 * @returns {Promise<Game>}
 	 */
 	async accept(gameId) {
 		return this.#action(gameId, 'accept')
@@ -131,6 +136,7 @@ export class GameAPI {
 
 	/**
 	 * @param {GameId} gameId
+	 * @returns {Promise<Game>}
 	 */
 	async decline(gameId) {
 		return this.#action(gameId, 'decline')
@@ -138,7 +144,8 @@ export class GameAPI {
 
 	/**
 	 * @param {GameId} gameId
-	 * @param {string} reason
+	 * @param {string|undefined} reason
+	 * @returns {Promise<Game>}
 	 */
 	async close(gameId, reason) {
 		const sp = new URLSearchParams()
@@ -148,6 +155,7 @@ export class GameAPI {
 
 	/**
 	 * @param {GameId} gameId
+	 * @returns {Promise<Game>}
 	 */
 	async forfeit(gameId) {
 		return this.#action(gameId, 'forfeit')
@@ -156,6 +164,7 @@ export class GameAPI {
 	/**
 	 * @param {GameId} gameId
 	 * @param {Array<string>} targets
+	 * @returns {Promise<Game>}
 	 */
 	async offer(gameId, targets) {
 		const sp = new URLSearchParams()
@@ -166,6 +175,7 @@ export class GameAPI {
 	/**
 	 * @param {GameId} gameId
 	 * @param {string} position
+	 * @returns {Promise<Game>}
 	 */
 	async move(gameId, position) {
 		const sp = new URLSearchParams()

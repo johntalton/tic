@@ -3,7 +3,11 @@
 
 import { range } from './range.js'
 
+/** @import { GameId, BoardType } from './types.js' */
 
+/**
+ * @param {BoardType} type
+ */
 function buttonCountForGameType(type) {
 	if(type === 'TTT') { return 9 }
 	if(type === 'Reversi') { return 64 }
@@ -13,6 +17,9 @@ function buttonCountForGameType(type) {
 }
 
 class UIListing {
+	/**
+	 * @param {GameId} gameId
+	 */
 	static selectGameListingItem(gameId) {
 		const gameListElement = document.getElementById('GamesListing')
 		const gameListingItem = gameListElement?.querySelector(`li[data-game-id="${gameId}"]`)
@@ -22,6 +29,10 @@ class UIListing {
 		gameListingItem?.toggleAttribute('data-active', true)
 	}
 
+	/**
+	 * @param {Set<GameId>} notificationGameIdSet
+	 * @param {MessagePort} port
+	 */
 	static addGameListingItem(game, user, notificationGameIdSet, port) {
 		const gameListElement = document.getElementById('GamesListing')
 		const gameListingItemTemplate = gameListElement?.querySelector('template')
@@ -46,6 +57,10 @@ class UIListing {
 		})
 	}
 
+	/**
+	 * @param {HTMLElement} li
+	 * @param {Set<GameId>} notificationGameIdSet
+	 */
 	static updateGameListingItemLI(li, game, user, notificationGameIdSet) {
 		li.toggleAttribute('data-stale', false)
 
@@ -69,6 +84,9 @@ class UIListing {
 
 	}
 
+	/**
+	 * @param {GameId} gameId
+	 */
 	static clearGameListingItemNotification(gameId) {
 		const gameListElement = document.getElementById('GamesListing')
 		const gameListingItem = gameListElement?.querySelector(`li[data-game-id="${gameId}"]`)
@@ -79,6 +97,10 @@ class UIListing {
 		hasUpdateElem?.setAttribute('data-game-has-update', hasUpdateValue)
 	}
 
+	/**
+	 * @param {Set<GameId>} notificationGameIdSet
+	 * @param {MessagePort} port
+	 */
 	static addOrUpdateGameListingItem(game, user, notificationGameIdSet, port) {
 		const gameListElement = document.getElementById('GamesListing')
 		const gameListingItem = gameListElement?.querySelector(`li[data-game-id="${game.id}"]`)
@@ -99,6 +121,10 @@ class UIListing {
 		}
 	}
 
+	/**
+	 * @param {Set<GameId>} notificationGameIdSet
+	 * @param {MessagePort} port
+	 */
 	static updateGameListing(listing, user, notificationGameIdSet, port) {
 		UI.Listing.markGameListingItemsStale()
 
@@ -135,12 +161,14 @@ class UIListing {
 		if(!(filterForm instanceof HTMLFormElement)) { return [] }
 
 		const fd = new FormData(filterForm)
-		return fd.getAll('ListFilter')
+		return fd.getAll('ListFilter').filter(value => (typeof value === 'string'))
 	}
 }
 
 class UIField {
-
+	/**
+	 * @param {GameId} gameId
+	 */
 	static setGameMessage(gameId, key) {
 		const gameFieldElem = document.querySelector(`game-field[game-id="${gameId}"]`)
 		if(gameFieldElem === null) { return }
@@ -152,6 +180,11 @@ class UIField {
 		message?.toggleAttribute('data-active', true)
 	}
 
+	/**
+	 * @param {GameId} gameId
+	 * @param {BoardType} type
+	 * @param {MessagePort} port
+	 */
 	static createNewGameField(gameId, type, port) {
 		const templateElem = document.getElementById('GameTemplate')
 		if(!(templateElem instanceof HTMLTemplateElement)) { throw new Error('GameTemplate is not a template') }
@@ -233,11 +266,17 @@ class UIField {
 		return gameFieldElem
 	}
 
+	/**
+	 * @param {GameId} gameId
+	 */
 	static hasGameField(gameId) {
 		const gameFieldElem = document.querySelector(`game-field[game-id="${gameId}"]`)
 		return gameFieldElem !== null
 	}
 
+	/**
+	 * @param {GameId} gameId
+	 */
 	static updateGameField(gameId, game, user, glyphCache = new Map()) {
 		const gameFieldElem = document.querySelector(`game-field[game-id="${gameId}"]`)
 		if(gameFieldElem === null) { throw new Error('game not in dom') }
@@ -313,6 +352,11 @@ class UIField {
 		})
 	}
 
+	/**
+	 * @param {GameId} gameId
+	 * @param {BoardType} type
+	 * @param {MessagePort} port
+	 */
 	static activateGameField(gameId, type, port) {
 		// console.log('load game', gameId)
 		const gameFieldsElem = document.getElementById('GameFields')
@@ -345,6 +389,10 @@ class UIField {
 
 
 class UIDialog {
+	/**
+	 * @param {GameId} gameId
+	 * @param {MessagePort} port
+	 */
 	static confirmClose(gameId, port) {
 		const closeDialog = document.getElementById('CloseConfirm')
 		const closeForm = closeDialog?.querySelector('form')
@@ -375,6 +423,10 @@ class UIDialog {
 		closeDialog?.showModal()
 	}
 
+	/**
+	 * @param {GameId} gameId
+	 * @param {MessagePort} port
+	 */
 	static confirmForfeit(gameId, port) {
 		const forfeitDialog = document.getElementById('ForfeitConfirm')
 		if(!(forfeitDialog instanceof HTMLDialogElement)) { throw new Error('Forfeit Confirmation is not a Dialog element') }
@@ -392,6 +444,10 @@ class UIDialog {
 		forfeitDialog.showModal()
 	}
 
+	/**
+	 * @param {GameId} gameId
+	 * @param {MessagePort} port
+	 */
 	static startOffer(gameId, port) {
 		const offerToDialog = document.getElementById('OfferTo')
 		const offerForm = offerToDialog?.querySelector('form')
@@ -449,6 +505,10 @@ class UIGlobal {
 		// }, 50)
 	}
 
+	/**
+	 * @param {string} message
+	 * @param {string|undefined} [kind]
+	 */
 	static showToast(message, kind) {
 		const toastElem = document.getElementById('Toast')
 		toastElem?.toggleAttribute('data-show', true)
