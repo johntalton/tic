@@ -1,6 +1,6 @@
 // import { login, register } from './webauthn.js'
 /** biome-ignore-all lint/nursery/noExcessiveLinesPerFile: <explanation> */
-import { GameAPI } from './game-api.js'
+import { GameAPI, IsBoardType } from './game-api.js'
 import { UI } from './ui.js'
 import { UserAPI } from './user-api.js'
 
@@ -226,6 +226,10 @@ function handleCreateGame(_event) {
 	if(!(typeSelect instanceof HTMLSelectElement)) { throw new Error('type selection not select element') }
 	const type = typeSelect.value
 
+	if(!IsBoardType(type)) {
+		throw new Error('unknown board type')
+	}
+
 	gameApi.create(type)
 		.then(game => {
 			refreshGlyphCache(game.players)
@@ -359,7 +363,7 @@ function handleOnLoggedIn() {
 function simpleUserAutoLogin() {
 	const info = localStorage.getItem('simple-login')
 	if(info === null) {
-		UI.Global.setLoggedIn(USER, false)
+		UI.Global.logout(USER)
 		return false
 	}
 

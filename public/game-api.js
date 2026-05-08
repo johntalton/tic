@@ -1,5 +1,17 @@
 /** @import { SessionUser, GameId, Game, BoardType } from './types.js' */
 
+/**
+ * @param {string} type
+ * @returns {type is BoardType}
+ */
+export function IsBoardType(type) {
+	if(type === 'C4') { return true }
+	if(type === 'Reversi') { return true }
+	if(type === 'TTT') { return true }
+
+	return false
+}
+
 export class GameAPI {
 	#baseUrl
 	#user
@@ -15,7 +27,7 @@ export class GameAPI {
 
 	/**
 	 * @param {Array<string>} filter
-	 * @returns {Promise<Array<Game>>}
+	 * @returns {Promise<{ games: Array<Game> }>}
 	 */
 	async listing(filter) {
 		if(!this.#user.isLoggedIn) { throw new Error('user not logged in') }

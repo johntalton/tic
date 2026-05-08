@@ -3,7 +3,7 @@
 
 import { range } from './range.js'
 
-/** @import { GameId, BoardType } from './types.js' */
+/** @import { SessionUser, Game, GameId, BoardType, User } from './types.js' */
 
 /**
  * @param {BoardType} type
@@ -30,6 +30,8 @@ class UIListing {
 	}
 
 	/**
+	 * @param {Game} game
+	 * @param {SessionUser} user
 	 * @param {Set<GameId>} notificationGameIdSet
 	 * @param {MessagePort} port
 	 */
@@ -58,10 +60,14 @@ class UIListing {
 	}
 
 	/**
-	 * @param {HTMLElement} li
+	 * @param {Element} li
+	 * @param {Game} game
+	 * @param {SessionUser} user
 	 * @param {Set<GameId>} notificationGameIdSet
 	 */
 	static updateGameListingItemLI(li, game, user, notificationGameIdSet) {
+		if(!user.isLoggedIn) { throw new Error('user not logged in') }
+
 		li.toggleAttribute('data-stale', false)
 
 		const nameOutput = li.querySelector('output[data-game-name]')
@@ -69,6 +75,11 @@ class UIListing {
 		const isOwnerOutput = li.querySelector('output[data-game-owner]')
 		const elapsedTime = li.querySelector('elapsed-time[data-created-at]')
 		const hasUpdateElem = li.querySelector('[data-game-has-update]')
+
+		if((nameOutput === null) || !(nameOutput instanceof HTMLOutputElement)) { throw new Error('missing name output') }
+		if((subNameOutput === null) || !(subNameOutput instanceof HTMLOutputElement)) { throw new Error('missing sub-name output') }
+		if((isOwnerOutput === null) || !(isOwnerOutput instanceof HTMLOutputElement)) { throw new Error('missing isOwner output') }
+		if(hasUpdateElem === null) { throw new Error('missing has-update element') }
 
 		const isOwner = game.owner === user.id
 		const hasUpdateValue = notificationGameIdSet.has(game.id) ? 'yes' : 'no'
@@ -98,13 +109,15 @@ class UIListing {
 	}
 
 	/**
+	 * @param {Game} game
+	 * @param {SessionUser} user
 	 * @param {Set<GameId>} notificationGameIdSet
 	 * @param {MessagePort} port
 	 */
 	static addOrUpdateGameListingItem(game, user, notificationGameIdSet, port) {
 		const gameListElement = document.getElementById('GamesListing')
 		const gameListingItem = gameListElement?.querySelector(`li[data-game-id="${game.id}"]`)
-		if(gameListingItem === null) {
+		if(gameListingItem === null || gameListingItem === undefined) {
 			UI.Listing.addGameListingItem(game, user, notificationGameIdSet, port)
 		}
 		else {
@@ -122,6 +135,8 @@ class UIListing {
 	}
 
 	/**
+	 * @param {{ games: Array<Game> }} listing
+	 * @param {SessionUser} user
 	 * @param {Set<GameId>} notificationGameIdSet
 	 * @param {MessagePort} port
 	 */
@@ -168,6 +183,7 @@ class UIListing {
 class UIField {
 	/**
 	 * @param {GameId} gameId
+	 * @param {string} key
 	 */
 	static setGameMessage(gameId, key) {
 		const gameFieldElem = document.querySelector(`game-field[game-id="${gameId}"]`)
@@ -276,8 +292,12 @@ class UIField {
 
 	/**
 	 * @param {GameId} gameId
+	 * @param {Game} game
+	 * @param {SessionUser} user
 	 */
 	static updateGameField(gameId, game, user, glyphCache = new Map()) {
+		if(!user.isLoggedIn) { throw new Error('user not logged in') }
+
 		const gameFieldElem = document.querySelector(`game-field[game-id="${gameId}"]`)
 		if(gameFieldElem === null) { throw new Error('game not in dom') }
 
@@ -481,6 +501,9 @@ class UIDialog {
 		offerToDialog?.showModal()
 	}
 
+	/**
+	 * @param {Array<User>} friends
+	 */
 	static updateFriends(friends) {
 		// offer listing
 		const offerToSelection = document.getElementById('offerToUser')
@@ -497,7 +520,10 @@ class UIDialog {
 }
 
 class UIGlobal {
-	static setProgress(percent) {
+	/**
+	 * @param {number} _percent
+	 */
+	static setProgress(_percent) {
 		// const progressElement = document.getElementById('GlobalProgress')
 		// setInterval(() => {
 		// 	progressElement.value += 1
@@ -522,8 +548,13 @@ class UIGlobal {
 		toastElem?.toggleAttribute('data-show', false)
 	}
 
-	static setLoggedIn(user, loggedIn = true) {
-		document.querySelector('body')?.toggleAttribute('data-logged-in', loggedIn)
+	/**
+	 * @param {SessionUser} user
+	 */
+	static setLoggedIn(user) {
+		if(!user.isLoggedIn) { throw new Error('user not logged in') }
+
+		document.querySelector('body')?.toggleAttribute('data-logged-in', true)
 
 		const usernameOutputs = document.querySelectorAll('output[data-username]')
 		for(const usernameOutput of usernameOutputs) {
@@ -532,8 +563,11 @@ class UIGlobal {
 		}
 	}
 
+	/**
+	 * @param {SessionUser} user
+	 */
 	static logout(user) {
-		UI.Global.setLoggedIn(user, false)
+		document.querySelector('body')?.toggleAttribute('data-logged-in', true)
 
 		// game listing
 		UI.Listing.clearGameListing()
