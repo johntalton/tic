@@ -54,7 +54,7 @@ export class CouchGameStore {
 		// 	console.log('CouchDB event', event)
 		// })
 
-		this.#feedUrl = new URL(`${this.#url}/_changes?feed=continuous&heartbeat=true&filter=_view&view=basic/games_by_viewer`)
+		this.#feedUrl = new URL(`${this.#url}/_changes?feed=continuous&heartbeat=true&since=now&filter=_view&view=basic/games_by_viewer`)
 		this.#feed = this.#feedConnect()
 	}
 
@@ -80,7 +80,7 @@ export class CouchGameStore {
 			const { data } = event
 			const { id } = data
 
-			// console.log('change', data)
+			// console.log('couch change', data)
 
 			// reset reconnect to default on success
 			feed.reconnectIntervalMS = RECONNECT_INTERVAL_INITIAL_MS

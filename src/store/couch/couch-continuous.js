@@ -126,7 +126,8 @@ export class CouchContinuous extends EventTarget {
 					for(const line of lines) {
 						if(line.length === 0) {
 							// heartbeat
-							return
+							// console.log('Couch Continuous Heartbeat', lines)
+							continue
 						}
 
 						const data = JSON.parse(line)
