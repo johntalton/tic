@@ -2,14 +2,17 @@
   "name": "@johntalton/tic",
   "type": "module",
   "scripts": {
-    "start": "./node_modules/.bin/http-server --cors -b -g -S -C ./certificates/localhost-cert.pem -K ./certificates/localhost-privkey.pem ./public",
-    "serve": "node --permission --allow-fs-read=. --allow-net --env-file=.env src/index.js"
+    "start": "./node_modules/.bin/http-server --cors -b -g -S -C ./certificates/tic.next.internal-cert.pem -K ./certificates/tic.next.internal-privkey.pem ./public",
+    "serve": "node --permission --allow-fs-read=. --allow-net --env-file=.env src/index.js",
+    "serve-weak": "node --env-file=.env src/index.js",
+    "lint": "biome check"
   },
   "devDependencies": {
+    "@biomejs/biome": "^2.4.16",
     "http-server": "^14.1.1"
   },
   "dependencies": {
-    "@johntalton/http-util": "^5.1.6",
+    "@johntalton/http-util": "^7.0.2",
     "@johntalton/sse-util": "^1.0.0"
   }
 }

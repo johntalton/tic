@@ -192,5 +192,5 @@ export class GameAPI {
 	}
 }
 
-// const gameApi = new GameAPI({ accessToken:'token:access:agent' }, 'https://tic.next.local:8443')
+// const gameApi = new GameAPI({ accessToken:'token:access:agent' }, 'https://tic.next.internal:8443')
 // console.log(await gameApi.listing(['resolved']))

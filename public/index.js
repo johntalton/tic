@@ -9,7 +9,7 @@ import './localized-output.js'
 
 /** @import { GameId, UserId, SessionUser } from './types.js' */
 
-const COMMON_API_URL = 'https://tic.next.local:8443'
+const COMMON_API_URL = 'https://tic.next.internal:8443'
 const SIMPLE_LOGIN_URL = COMMON_API_URL
 const WEB_AUTH_N_URL = COMMON_API_URL
 const TIC_URL = COMMON_API_URL

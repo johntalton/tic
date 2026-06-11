@@ -34,7 +34,7 @@ export async function startRegistration(user, query) {
 	return {
 		challenge: encodedChallenge,
 		rp: {
-			id: 'next.local', // if absent default to domain of origin
+			id: 'next.internal', // if absent default to domain of origin
 			name: ''
 		},
 		user: {

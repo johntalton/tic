@@ -8,6 +8,7 @@ import {
 	handleList,
 	handleNew
 } from './games/index.js'
+import { getHealth } from './health/index.js'
 import {
 	getSelf,
 	getUser,
@@ -97,6 +98,9 @@ export const USER_ROUTE = {
 
 /** @type {RouteDefinition<any>} */
 export const ROUTES = {
+	health: {
+		[GET]: getHealth
+	},
 	authentication: {
 		'simple-login': {
 			[POST]: handleSimpleLogin

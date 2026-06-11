@@ -13,8 +13,9 @@ export async function handleMove(encodedGameId, userId, _body, query, handlerPer
 	const positionStr = query.get('position') ?? query.get('p')
 	if(positionStr === null) { throw new Error('missing move position') }
 	const position = Number.parseInt(positionStr, 10)
-	const positionPlayerId = game.board[position]
-	if(positionPlayerId !== EMPTY) { throw new Error('invalid move position') }
+
+	// const positionPlayerId = game.board[position]
+	// if(positionPlayerId !== EMPTY) { throw new Error('invalid move position') }
 
  	const updatedGame = GameManager.move(game, userId, { position })
 

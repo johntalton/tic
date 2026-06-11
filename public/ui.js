@@ -567,7 +567,7 @@ class UIGlobal {
 	 * @param {SessionUser} user
 	 */
 	static logout(user) {
-		document.querySelector('body')?.toggleAttribute('data-logged-in', true)
+		document.querySelector('body')?.toggleAttribute('data-logged-in', false)
 
 		// game listing
 		UI.Listing.clearGameListing()

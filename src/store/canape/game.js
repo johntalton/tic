@@ -4,6 +4,7 @@ import { storeGameIdFromString } from '../store.js'
 
 /** @import { StoreGameId, StoreGameEnvelope, StoreGameEnvelopeBase, StoreGameListItem, StoreGameListItemRow} from '../../types/store.game.js' */
 /** @import { CanapeGenericRows, CanapeStoreGame } from '../../types/canape.js' */
+/** @import { StoreHealth } from '../store.js' */
 
 const DEFAULT_TIMEOUT_MS = 200
 
@@ -145,6 +146,17 @@ export class CanapeGameStore {
 			...row.value,
 			active: row.value.active?.includes(user)
 		}))
+	}
+
+	/**
+	 * @returns {Promise<StoreHealth>}
+	 */
+	async health() 	{
+		//
+		return {
+			name: 'CanapeGameStore',
+			health: 1
+		}
 	}
 }
 

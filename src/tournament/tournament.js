@@ -62,7 +62,7 @@ export class Store {
 }
 
 const sseToken = 'token:sse:orc'
-const BASE_URL = 'https://tic.next.local:8443'
+const BASE_URL = 'https://tic.next.internal:8443'
 const shutdown = new AbortController()
 const eventSource = new EventSource(`${BASE_URL}/tic/v1/events?token=${sseToken}`, { withCredentials: true })
 const Backend = new GameAPI({

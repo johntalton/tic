@@ -5,10 +5,11 @@ import {
 	CouchUtil
 } from './couch.js'
 
+/** @import { TimingsInfo } from '@johntalton/http-util/headers' */
 /** @import { Token, SSEToken } from '../../types/global.js' */
 /** @import { CouchGenericRows, CouchStoreUser } from '../../types/couch.js' */
 /** @import { StoreUserId, StoreUserEnvelope, StoreUserListItem, StoreUserListItemRow, StoreUserEnvelopeBase } from '../../types/store.user.js' */
-/** @import { TimingsInfo } from '@johntalton/http-util/headers' */
+/** @import { StoreHealth } from '../store.js' */
 
 /**
  * @typedef {Object} AccessTokenCacheItem
@@ -227,5 +228,16 @@ export class CouchUserStore {
 		if(result.rows[0] === undefined) { throw new Error('User DB invalid row') }
 		const userId = result.rows[0].value
 		return userId
+	}
+
+	/**
+	 * @returns {Promise<StoreHealth>}
+	 */
+	async health() 	{
+		//
+		return {
+			name: 'CouchUserStore',
+			health: 1
+		}
 	}
 }

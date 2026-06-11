@@ -104,7 +104,7 @@ class BetterAI extends BasicAI {
 
 class GameAgent {
 	// #channel = new MessageChannel()
-	#serviceUrl = 'https://tic.next.local:8443'
+	#serviceUrl = 'https://tic.next.internal:8443'
 	#api
 	#agentUserId
 	#accessToken

@@ -4,7 +4,7 @@ import { storeUserIdFromString } from '../store.js'
 /** @import { StoreUserId, StoreUserEnvelope, StoreUserListItem, StoreUserListItemRow, StoreUserEnvelopeBase } from '../../types/store.user.js' */
 /** @import { TimingsInfo } from '@johntalton/http-util/headers' */
 /** @import { CanapeGenericRows, CanapeStoreUser } from '../../types/canape.js' */
-
+/** @import { StoreHealth } from '../store.js' */
 
 import { Fetch2 } from '../../agent/fetch2.js'
 import { DisposableTimer } from '../../util/timing.js'
@@ -181,5 +181,16 @@ export class CanapeUserStore {
 
 		// console.log('fromSSEToken -> ', result.rows[0])
 		return result.rows[0].value
+	}
+
+	/**
+	 * @returns {Promise<StoreHealth>}
+	 */
+	async health() 	{
+		//
+		return {
+			name: 'CanapeUserStore',
+			health: 1
+		}
 	}
 }

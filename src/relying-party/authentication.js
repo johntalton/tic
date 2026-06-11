@@ -10,7 +10,7 @@ export function startAuthentication(user, query) {
 	// PublicKeyCredentialRequestOptions
 	return {
 		challenge: encodedChallenge,
-		rpId: 'next.local',
+		rpId: 'next.internal',
 		// allowCredentials: [],
 		// userVerification: 'preferred',
 		// timeout: 1000 * 60 * 1,

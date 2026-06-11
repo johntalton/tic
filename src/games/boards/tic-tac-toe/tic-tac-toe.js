@@ -124,7 +124,7 @@ export class TicTacToe {
 	 */
 	static isValidMove(board, _user, move) {
 		const { position } = move
-		return board[position] !== EMPTY
+		return board[position] === EMPTY
 	}
 
 	/**

@@ -3,7 +3,7 @@
 
 // import { GameAPI } from '../game-api.js'
 
-// deno run --allow-net --unsafely-ignore-certificate-errors=tic.next.local public/agent/agent.js
+// deno run --allow-net --unsafely-ignore-certificate-errors=tic.next.internal public/agent/agent.js
 // node --permission --allow-fs-read=. --experimental-eventsource  public/agent/agent.js
 
 // const globalDispatcher = Symbol.for('undici.globalDispatcher.1')
@@ -118,8 +118,8 @@ export class Fetch2 {
 
 
 
-// const response = await Fetch2.fetch('https://tic.next.local:8443/tic/v1/games?f=resolved')
-// const url = new URL('/tic/v1/games', 'https://tic.next.local:8443')
+// const response = await Fetch2.fetch('https://tic.next.internal:8443/tic/v1/games?f=resolved')
+// const url = new URL('/tic/v1/games', 'https://tic.next.internal:8443')
 // url.searchParams.set('f', 'resolved')
 // const response = await Fetch2.fetch(url, {
 // 	mode: 'cors',

@@ -7,18 +7,15 @@ import {
 	Accept,
 	AcceptEncoding,
 	AcceptLanguage,
-
 	CONTENT_TYPE_JSON,
+	ContentType,
 	FORWARDED_KEY_FOR,
 	Forwarded,
 	KNOWN_FORWARDED_KEYS,
-
 	MIME_TYPE_EVENT_STREAM,
 	MIME_TYPE_JSON,
 	MIME_TYPE_TEXT,
 	MIME_TYPE_XML,
-
-	parseContentType,
 	SecFetch
 } from '@johntalton/http-util/headers'
 import {
@@ -275,8 +272,12 @@ async  function handleStreamAsync(stream, header, _flags, shutdownSignal) {
 	// Options pre-flight
 	//
 	if(method === HTTP2_METHOD_OPTIONS) {
-		const allowedMethods = digOptions(ROUTES, requestUrl.pathname)
-		Response.preflight(stream, allowedMethods, undefined, undefined, meta)
+		const supportedMethods = digOptions(ROUTES, requestUrl.pathname)
+		Response.preflight(stream, {
+			supportedQueryTypes: undefined,
+			acceptRanges: undefined,
+			supportedMethods
+		}, meta)
 		return
 	}
 
@@ -286,7 +287,7 @@ async  function handleStreamAsync(stream, header, _flags, shutdownSignal) {
 	const rateLimitKey = `${ip}` // `${ip}:${header['x-k6-vuid']}`
 	const limitInfo = RateLimiter.test(ipRateStore, rateLimitKey, ipRequestPerSecondPolicy)
 	if(limitInfo.exhausted) {
-		Response.tooManyRequests(stream, limitInfo, [ ipRequestPerSecondPolicy ], meta)
+		Response.tooManyRequests(stream, { limitInfo, policies: [ ipRequestPerSecondPolicy ] }, meta)
 		return
 	}
 
@@ -318,7 +319,7 @@ async  function handleStreamAsync(stream, header, _flags, shutdownSignal) {
 	// content negotiation
 	//
 	const hasContentType =  (fullContentType !== undefined) && (fullContentType !== '')
-	const contentType = parseContentType(hasContentType ? fullContentType : CONTENT_TYPE_ASSUMED)
+	const contentType = ContentType.parse(hasContentType ? fullContentType : CONTENT_TYPE_ASSUMED)
 
 	const forceIdentity = false
 	const supportedEncodings = forceIdentity ? [] : DEFAULT_SUPPORTED_ENCODINGS
@@ -387,7 +388,15 @@ async  function handleStreamAsync(stream, header, _flags, shutdownSignal) {
 			if(isSSE) { return }
 
 			if(accept === MIME_TYPE_JSON) {
-				Response.json(stream, data, acceptedEncoding, undefined, undefined, { priv: true, maxAge: 0 }, undefined, finalMeta)
+				Response.json(stream, data, {
+					encoding: acceptedEncoding,
+					etag: undefined,
+					lastModified: undefined,
+					age: undefined,
+					cacheControl: { priv: true, maxAge: 0 }
+				}, {
+					supportedQueryTypes: undefined
+				}, finalMeta)
 			}
 			else {
 				throw new Error('unknown accept type')

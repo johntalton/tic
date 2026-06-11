@@ -4,6 +4,7 @@ import { CouchContinuous, DEFAULT_RECONNECT_INTERVAL_MS } from './couch-continuo
 
 /** @import { CouchGenericRows, CouchStoreGame } from '../../types/couch.js' */
 /** @import { StoreGameId, StoreGameEnvelope, StoreGameEnvelopeBase, StoreGameListItem, StoreGameListItemRow} from '../../types/store.game.js' */
+/** @import { StoreHealth } from '../store.js' */
 
 /**
  * @typedef {Object} CouchCacheGetGame
@@ -297,5 +298,16 @@ export class CouchGameStore {
 			...row.value,
 			active: row.value.active?.includes(user)
 		}))
+	}
+
+	/**
+	 * @returns {Promise<StoreHealth>}
+	 */
+	async health() 	{
+		//
+		return {
+			name: 'CouchGameStore',
+			health: 1
+		}
 	}
 }
