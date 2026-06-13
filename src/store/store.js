@@ -15,12 +15,10 @@ import { CouchUserStore } from './couch/user.js'
 
 export const USE_CANAPE = false
 
-// biome-ignore lint/nursery/noUnnecessaryConditions: configuration
 export const gameStore = USE_CANAPE ?
 	new CanapeGameStore('https://canape.next.internal:6095/tic') :
 	new CouchGameStore()
 
-// biome-ignore lint/nursery/noUnnecessaryConditions: configuration
 export const userStore = USE_CANAPE ?
 	new CanapeUserStore('https://canape.next.internal:6095/tic') :
 	new CouchUserStore()

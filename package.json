@@ -8,11 +8,11 @@
     "lint": "biome check"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.4.16",
+    "@biomejs/biome": "^2.5.0",
     "http-server": "^14.1.1"
   },
   "dependencies": {
-    "@johntalton/http-util": "^7.0.2",
+    "@johntalton/http-util": "^7.1.0",
     "@johntalton/sse-util": "^1.0.0"
   }
 }

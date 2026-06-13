@@ -1,3 +1,5 @@
+import process from 'node:process'
+
 import { storeGameIdFromString } from '../store.js'
 import { COUCH_STATUS_NOT_MODIFIED, CouchUtil } from './couch.js'
 import { CouchContinuous, DEFAULT_RECONNECT_INTERVAL_MS } from './couch-continuous.js'

@@ -1,6 +1,7 @@
 import crypto from 'node:crypto'
 import fs from 'node:fs'
 import http2 from 'node:http2'
+import process from 'node:process'
 
 import { handleStream } from './dig-stream.js'
 

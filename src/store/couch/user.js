@@ -1,3 +1,5 @@
+import process from 'node:process'
+
 import { DisposableTimer } from '../../util/timing.js'
 import { storeUserIdFromString } from '../store.js'
 import {

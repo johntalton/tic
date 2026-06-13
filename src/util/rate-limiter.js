@@ -1,4 +1,4 @@
-/** biome-ignore-all lint/nursery/noExcessiveClassesPerFile: Internal Bucket */
+/** biome-ignore-all lint/style/noExcessiveClassesPerFile: Internal Bucket */
 
 /** @import { RateLimitPolicyInfo, RateLimitInfo } from '@johntalton/http-util/headers' */
 

@@ -1,4 +1,4 @@
-/** biome-ignore-all lint/nursery/noExcessiveLinesPerFile: single responsibility */
+/** biome-ignore-all lint/style/noExcessiveLinesPerFile: single responsibility */
 /** biome-ignore-all lint/complexity/noExcessiveCognitiveComplexity: complexity is just life */
 /** biome-ignore-all lint/style/noSubstr: for now fix later */
 

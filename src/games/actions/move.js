@@ -1,6 +1,6 @@
 import { gameStore } from '../../store/store.js'
 import { TIMING, timed } from '../../util/timing.js'
-import { EMPTY, GameManager } from '../game.js'
+import { GameManager } from '../game.js'
 import { computeAndUpdateELO, resolveFromStore } from '../util.js'
 
 /** @import { ActionHandlerFn } from './index.js' */

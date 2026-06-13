@@ -1,4 +1,4 @@
-/** biome-ignore-all lint/nursery/noExcessiveClassesPerFile: data event itself */
+/** biome-ignore-all lint/style/noExcessiveClassesPerFile: data event itself */
 /**
  * @typedef {Object} CouchContinuousOptions
  * @property {number} [reconnectIntervalMS]

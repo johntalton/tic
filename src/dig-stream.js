@@ -1,5 +1,6 @@
-/** biome-ignore-all lint/nursery/noExcessiveLinesPerFile: main handler is complex */
+/** biome-ignore-all lint/style/noExcessiveLinesPerFile: main stream handler */
 import http2 from 'node:http2'
+import process from 'node:process'
 import { TLSSocket } from 'node:tls'
 
 import { requestBody } from '@johntalton/http-util/body'
@@ -327,6 +328,11 @@ async  function handleStreamAsync(stream, header, _flags, shutdownSignal) {
 	const accept = Accept.select(fullAccept, metadata.mimeTypes ?? DEFAULT_SUPPORTED_MIME_TYPES)
 	const _acceptedLanguage = AcceptLanguage.select(fullAcceptLanguage, metadata.languages ?? DEFAULT_SUPPORTED_LANGUAGES)
 
+	if(accept === undefined) {
+		Response.notAcceptable(stream, { acceptableTypes: DEFAULT_SUPPORTED_MIME_TYPES }, meta)
+		return
+	}
+
 	//
 	const preambleEnd = performance.now()
 
@@ -346,7 +352,8 @@ async  function handleStreamAsync(stream, header, _flags, shutdownSignal) {
 	//
 	if(isSSE) {
 		if(accept !== MIME_TYPE_EVENT_STREAM) {
-			Response.error(stream, 'mime type event stream expect for SSE route', meta)
+			Response.notAcceptable(stream, { acceptableTypes: [ MIME_TYPE_EVENT_STREAM ] }, meta)
+			// Response.error(stream, 'mime type event stream expect for SSE route', meta)
 			return
 		}
 
@@ -387,20 +394,20 @@ async  function handleStreamAsync(stream, header, _flags, shutdownSignal) {
 			// SSE header/response send above via sendSSE
 			if(isSSE) { return }
 
-			if(accept === MIME_TYPE_JSON) {
+			// if(accept === MIME_TYPE_JSON) {
 				Response.json(stream, data, {
 					encoding: acceptedEncoding,
 					etag: undefined,
 					lastModified: undefined,
 					age: undefined,
-					cacheControl: { priv: true, maxAge: 0 }
+					cacheControl: { priv: true, maxAge: 0, directives: 'no-store' }
 				}, {
 					supportedQueryTypes: undefined
 				}, finalMeta)
-			}
-			else {
-				throw new Error('unknown accept type')
-			}
+			// }
+			// else {
+			// 	throw new Error('unknown accept type')
+			// }
 
 		})
 		.catch(e => {

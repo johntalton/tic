@@ -1,5 +1,5 @@
-/** biome-ignore-all lint/nursery/noExcessiveClassesPerFile: action helper */
-/** biome-ignore-all lint/nursery/noExcessiveLinesPerFile: complex */
+/** biome-ignore-all lint/style/noExcessiveClassesPerFile: action helper */
+/** biome-ignore-all lint/style/noExcessiveLinesPerFile: complex */
 import { BoardFactory } from './boards/boards.js'
 
 /** @import { BoardType } from './boards/boards.js' */
